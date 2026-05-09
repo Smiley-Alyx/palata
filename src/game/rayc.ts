@@ -5,7 +5,16 @@ import { createInput } from '../input/input';
 import { createRenderer } from './render/renderer';
 import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX } from './audio/sfx-config';
-import { getMap, hitWall, isDoorCell, setCell, setMap as setMapState } from '../state/map-state';
+import {
+  getCellMaterial,
+  getMap,
+  hitWall,
+  isDoorCell,
+  setCell,
+  setLegend as setLegendState,
+  setMap as setMapState,
+} from '../state/map-state';
+import type { RayHit } from '../raycast/raycaster';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -59,6 +68,86 @@ let healthFloorCandidates: Array<{ x: number; y: number }> = [];
 let healthSpawnCooldownMs = 0;
 
 let enemySightLoopKey: 'enemy' | 'zombie' | null = null;
+
+type WallFace = 'N' | 'S' | 'E' | 'W';
+
+type AtlasKind = 'wall' | 'door' | 'stand';
+
+function getAtlasKind(m: string | number): AtlasKind | null {
+  if (m === 'wall' || m === 'brick' || m === 1) return 'wall';
+  if (m === 'door' || m === 6 || m === 3) return 'door';
+  if (m === 'stand' || m === 4) return 'stand';
+  return null;
+}
+
+function encodeAtlasTextureId(kind: AtlasKind, tile: number): number {
+  const t = ((tile % 16) + 16) % 16;
+  if (kind === 'wall') return 100 + t;
+  if (kind === 'door') return 200 + t;
+  return 300 + t;
+}
+
+function getAtlasVariantTextureId({
+  map,
+  xMap,
+  yMap,
+  face,
+  isVerticalHit,
+  kind,
+}: {
+  map: number[][];
+  xMap: number;
+  yMap: number;
+  face: WallFace;
+  isVerticalHit: boolean;
+  kind: AtlasKind;
+}): number {
+  const w = map[0]?.length ?? 0;
+  const h = map.length;
+
+  const isSameKind = (x: number, y: number) => {
+    if (x < 0 || x >= w || y < 0 || y >= h) return false;
+    const m = getCellMaterial(x, y);
+    return getAtlasKind(m) === kind;
+  };
+
+  let segStart = 0;
+  if (isVerticalHit) {
+    segStart = yMap;
+    while (segStart > 0 && isSameKind(xMap, segStart - 1)) segStart--;
+
+    const parity = Math.abs(xMap) % 2;
+    const salt = kind === 'door' ? 101 : kind === 'stand' ? 203 : 307;
+    const base = Math.abs(segStart * 7 + (face === 'W' ? 13 : 29) + salt) % 16;
+    const tile = parity === 0 ? base : (base + 1) % 16;
+    return encodeAtlasTextureId(kind, tile);
+  }
+
+  segStart = xMap;
+  while (segStart > 0 && isSameKind(segStart - 1, yMap)) segStart--;
+
+  const parity = Math.abs(yMap) % 2;
+  const salt = kind === 'door' ? 101 : kind === 'stand' ? 203 : 307;
+  const base = Math.abs(segStart * 7 + (face === 'S' ? 17 : 31) + salt) % 16;
+  const tile = parity === 0 ? base : (base + 1) % 16;
+  return encodeAtlasTextureId(kind, tile);
+}
+
+function getWallTextureId(hit: RayHit<string | number>): string | number {
+  const map = getMap();
+  if (!map) return hit.material;
+  const kind = getAtlasKind(hit.material);
+  if (!kind) return hit.material;
+  const face = hit.face as WallFace;
+  return getAtlasVariantTextureId({
+    map,
+    xMap: hit.xMap,
+    yMap: hit.yMap,
+    face,
+    isVerticalHit: hit.isVerticalHit,
+    kind,
+  });
+}
 
 let enemyGridW = 0;
 let enemyGridH = 0;
@@ -425,7 +514,7 @@ function hasLineOfSight(xFrom: number, yFrom: number, xTo: number, yTo: number):
 }
 
 let enemyDamageCooldownMs = 0;
-let enemyInSight = false;
+const enemyInSight = false;
 
 function alertEnemiesFromNoise(x: number, y: number, radius: number) {
   const r2 = radius * radius;
@@ -832,20 +921,30 @@ function ensureEngine() {
     getSprites: () => getSprites(),
   });
   engine = createEngine({
-    ctx,
     getViewWidth,
     getViewHeight,
     player,
     input,
     renderer,
-    hitSolid: (x: number, y: number) => {
-      const playerRadius = 0.22;
-      return hitWallCircle(x, y, playerRadius) || hitEnemyCircle(x, y, playerRadius + 0.22);
+    world: {
+      isSolid: (x: number, y: number) => {
+        const playerRadius = 0.22;
+        return hitWallCircle(x, y, playerRadius) || hitEnemyCircle(x, y, playerRadius + 0.22);
+      },
+      isRaySolid: (x: number, y: number) => {
+        return hitWall(x, y);
+      },
+      getMaterial: (x: number, y: number) => {
+        return getCellMaterial(Math.floor(x), Math.floor(y));
+      },
+      interact: (x: number, y: number) => {
+        const xMap = Math.floor(x);
+        const yMap = Math.floor(y);
+        if (isDoorCell(xMap, yMap)) requestOpenDoor(xMap, yMap);
+      },
+      getWallTextureId,
     },
     events: {
-      onDoorOpen: (xMap: number, yMap: number) => {
-        requestOpenDoor(xMap, yMap);
-      },
       onFootstep: () => {
         audio.playSfx('footstep');
       },
@@ -898,7 +997,7 @@ export function setSpawn(spawn: Spawn | null) {
 }
 
 export function setLegend(newLegend: Legend) {
-  ensureEngine().setLegend(newLegend);
+  setLegendState(newLegend);
 }
 
 export function setAudioConfig({

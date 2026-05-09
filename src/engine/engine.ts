@@ -1,12 +1,5 @@
-import {
-  hitWall as hitWallState,
-  isDoorCell,
-  getCellMaterial,
-  setLegend as setLegendState,
-  setMap as setMapState,
-} from '../state/map-state';
-import { castRays } from '../raycast/raycaster';
-import type { Grid, Legend, Player, Spawn } from '../types/game';
+import { castRays, type RayHit } from '../raycast/raycaster';
+import type { Player, Spawn } from '../types/game';
 
 type Input = {
   bind: () => void;
@@ -22,7 +15,6 @@ type Renderer = {
 };
 
 type EngineEvents = {
-  onDoorOpen?: (xMap: number, yMap: number) => void;
   onFootstep?: () => void;
   onShoot?: () => void;
   onEnemyKilled?: (xMap: number, yMap: number) => void;
@@ -31,29 +23,35 @@ type EngineEvents = {
   onTick?: (dt: number) => void;
 };
 
+export type World<MaterialId = string | number> = {
+  isSolid: (x: number, y: number) => boolean;
+  isRaySolid: (x: number, y: number) => boolean;
+  getMaterial: (x: number, y: number) => MaterialId;
+  interact?: (x: number, y: number) => void;
+  getWallTextureId?: (hit: RayHit<MaterialId>) => MaterialId;
+};
+
 export function createEngine({
-  ctx,
   getViewWidth,
   getViewHeight,
   player,
   input,
   renderer,
-  hitSolid,
+  world,
   events,
 }: {
-  ctx: CanvasRenderingContext2D;
   getViewWidth: () => number;
   getViewHeight: () => number;
   player: Player;
   input: Input;
   renderer: Renderer;
-  hitSolid?: (x: number, y: number) => boolean;
+  world: World;
   events?: EngineEvents;
 }) {
   let started = false;
   let rafId: number | null = null;
 
-  const solidAt = typeof hitSolid === 'function' ? hitSolid : hitWallState;
+  const solidAt = world.isSolid;
 
   let previousTime = Date.now();
   let lag = 0.0;
@@ -72,18 +70,10 @@ export function createEngine({
     if (typeof spawn.rot === 'number') player.rot = spawn.rot;
   }
 
-  function setMap(newMap: Grid) {
-    setMapState(newMap);
-  }
-
-  function setLegend(newLegend: Legend) {
-    setLegendState(newLegend);
-  }
-
   function processInput(dt: number) {
     const useDown = input.isDown('KeyE');
     if (useDown && !prevUseDown) {
-      tryOpenDoorInFront();
+      tryInteractInFront();
     }
     prevUseDown = useDown;
 
@@ -167,17 +157,12 @@ export function createEngine({
     }
   }
 
-  function tryOpenDoorInFront() {
+  function tryInteractInFront() {
     const reach = 0.8;
     const xProbe = player.x + reach * Math.cos(player.rot);
     const yProbe = player.y - reach * Math.sin(player.rot);
 
-    const xMap = Math.floor(xProbe);
-    const yMap = Math.floor(yProbe);
-
-    if (isDoorCell(xMap, yMap)) {
-      events?.onDoorOpen?.(xMap, yMap);
-    }
+    world.interact?.(xProbe, yProbe);
   }
 
   function addRotToAngle(rot: number, angle: number) {
@@ -193,7 +178,7 @@ export function createEngine({
 
   function render() {
     renderer.drawBackground();
-    const { zBuffer } = castRays({ player, getViewWidth, addRotToAngle, drawRay: renderer.drawRay });
+    const { zBuffer } = castRays({ player, world, getViewWidth, addRotToAngle, drawRay: renderer.drawRay });
     renderer.drawSprites(zBuffer);
     if (player.flatmap) renderer.drawMap();
   }
@@ -246,8 +231,6 @@ export function createEngine({
     start,
     stop,
     dispose,
-    setMap,
-    setLegend,
     setSpawn,
     player,
   };
