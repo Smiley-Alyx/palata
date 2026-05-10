@@ -6,7 +6,7 @@ import { createRenderer } from './render/renderer';
 import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import { getCellMaterial, getMap, setLegend as setLegendState, setMap as setMapState } from '../state/map-state';
-import { createDoorsSystem } from './systems/doors';
+import { createDoorsSystem, type KeyId } from './systems/doors';
 import { createEnemiesSystem, type Enemy } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createWorldAdapter } from './world/world-adapter';
@@ -29,6 +29,16 @@ let enemiesSystem: ReturnType<typeof createEnemiesSystem> | null = null;
 let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
 
 let currentDifficulty: Difficulty = 'lost';
+
+const ownedKeys: Record<KeyId, boolean> = {
+  gold: false,
+  silver: false,
+  blood: false,
+};
+
+export function getKeys() {
+  return ownedKeys;
+}
 
 type WallFace = 'N' | 'S' | 'E' | 'W';
 
@@ -182,6 +192,7 @@ function ensureEngine() {
 
   doorsSystem = createDoorsSystem({
     playDoorOpenSfx: () => audio.playSfx('doorOpen'),
+    playDoorDeniedSfx: () => audio.playSfx('damage'),
     onDoorOpened: (xMap, yMap) => {
       handleDoorOpened(xMap, yMap);
     },
@@ -292,9 +303,12 @@ function ensureEngine() {
         );
       },
       interact: (x: number, y: number) => {
-        doorsSystem?.interactWorld(x, y);
+        doorsSystem?.interactWorld(x, y, ownedKeys);
       },
       getWallTextureId,
+      isDoorBlocking: (x: number, y: number) => {
+        return !!doorsSystem && doorsSystem.isDoorBlocking(x, y);
+      },
     }),
     events: {
       onFootstep: () => {
@@ -307,7 +321,14 @@ function ensureEngine() {
         enemiesSystem?.tryShootEnemies();
       },
       onTick: (dt: number) => {
-        doorsSystem?.tick(dt);
+        doorsSystem?.tick(dt, (xMap, yMap) => {
+          // Block auto-close if player or an enemy is in / very close to the door cell.
+          const cx = xMap + 0.5;
+          const cy = yMap + 0.5;
+          if (Math.hypot(player.x - cx, player.y - cy) < 0.75) return true;
+          const enemyR = 0.35;
+          return !!enemiesSystem && enemiesSystem.hitEnemyCircle(cx, cy, enemyR);
+        });
         enemiesSystem?.tick(dt);
         pickupsSystem?.tick(dt);
       },
