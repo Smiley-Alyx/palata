@@ -1,4 +1,4 @@
-import { isDoorCell, setCell } from '../../state/map-state';
+import { isDoorCell } from '../../state/map-state';
 
 export type KeyId = 'gold' | 'silver' | 'blood';
 
@@ -113,7 +113,6 @@ export function createDoorsSystem({
         const prev = d.open01;
         d.open01 = Math.min(1, d.open01 + stepMs * openSpeedPerMs);
         if (prev < 0.98 && d.open01 >= 0.98) {
-          setCell(d.x, d.y, 0);
           playDoorOpenSfx();
           onDoorOpened?.(d.x, d.y);
         }

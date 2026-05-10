@@ -205,6 +205,9 @@ function ensureEngine() {
     playLoopingSfx: (key, volume) => audio.playLoopingSfx(key, volume),
     stopLoopingSfx: (key) => audio.stopLoopingSfx(key),
     onRequestOpenDoor: (xMap, yMap) => doorsSystem?.requestOpenDoor(xMap, yMap),
+    isDoorBlocking: (xMap, yMap) => {
+      return !!doorsSystem && doorsSystem.isDoorBlocking(xMap + 0.5, yMap + 0.5);
+    },
     onDamagePulse: () => renderer?.triggerDamagePulse(),
     onKillFill: () => renderer?.triggerKillFill(),
   });
@@ -350,6 +353,7 @@ export function triggerDeathOverlay() {
 export function setMap(grid: number[][]) {
   ensureEngine();
   setMapState(grid);
+  doorsSystem?.onMapChanged();
   enemiesSystem?.onMapChanged();
   pickupsSystem?.onMapChanged(grid);
 }

@@ -34,6 +34,7 @@ export function createEnemiesSystem({
   playLoopingSfx,
   stopLoopingSfx,
   onRequestOpenDoor,
+  isDoorBlocking,
   onEnemyKilled,
   onDamagePulse,
   onKillFill,
@@ -44,6 +45,7 @@ export function createEnemiesSystem({
   playLoopingSfx: (key: 'enemy' | 'zombie', volume?: number) => void;
   stopLoopingSfx: (key: 'enemy' | 'zombie') => void;
   onRequestOpenDoor: (xMap: number, yMap: number) => void;
+  isDoorBlocking?: (xMap: number, yMap: number) => boolean;
   onEnemyKilled?: () => void;
   onDamagePulse?: () => void;
   onKillFill?: () => void;
@@ -260,7 +262,12 @@ export function createEnemiesSystem({
     const w = map[0].length;
     const h = map.length;
     if (xMap < 0 || xMap >= w || yMap < 0 || yMap >= h) return true;
-    if (map[yMap][xMap] !== 0) return true;
+    if (map[yMap][xMap] !== 0) {
+      if (isDoorCell(xMap, yMap) && typeof isDoorBlocking === 'function') {
+        return isDoorBlocking(xMap, yMap);
+      }
+      return true;
+    }
 
     ensureEnemyGridForCurrentMap();
     if (!enemyAt) return false;
@@ -287,7 +294,12 @@ export function createEnemiesSystem({
         onRequestOpenDoor(nextX, nextY);
         e.decisionCooldownMs = 180;
       }
-      return false;
+
+      if (isDoorCell(nextX, nextY) && typeof isDoorBlocking === 'function' && !isDoorBlocking(nextX, nextY)) {
+        // Door tile is present but currently not blocking: allow stepping through.
+      } else {
+        return false;
+      }
     }
 
     ensureEnemyGridForCurrentMap();
