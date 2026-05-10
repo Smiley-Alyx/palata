@@ -1,4 +1,5 @@
 import type { Legend, Spawn } from '../../types/game';
+import { assetUrl, loadJson } from '../content/content';
 
 type LevelAudioConfig = {
   music?: {
@@ -33,21 +34,8 @@ type LevelsIndexJson = {
   default: string;
 };
 
-function resolvePublicUrl(path: string): string {
-  if (typeof path !== 'string') return path;
-  const base = new URL(import.meta.env.BASE_URL, window.location.origin);
-  if (path.startsWith('/')) {
-    return new URL(path.slice(1), base).toString();
-  }
-  return new URL(path, base).toString();
-}
-
 export async function loadLevel(levelUrl: string) {
-  const res = await fetch(resolvePublicUrl(levelUrl));
-  if (!res.ok) {
-    throw new Error('Failed to load level: ' + levelUrl);
-  }
-  const data: LevelJson = await res.json();
+  const data = await loadJson<LevelJson>(levelUrl);
 
   if (!data || !Array.isArray(data.rows) || data.rows.length === 0) {
     throw new Error('Invalid level format: missing rows');
@@ -99,7 +87,7 @@ export async function loadLevel(levelUrl: string) {
       const m = a.music as { src?: unknown; loop?: unknown; volume?: unknown };
       if (typeof m.src === 'string') {
         cfg.music = {
-          src: resolvePublicUrl(m.src),
+          src: assetUrl(m.src),
           loop: typeof m.loop === 'boolean' ? m.loop : undefined,
           volume: typeof m.volume === 'number' ? m.volume : undefined,
         };
@@ -109,9 +97,9 @@ export async function loadLevel(levelUrl: string) {
     if (a.sfx && typeof a.sfx === 'object') {
       const s = a.sfx as { doorOpen?: unknown; footstep?: unknown; shoot?: unknown };
       cfg.sfx = {
-        doorOpen: typeof s.doorOpen === 'string' ? resolvePublicUrl(s.doorOpen) : undefined,
-        footstep: typeof s.footstep === 'string' ? resolvePublicUrl(s.footstep) : undefined,
-        shoot: typeof s.shoot === 'string' ? resolvePublicUrl(s.shoot) : undefined,
+        doorOpen: typeof s.doorOpen === 'string' ? assetUrl(s.doorOpen) : undefined,
+        footstep: typeof s.footstep === 'string' ? assetUrl(s.footstep) : undefined,
+        shoot: typeof s.shoot === 'string' ? assetUrl(s.shoot) : undefined,
       };
     }
 
@@ -144,12 +132,7 @@ export async function loadLevel(levelUrl: string) {
 }
 
 export async function loadLevelsIndex(indexUrl: string) {
-  const res = await fetch(resolvePublicUrl(indexUrl));
-  if (!res.ok) {
-    throw new Error('Failed to load levels index: ' + indexUrl);
-  }
-
-  const data: LevelsIndexJson = await res.json();
+  const data = await loadJson<LevelsIndexJson>(indexUrl);
   if (!data || !Array.isArray(data.levels) || typeof data.default !== 'string') {
     throw new Error('Invalid levels index format');
   }

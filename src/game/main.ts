@@ -506,7 +506,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   hideDeathScreen();
   hideBloodOverlay();
 
-  const levelsIndex = await loadLevelsIndex('/levels/index.json');
+  const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
   const levelEntry = levelsIndex.levels.find(
     (l: { id: string; file: string }) => l.id === levelId,
   );
@@ -638,7 +638,7 @@ function initMenu() {
   if (levelsRoot instanceof HTMLElement) {
     void (async () => {
       try {
-        const levelsIndex = await loadLevelsIndex('/levels/index.json');
+        const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
         levelsRoot.innerHTML = '';
 
         const visibleLevels = levelsIndex.levels.filter((l) => !l.hidden);

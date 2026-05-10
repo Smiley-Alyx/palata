@@ -374,7 +374,7 @@ async function loadLevelJson(path: string): Promise<LevelJson> {
 if (loadLevel1Btn instanceof HTMLButtonElement) {
   loadLevel1Btn.addEventListener('click', () => {
     void (async () => {
-      const level = await loadLevelJson('/levels/level0.json');
+      const level = await loadLevelJson('/assets/data/levels/level0.json');
       applyLevelJson(level);
     })();
   });
