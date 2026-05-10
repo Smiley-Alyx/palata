@@ -7,7 +7,7 @@ import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import { getCellMaterial, getMap, setLegend as setLegendState, setMap as setMapState } from '../state/map-state';
 import { createDoorsSystem, type KeyId } from './systems/doors';
-import { createEnemiesSystem, type Enemy } from './systems/enemies';
+import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
@@ -35,6 +35,12 @@ const ownedKeys: Record<KeyId, boolean> = {
   silver: false,
   blood: false,
 };
+
+export function resetKeys() {
+  ownedKeys.gold = false;
+  ownedKeys.silver = false;
+  ownedKeys.blood = false;
+}
 
 export function getKeys() {
   return ownedKeys;
@@ -142,6 +148,11 @@ export function setHealthPickups(next: Array<{ x: number; y: number }>) {
 export function setKeyPickups(next: Array<{ x: number; y: number; id: KeyId }>) {
   ensureEngine();
   pickupsSystem?.setKeyPickups(next);
+}
+
+export function setDoorLocks(next: Array<{ x: number; y: number; id: KeyId }>) {
+  ensureEngine();
+  doorsSystem?.setDoorLocks(next);
 }
 
 export function getSprites() {

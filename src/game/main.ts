@@ -20,6 +20,9 @@ import {
   setSfxVolume,
   getKeys,
   type Difficulty,
+  resetKeys,
+  setKeyPickups,
+  setDoorLocks,
 } from './rayc';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
@@ -525,6 +528,10 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
 
+  resetKeys();
+  setKeyPickups(level.keyPickups ?? []);
+  setDoorLocks(level.doorLocks ?? []);
+
   const p = getPlayer();
   setEnemies(placeRandomEnemies({ grid: level.grid, player: p, difficulty }));
   setHealthPickups(placeRandomHealthPickups({ grid: level.grid, player: p, difficulty }));
@@ -590,6 +597,10 @@ async function maybeStartCustomFromEditor() {
   setMap(grid);
   setSpawn(level.spawn);
   setBackgroundColors(level.colors ?? {});
+
+  resetKeys();
+  setKeyPickups([]);
+  setDoorLocks([]);
 
   const p = getPlayer();
   setEnemies(placeRandomEnemies({ grid, player: p, difficulty: 'lost' }));

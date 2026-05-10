@@ -2,6 +2,8 @@ import { isDoorCell } from '../../state/map-state';
 
 export type KeyId = 'gold' | 'silver' | 'blood';
 
+type DoorLock = { x: number; y: number; id: KeyId };
+
 type DoorAction = 'closed' | 'opening' | 'open' | 'closing';
 
 type DoorState = {
@@ -24,9 +26,19 @@ export function createDoorsSystem({
 }) {
   const doors: DoorState[] = [];
 
+  let doorLocks: DoorLock[] = [];
+
+  function setDoorLocks(next: DoorLock[]) {
+    doorLocks = Array.isArray(next) ? next.slice() : [];
+    for (const d of doors) {
+      d.lock = keyForCell(d.x, d.y);
+    }
+  }
+
   function keyForCell(xMap: number, yMap: number): KeyId | null {
-    void xMap;
-    void yMap;
+    for (const l of doorLocks) {
+      if (l.x === xMap && l.y === yMap) return l.id;
+    }
     return null;
   }
 
@@ -54,6 +66,7 @@ export function createDoorsSystem({
 
   function onMapChanged() {
     doors.length = 0;
+    doorLocks = [];
   }
 
   function canInteractDoor(xMap: number, yMap: number) {
@@ -153,6 +166,7 @@ export function createDoorsSystem({
     requestOpenDoor,
     interactWorld,
     isDoorBlocking,
+    setDoorLocks,
     onMapChanged,
     tick,
   };

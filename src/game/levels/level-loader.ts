@@ -1,5 +1,6 @@
 import type { Legend, Spawn } from '../../types/game';
 import { assetUrl, loadJson } from '../content/content';
+import type { KeyId } from '../systems/doors';
 
 type LevelAudioConfig = {
   music?: {
@@ -27,6 +28,8 @@ type LevelJson = {
   colors?: unknown;
   rows: string[];
   spawn?: unknown;
+  keyPickups?: unknown;
+  doorLocks?: unknown;
 };
 
 type LevelsIndexJson = {
@@ -120,6 +123,28 @@ export async function loadLevel(levelUrl: string) {
     };
   }
 
+  const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
+  if (Array.isArray(data.keyPickups)) {
+    for (const it of data.keyPickups) {
+      if (!it || typeof it !== 'object') continue;
+      const p = it as { x?: unknown; y?: unknown; id?: unknown };
+      if (typeof p.x !== 'number' || typeof p.y !== 'number') continue;
+      if (p.id !== 'gold' && p.id !== 'silver' && p.id !== 'blood') continue;
+      keyPickups.push({ x: p.x, y: p.y, id: p.id });
+    }
+  }
+
+  const doorLocks: Array<{ x: number; y: number; id: KeyId }> = [];
+  if (Array.isArray(data.doorLocks)) {
+    for (const it of data.doorLocks) {
+      if (!it || typeof it !== 'object') continue;
+      const p = it as { x?: unknown; y?: unknown; id?: unknown };
+      if (typeof p.x !== 'number' || typeof p.y !== 'number') continue;
+      if (p.id !== 'gold' && p.id !== 'silver' && p.id !== 'blood') continue;
+      doorLocks.push({ x: p.x, y: p.y, id: p.id });
+    }
+  }
+
   return {
     id: data.id,
     name: data.name,
@@ -128,6 +153,8 @@ export async function loadLevel(levelUrl: string) {
     spawn,
     audio,
     colors,
+    keyPickups,
+    doorLocks,
   };
 }
 
