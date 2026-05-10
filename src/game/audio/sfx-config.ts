@@ -7,11 +7,11 @@ function url(path: string) {
 }
 
 export const DEFAULT_SFX: Partial<Record<SfxKey, string>> = {
-  doorOpen: url('/audio/sfx/door.wav'),
-  footstep: url('/audio/sfx/step.wav'),
-  shoot: url('/audio/sfx/shoot.wav'),
-  damage: url('/audio/sfx/damage.wav'),
-  enemy: url('/audio/sfx/enemy.wav'),
-  zombie: url('/audio/sfx/zombie.wav'),
-  health: url('/audio/sfx/health.wav'),
+  doorOpen: url('/assets/sounds/sfx/door.wav'),
+  footstep: url('/assets/sounds/sfx/step.wav'),
+  shoot: url('/assets/sounds/sfx/shoot.wav'),
+  damage: url('/assets/sounds/sfx/damage.wav'),
+  enemy: url('/assets/sounds/sfx/enemy.wav'),
+  zombie: url('/assets/sounds/sfx/zombie.wav'),
+  health: url('/assets/sounds/sfx/health.wav'),
 } as const;

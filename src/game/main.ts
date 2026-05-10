@@ -28,7 +28,7 @@ const CUSTOM_LEVEL_STORAGE_KEY = 'rayc.customLevel';
 function getDefaultMusicForLevelId(levelId: string) {
   const base = new URL(import.meta.env.BASE_URL, window.location.origin);
   const m = /^level(\d+)$/.exec(levelId);
-  const src = m ? `/audio/music/level_${m[1]}.wav` : '/audio/music/main.wav';
+  const src = m ? `/assets/music/level_${m[1]}/level_${m[1]}.wav` : '/assets/music/menu/main.wav';
   return {
     src: new URL(src.startsWith('/') ? src.slice(1) : src, base).toString(),
     loop: true,

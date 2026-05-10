@@ -15,7 +15,7 @@
   },
   "audio": {
     "music": {
-      "src": "/audio/music/main.wav",
+      "src": "/assets/music/menu/main.wav",
       "loop": true,
       "volume": 0.5
     }
