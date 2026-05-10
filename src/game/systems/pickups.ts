@@ -1,15 +1,20 @@
 import type { Player } from '../../types/game';
+import type { KeyId } from './doors';
 
 export function createPickupsSystem({
   player,
   playHealthSfx,
+  playKeySfx,
   isBlocked,
   getDifficulty,
+  onKeyPickup,
 }: {
   player: Player;
   playHealthSfx: () => void;
+  playKeySfx?: () => void;
   isBlocked: (x: number, y: number, r: number) => boolean;
   getDifficulty: () => 'lost' | 'trapped' | 'consumed';
+  onKeyPickup?: (id: KeyId) => void;
 }) {
   type HealthPickup = {
     x: number;
@@ -18,6 +23,15 @@ export function createPickupsSystem({
   };
 
   let healthPickups: HealthPickup[] = [];
+
+  type KeyPickup = {
+    x: number;
+    y: number;
+    id: KeyId;
+    alive: boolean;
+  };
+
+  let keyPickups: KeyPickup[] = [];
   let healthFloorCandidates: Array<{ x: number; y: number }> = [];
   let healthSpawnCooldownMs = 0;
 
@@ -26,10 +40,18 @@ export function createPickupsSystem({
     healthSpawnCooldownMs = 0;
   }
 
+  function setKeyPickups(next: Array<{ x: number; y: number; id: KeyId }>) {
+    keyPickups = next.map((p) => ({ x: p.x, y: p.y, id: p.id, alive: true }));
+  }
+
   function getSprites() {
     const sprites: Array<{ x: number; y: number; material: string; alive: boolean; scale?: number }> = [];
     for (const p of healthPickups) {
       sprites.push({ x: p.x, y: p.y, material: 'health', alive: p.alive, scale: 0.33 });
+    }
+    for (const k of keyPickups) {
+      const mat = k.id === 'gold' ? 'keyGold' : k.id === 'silver' ? 'keySilver' : 'keyBlood';
+      sprites.push({ x: k.x, y: k.y, material: mat, alive: k.alive, scale: 0.33 });
     }
     return sprites;
   }
@@ -55,6 +77,14 @@ export function createPickupsSystem({
       player.hp = Math.min(player.maxHp, player.hp + 20);
       p.alive = false;
       playHealthSfx();
+    }
+
+    for (const k of keyPickups) {
+      if (!k.alive) continue;
+      if (Math.hypot(player.x - k.x, player.y - k.y) > pickupR) continue;
+      k.alive = false;
+      onKeyPickup?.(k.id);
+      playKeySfx?.();
     }
   }
 
@@ -120,6 +150,7 @@ export function createPickupsSystem({
 
   return {
     setHealthPickups,
+    setKeyPickups,
     getSprites,
     onMapChanged,
     tick,

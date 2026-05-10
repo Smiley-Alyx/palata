@@ -18,6 +18,7 @@ import {
   setSfxEnabled,
   setMusicVolume,
   setSfxVolume,
+  getKeys,
   type Difficulty,
 } from './rayc';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
@@ -361,11 +362,13 @@ function initHpUi() {
   const ammoEl = hudAmmoEl instanceof HTMLElement ? hudAmmoEl : null;
   const armorEl = hudArmorEl instanceof HTMLElement ? hudArmorEl : null;
 
-  // Inventory not implemented yet. Keep Doom-like slots prepared.
-  const ownedKeys = { gold: false, silver: false, blood: false };
-  if (keyGoldEl instanceof HTMLImageElement) keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
-  if (keySilverEl instanceof HTMLImageElement) keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
-  if (keyBloodEl instanceof HTMLImageElement) keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
+  const syncKeys = () => {
+    const ownedKeys = getKeys();
+    if (keyGoldEl instanceof HTMLImageElement) keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
+    if (keySilverEl instanceof HTMLImageElement) keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
+    if (keyBloodEl instanceof HTMLImageElement) keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
+  };
+  syncKeys();
 
   function renderPortrait(hpRatio: number) {
     if (!hudCtx || !hudCanvas) return;
@@ -419,6 +422,7 @@ function initHpUi() {
 
     if (ammoEl) ammoEl.textContent = '50';
     if (armorEl) armorEl.textContent = '0%';
+    syncKeys();
     renderPortrait(hp / maxHp);
     requestAnimationFrame(update);
   }

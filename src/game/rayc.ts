@@ -139,6 +139,11 @@ export function setHealthPickups(next: Array<{ x: number; y: number }>) {
   pickupsSystem?.setHealthPickups(next);
 }
 
+export function setKeyPickups(next: Array<{ x: number; y: number; id: KeyId }>) {
+  ensureEngine();
+  pickupsSystem?.setKeyPickups(next);
+}
+
 export function getSprites() {
   ensureEngine();
   return pickupsSystem?.getSprites() ?? [];
@@ -215,10 +220,14 @@ function ensureEngine() {
   pickupsSystem = createPickupsSystem({
     player,
     playHealthSfx: () => audio.playSfx('health'),
+    playKeySfx: () => audio.playSfx('footstep'),
     isBlocked: (x, y, r) => {
       return !!enemiesSystem && (enemiesSystem.hitWallCircle(x, y, r) || enemiesSystem.hitEnemyCircle(x, y, r * 3.0));
     },
     getDifficulty: () => currentDifficulty,
+    onKeyPickup: (id) => {
+      ownedKeys[id] = true;
+    },
   });
 
   function handleDoorOpened(xMap: number, yMap: number) {
