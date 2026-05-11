@@ -34,6 +34,7 @@ type LevelJson = {
   backgroundMaterials?: unknown;
   entities?: unknown;
   triggers?: unknown;
+  lights?: unknown;
   rows?: string[];
   geometry?: unknown;
   materialsWall?: unknown;
@@ -77,6 +78,15 @@ export type LevelTriggerJson = {
   id: string;
   trigger: LevelTriggerZoneJson;
   actions: LevelTriggerActionJson[];
+};
+
+export type LevelLightJson = {
+  x: number;
+  y: number;
+  radius: number;
+  color?: string;
+  intensity?: number;
+  flicker?: boolean;
 };
 
 type LevelsIndexJson = {
@@ -285,6 +295,24 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const lights: LevelLightJson[] = [];
+  if (Array.isArray(data.lights)) {
+    for (const it of data.lights) {
+      if (!it || typeof it !== 'object') continue;
+      const l = it as { x?: unknown; y?: unknown; radius?: unknown; color?: unknown; intensity?: unknown; flicker?: unknown };
+      if (typeof l.x !== 'number' || typeof l.y !== 'number' || typeof l.radius !== 'number') continue;
+      if (!Number.isFinite(l.radius) || l.radius <= 0) continue;
+      lights.push({
+        x: l.x,
+        y: l.y,
+        radius: l.radius,
+        color: typeof l.color === 'string' ? l.color : undefined,
+        intensity: typeof l.intensity === 'number' ? l.intensity : undefined,
+        flicker: typeof l.flicker === 'boolean' ? l.flicker : undefined,
+      });
+    }
+  }
+
   const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
   if (Array.isArray(data.keyPickups)) {
     for (const it of data.keyPickups) {
@@ -319,6 +347,7 @@ export async function loadLevel(levelUrl: string) {
     backgroundMaterials,
     entities,
     triggers,
+    lights,
     keyPickups,
     doorLocks,
   };

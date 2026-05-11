@@ -1,7 +1,7 @@
 import type { Player } from '../types/game';
 
 type AddRotToAngle = (rot: number, angle: number) => number;
-type DrawRay = (dist: number, x: number, offset: number, img: string | number) => void;
+type DrawRay = (dist: number, x: number, offset: number, img: string | number, light01?: number) => void;
 
 type WallFace = 'N' | 'S' | 'E' | 'W';
 
@@ -19,6 +19,7 @@ type World<MaterialId = string | number> = {
   isRaySolid: (x: number, y: number) => boolean;
   getMaterial: (x: number, y: number) => MaterialId;
   getWallTextureId?: (hit: RayHit<MaterialId>) => MaterialId;
+  getLightAt?: (x: number, y: number) => number;
 };
 
 export function castRays({
@@ -183,8 +184,10 @@ function castSingleRay({
   const rawMaterial = hit ? hit.material : 0;
   const imgOut = hit && typeof world.getWallTextureId === 'function' ? world.getWallTextureId(hit) : rawMaterial;
 
+  const light01 = hit && typeof world.getLightAt === 'function' ? world.getLightAt(hit.xMap + 0.5, hit.yMap + 0.5) : 1;
+
   dist = dist * Math.cos(player.rot - angle);
-  drawRay(dist, row, offset, imgOut);
+  drawRay(dist, row, offset, imgOut, light01);
 
   return dist;
 }

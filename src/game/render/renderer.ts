@@ -23,6 +23,8 @@ export function createRenderer({
   let ceilingMaterial: string | number | null = null;
   let floorMaterial: string | number | null = null;
 
+  let ambientLight01 = 1;
+
   let flash = 0;
   let damagePulse = 0;
   let killFill = 0;
@@ -49,6 +51,10 @@ export function createRenderer({
   function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
     if ('ceiling' in materials) ceilingMaterial = materials.ceiling ?? null;
     if ('floor' in materials) floorMaterial = materials.floor ?? null;
+  }
+
+  function setAmbientLight01(light01: number) {
+    ambientLight01 = Math.max(0, Math.min(1, light01));
   }
 
   function drawBackground() {
@@ -111,6 +117,13 @@ export function createRenderer({
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, w, h);
 
+    // Screen-space darkness driven by world lighting.
+    const darkness = (1 - ambientLight01) * 0.55;
+    if (darkness > 0.001) {
+      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.8, darkness)})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+
     if (flash > 0) {
       ctx.fillStyle = `rgba(255,255,255,${Math.min(0.18, flash)})`;
       ctx.fillRect(0, 0, w, h);
@@ -151,7 +164,7 @@ export function createRenderer({
     killFillTarget = Math.min(0.55, killFillTarget + 0.35);
   }
 
-  function drawRay(dist: number, x: number, offset: number, img: string | number) {
+  function drawRay(dist: number, x: number, offset: number, img: string | number, light01: number = 1) {
     const viewWidth = getViewWidth();
     const viewHeight = getViewHeight();
     const distanceProjectionPlane = viewWidth / 2 / Math.tan(player.fov / 2);
@@ -166,7 +179,16 @@ export function createRenderer({
     if (texX < 0) texX = 0;
     if (texX > texW - 1) texX = texW - 1;
 
-    ctx.drawImage(texture, texX, 0, 1, texH, x, viewHeight / 2 - sliceHeight / 2, 1, sliceHeight);
+    const y0 = viewHeight / 2 - sliceHeight / 2;
+    ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
+
+    // Apply lighting as a dark overlay (cheap and stable for retro look).
+    const l = Math.max(0, Math.min(1, light01));
+    const shade = 1 - l;
+    if (shade > 0.001) {
+      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, shade)})`;
+      ctx.fillRect(x, y0, 1, sliceHeight);
+    }
   }
 
   function drawSpriteList(
@@ -294,6 +316,7 @@ export function createRenderer({
     drawSprites,
     setBackgroundColors,
     setBackgroundMaterials,
+    setAmbientLight01,
     triggerFlash,
     triggerDamagePulse,
     triggerKillFill,

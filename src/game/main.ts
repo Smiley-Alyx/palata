@@ -17,6 +17,7 @@ import {
   setLegend,
   setMap,
   setMaterialsWall,
+  setLights,
   setMusicEnabled,
   setMusicVolume,
   setSfxEnabled,
@@ -534,6 +535,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setBackgroundColors(level.colors);
   setBackgroundMaterials(level.backgroundMaterials ?? {});
   setTriggers(level.triggers ?? []);
+  setLights(level.lights ?? []);
 
   resetKeys();
 

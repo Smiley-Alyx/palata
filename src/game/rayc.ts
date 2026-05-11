@@ -17,10 +17,12 @@ import { createDoorsSystem, type KeyId } from './systems/doors';
 import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
+import { createLightsSystem } from './systems/lights';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
 import type { LevelTriggerJson } from './levels/level-loader';
+import type { LevelLightJson } from './levels/level-loader';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -37,6 +39,7 @@ let doorsSystem: ReturnType<typeof createDoorsSystem> | null = null;
 let enemiesSystem: ReturnType<typeof createEnemiesSystem> | null = null;
 let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
 let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
+let lightsSystem: ReturnType<typeof createLightsSystem> | null = null;
 
 let currentDifficulty: Difficulty = 'lost';
 
@@ -168,6 +171,11 @@ export function setDoorLocks(next: Array<{ x: number; y: number; id: KeyId }>) {
 export function setTriggers(next: LevelTriggerJson[]) {
   ensureEngine();
   triggersSystem?.setTriggers(next);
+}
+
+export function setLights(next: LevelLightJson[]) {
+  ensureEngine();
+  lightsSystem?.setLights(next);
 }
 
 export function getSprites() {
@@ -333,6 +341,9 @@ function ensureEngine() {
     getEnemies: () => enemiesSystem?.getEnemies() ?? [],
     getSprites: () => pickupsSystem?.getSprites() ?? [],
   });
+
+  lightsSystem = createLightsSystem();
+
   engine = createEngine({
     getViewWidth,
     getViewHeight,
@@ -351,6 +362,7 @@ function ensureEngine() {
         doorsSystem?.interactWorld(x, y, ownedKeys);
       },
       getWallTextureId,
+      getLightAt: (x: number, y: number) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
       isDoorBlocking: (x: number, y: number) => {
         return !!doorsSystem && doorsSystem.isDoorBlocking(x, y);
       },
@@ -366,6 +378,8 @@ function ensureEngine() {
         enemiesSystem?.tryShootEnemies();
       },
       onTick: (dt: number) => {
+        lightsSystem?.tick(dt);
+        renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
           const cx = xMap + 0.5;
@@ -406,6 +420,7 @@ export function setMap(grid: number[][]) {
   enemiesSystem?.onMapChanged();
   pickupsSystem?.onMapChanged(grid);
   triggersSystem?.onMapChanged();
+  lightsSystem?.onMapChanged();
 }
 
 export function setMaterialsWall(rows: string[][] | null) {

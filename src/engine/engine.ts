@@ -9,7 +9,7 @@ type Input = {
 
 type Renderer = {
   drawBackground: () => void;
-  drawRay: (dist: number, x: number, offset: number, img: string | number) => void;
+  drawRay: (dist: number, x: number, offset: number, img: string | number, light01?: number) => void;
   drawMap: () => void;
   drawSprites: (zBuffer: Float64Array) => void;
 };
@@ -29,6 +29,7 @@ export type World<MaterialId = string | number> = {
   getMaterial: (x: number, y: number) => MaterialId;
   interact?: (x: number, y: number) => void;
   getWallTextureId?: (hit: RayHit<MaterialId>) => MaterialId;
+  getLightAt?: (x: number, y: number) => number;
 };
 
 export function createEngine({
