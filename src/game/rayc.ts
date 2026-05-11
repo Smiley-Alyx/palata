@@ -57,6 +57,7 @@ function reapplyEntities() {
 
   const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
+  const healthPickupsFromEntities: Array<{ x: number; y: number }> = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -72,9 +73,14 @@ function reapplyEntities() {
         doorLocksFromEntities.push({ x: Math.floor(e.x), y: Math.floor(e.y), id: keyId });
       }
     }
+
+    if (e.type === 'health_pickup' || e.type === 'health') {
+      healthPickupsFromEntities.push({ x: e.x, y: e.y });
+    }
   }
 
   pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
+  pickupsSystem?.setHealthPickups(healthPickupsFromEntities);
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
 }
 
