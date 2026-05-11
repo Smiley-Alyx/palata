@@ -6,16 +6,33 @@ export function createTriggersSystem({
   getPlayerPos,
   getMaterialsWall,
   setMaterialsWall,
+  isEnabledByWorldState,
+  setWorldState,
+  toggleWorldState,
+  setWorldFlag,
+  toggleWorldFlag,
 }: {
   audio: AudioManager;
   getPlayerPos: () => { x: number; y: number };
   getMaterialsWall: () => string[][] | null;
   setMaterialsWall: (rows: string[][] | null) => void;
+  isEnabledByWorldState: (opts: {
+    enabledInStates?: string[];
+    disabledInStates?: string[];
+    enabledIfFlags?: Record<string, boolean>;
+  }) => boolean;
+  setWorldState: (state: string, value: boolean) => void;
+  toggleWorldState: (state: string) => void;
+  setWorldFlag: (flag: string, value: boolean) => void;
+  toggleWorldFlag: (flag: string) => void;
 }) {
   type TriggerRuntime = {
     id: string;
     trigger: LevelTriggerJson['trigger'];
     actions: LevelTriggerJson['actions'];
+    enabledInStates?: string[];
+    disabledInStates?: string[];
+    enabledIfFlags?: Record<string, boolean>;
     fired: boolean;
   };
 
@@ -23,7 +40,15 @@ export function createTriggersSystem({
 
   function setTriggers(next: LevelTriggerJson[]) {
     triggers = Array.isArray(next)
-      ? next.map((t) => ({ id: t.id, trigger: t.trigger, actions: t.actions, fired: false }))
+      ? next.map((t) => ({
+          id: t.id,
+          trigger: t.trigger,
+          actions: t.actions,
+          enabledInStates: t.enabledInStates,
+          disabledInStates: t.disabledInStates,
+          enabledIfFlags: t.enabledIfFlags,
+          fired: false,
+        }))
       : [];
   }
 
@@ -57,6 +82,26 @@ export function createTriggersSystem({
       setMaterialsWall(next);
       return;
     }
+
+    if (a.type === 'set_state') {
+      setWorldState(a.state, a.value);
+      return;
+    }
+
+    if (a.type === 'toggle_state') {
+      toggleWorldState(a.state);
+      return;
+    }
+
+    if (a.type === 'set_flag') {
+      setWorldFlag(a.flag, a.value);
+      return;
+    }
+
+    if (a.type === 'toggle_flag') {
+      toggleWorldFlag(a.flag);
+      return;
+    }
   }
 
   function tick() {
@@ -64,6 +109,15 @@ export function createTriggersSystem({
 
     const p = getPlayerPos();
     for (const t of triggers) {
+      if (
+        !isEnabledByWorldState({
+          enabledInStates: t.enabledInStates,
+          disabledInStates: t.disabledInStates,
+          enabledIfFlags: t.enabledIfFlags,
+        })
+      ) {
+        continue;
+      }
       if (t.fired && t.trigger.once) continue;
       if (t.trigger.type !== 'enter_zone') continue;
 

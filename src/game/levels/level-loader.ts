@@ -32,6 +32,7 @@ type LevelJson = {
   audio?: unknown;
   colors?: unknown;
   backgroundMaterials?: unknown;
+  worldStates?: unknown;
   entities?: unknown;
   triggers?: unknown;
   lights?: unknown;
@@ -49,7 +50,15 @@ export type LevelEntityJson = {
   subtype?: string;
   x: number;
   y: number;
+  enabledInStates?: string[];
+  disabledInStates?: string[];
+  enabledIfFlags?: Record<string, boolean>;
   [k: string]: unknown;
+};
+
+export type LevelWorldStatesJson = {
+  initialStates?: string[];
+  flags?: Record<string, boolean>;
 };
 
 export type LevelTriggerZoneJson = {
@@ -72,12 +81,33 @@ export type LevelTriggerActionJson =
       x: number;
       y: number;
       material: string;
+    }
+  | {
+      type: 'set_state';
+      state: string;
+      value: boolean;
+    }
+  | {
+      type: 'toggle_state';
+      state: string;
+    }
+  | {
+      type: 'set_flag';
+      flag: string;
+      value: boolean;
+    }
+  | {
+      type: 'toggle_flag';
+      flag: string;
     };
 
 export type LevelTriggerJson = {
   id: string;
   trigger: LevelTriggerZoneJson;
   actions: LevelTriggerActionJson[];
+  enabledInStates?: string[];
+  disabledInStates?: string[];
+  enabledIfFlags?: Record<string, boolean>;
 };
 
 export type LevelLightJson = {
@@ -87,6 +117,9 @@ export type LevelLightJson = {
   color?: string;
   intensity?: number;
   flicker?: boolean;
+  enabledInStates?: string[];
+  disabledInStates?: string[];
+  enabledIfFlags?: Record<string, boolean>;
 };
 
 type LevelsIndexJson = {
@@ -204,11 +237,31 @@ export async function loadLevel(levelUrl: string) {
     };
   }
 
+  let worldStates: LevelWorldStatesJson | null = null;
+  if (data.worldStates && typeof data.worldStates === 'object') {
+    const ws = data.worldStates as { initialStates?: unknown; flags?: unknown };
+    const initialStates = Array.isArray(ws.initialStates)
+      ? ws.initialStates.filter((s): s is string => typeof s === 'string')
+      : undefined;
+    let flags: Record<string, boolean> | undefined;
+    if (ws.flags && typeof ws.flags === 'object') {
+      flags = {};
+      for (const [k, v] of Object.entries(ws.flags as Record<string, unknown>)) {
+        if (typeof v === 'boolean') flags[k] = v;
+      }
+    }
+    worldStates = { initialStates, flags };
+  }
+
   let backgroundMaterials: LevelBackgroundMaterialsConfig | undefined;
   if (data.backgroundMaterials && typeof data.backgroundMaterials === 'object') {
     const bm = data.backgroundMaterials as { ceiling?: unknown; floor?: unknown };
     const ceiling =
-      typeof bm.ceiling === 'string' || typeof bm.ceiling === 'number' ? bm.ceiling : bm.ceiling === null ? null : undefined;
+      typeof bm.ceiling === 'string' || typeof bm.ceiling === 'number'
+        ? bm.ceiling
+        : bm.ceiling === null
+          ? null
+          : undefined;
     const floor =
       typeof bm.floor === 'string' || typeof bm.floor === 'number' ? bm.floor : bm.floor === null ? null : undefined;
     if ('ceiling' in bm || 'floor' in bm) {
@@ -220,24 +273,22 @@ export async function loadLevel(levelUrl: string) {
   if (Array.isArray(data.entities)) {
     for (const it of data.entities) {
       if (!it || typeof it !== 'object') continue;
-      const e = it as { id?: unknown; type?: unknown; subtype?: unknown; x?: unknown; y?: unknown; [k: string]: unknown };
-      if (typeof e.type !== 'string' || e.type.length === 0) continue;
+      const e = it as Partial<LevelEntityJson>;
+      if (typeof e.type !== 'string') continue;
       if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-      const out: LevelEntityJson = {
-        type: e.type,
-        x: e.x,
-        y: e.y,
-      };
-      if (typeof e.id === 'string') out.id = e.id;
-      if (typeof e.subtype === 'string') out.subtype = e.subtype;
-
-      // Preserve any extra data fields for future systems.
-      for (const [k, v] of Object.entries(e)) {
-        if (k === 'id' || k === 'type' || k === 'subtype' || k === 'x' || k === 'y') continue;
-        out[k] = v;
-      }
-
-      entities.push(out);
+      entities.push({
+        ...(e as LevelEntityJson),
+        enabledInStates: Array.isArray((e as any).enabledInStates)
+          ? ((e as any).enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        disabledInStates: Array.isArray((e as any).disabledInStates)
+          ? ((e as any).disabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        enabledIfFlags:
+          (e as any).enabledIfFlags && typeof (e as any).enabledIfFlags === 'object'
+            ? ((e as any).enabledIfFlags as Record<string, boolean>)
+            : undefined,
+      });
     }
   }
 
@@ -245,37 +296,53 @@ export async function loadLevel(levelUrl: string) {
   if (Array.isArray(data.triggers)) {
     for (const it of data.triggers) {
       if (!it || typeof it !== 'object') continue;
-      const t = it as { id?: unknown; trigger?: unknown; actions?: unknown };
-      if (typeof t.id !== 'string' || t.id.length === 0) continue;
+      const t = it as {
+        id?: unknown;
+        trigger?: unknown;
+        actions?: unknown;
+        enabledInStates?: unknown;
+        disabledInStates?: unknown;
+        enabledIfFlags?: unknown;
+      };
+      if (typeof t.id !== 'string') continue;
       if (!t.trigger || typeof t.trigger !== 'object') continue;
       const z = t.trigger as { type?: unknown; x?: unknown; y?: unknown; w?: unknown; h?: unknown; once?: unknown };
       if (z.type !== 'enter_zone') continue;
-      if (typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.w !== 'number' || typeof z.h !== 'number') continue;
+      if (typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.w !== 'number' || typeof z.h !== 'number') {
+        continue;
+      }
 
       const actions: LevelTriggerActionJson[] = [];
       if (Array.isArray(t.actions)) {
         for (const a of t.actions) {
           if (!a || typeof a !== 'object') continue;
-          const aa = a as Record<string, unknown>;
-          if (aa.type === 'play_sound') {
-            const sound = aa.sound;
-            const volume = aa.volume;
-            if (typeof sound !== 'string' || sound.length === 0) continue;
+          const aa = a as any;
+          if (aa.type === 'play_sound' && typeof aa.sound === 'string') {
             actions.push({
               type: 'play_sound',
-              sound,
-              volume: typeof volume === 'number' ? volume : undefined,
+              sound: aa.sound,
+              volume: typeof aa.volume === 'number' ? aa.volume : undefined,
             });
-            continue;
           }
-          if (aa.type === 'change_wall_material') {
-            const x = aa.x;
-            const y = aa.y;
-            const material = aa.material;
-            if (typeof x !== 'number' || typeof y !== 'number') continue;
-            if (typeof material !== 'string' || material.length === 0) continue;
-            actions.push({ type: 'change_wall_material', x, y, material });
-            continue;
+          if (
+            aa.type === 'change_wall_material' &&
+            typeof aa.x === 'number' &&
+            typeof aa.y === 'number' &&
+            typeof aa.material === 'string'
+          ) {
+            actions.push({ type: 'change_wall_material', x: aa.x, y: aa.y, material: aa.material });
+          }
+          if (aa.type === 'set_state' && typeof aa.state === 'string' && typeof aa.value === 'boolean') {
+            actions.push({ type: 'set_state', state: aa.state, value: aa.value });
+          }
+          if (aa.type === 'toggle_state' && typeof aa.state === 'string') {
+            actions.push({ type: 'toggle_state', state: aa.state });
+          }
+          if (aa.type === 'set_flag' && typeof aa.flag === 'string' && typeof aa.value === 'boolean') {
+            actions.push({ type: 'set_flag', flag: aa.flag, value: aa.value });
+          }
+          if (aa.type === 'toggle_flag' && typeof aa.flag === 'string') {
+            actions.push({ type: 'toggle_flag', flag: aa.flag });
           }
         }
       }
@@ -291,6 +358,13 @@ export async function loadLevel(levelUrl: string) {
           once: typeof z.once === 'boolean' ? z.once : undefined,
         },
         actions,
+        enabledInStates: Array.isArray(t.enabledInStates)
+          ? (t.enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        disabledInStates: Array.isArray(t.disabledInStates)
+          ? (t.disabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        enabledIfFlags: t.enabledIfFlags && typeof t.enabledIfFlags === 'object' ? (t.enabledIfFlags as Record<string, boolean>) : undefined,
       });
     }
   }
@@ -299,7 +373,17 @@ export async function loadLevel(levelUrl: string) {
   if (Array.isArray(data.lights)) {
     for (const it of data.lights) {
       if (!it || typeof it !== 'object') continue;
-      const l = it as { x?: unknown; y?: unknown; radius?: unknown; color?: unknown; intensity?: unknown; flicker?: unknown };
+      const l = it as {
+        x?: unknown;
+        y?: unknown;
+        radius?: unknown;
+        color?: unknown;
+        intensity?: unknown;
+        flicker?: unknown;
+        enabledInStates?: unknown;
+        disabledInStates?: unknown;
+        enabledIfFlags?: unknown;
+      };
       if (typeof l.x !== 'number' || typeof l.y !== 'number' || typeof l.radius !== 'number') continue;
       if (!Number.isFinite(l.radius) || l.radius <= 0) continue;
       lights.push({
@@ -309,6 +393,13 @@ export async function loadLevel(levelUrl: string) {
         color: typeof l.color === 'string' ? l.color : undefined,
         intensity: typeof l.intensity === 'number' ? l.intensity : undefined,
         flicker: typeof l.flicker === 'boolean' ? l.flicker : undefined,
+        enabledInStates: Array.isArray(l.enabledInStates)
+          ? (l.enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        disabledInStates: Array.isArray(l.disabledInStates)
+          ? (l.disabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        enabledIfFlags: l.enabledIfFlags && typeof l.enabledIfFlags === 'object' ? (l.enabledIfFlags as Record<string, boolean>) : undefined,
       });
     }
   }
@@ -345,6 +436,7 @@ export async function loadLevel(levelUrl: string) {
     audio,
     colors,
     backgroundMaterials,
+    worldStates,
     entities,
     triggers,
     lights,

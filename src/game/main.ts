@@ -18,6 +18,7 @@ import {
   setMap,
   setMaterialsWall,
   setLights,
+  setWorldStates,
   setMusicEnabled,
   setMusicVolume,
   setSfxEnabled,
@@ -534,6 +535,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
   setBackgroundMaterials(level.backgroundMaterials ?? {});
+  setWorldStates(level.worldStates ?? null);
   setTriggers(level.triggers ?? []);
   setLights(level.lights ?? []);
 

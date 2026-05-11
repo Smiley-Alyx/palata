@@ -18,11 +18,13 @@ import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
+import { createWorldStateSystem } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
 import type { LevelTriggerJson } from './levels/level-loader';
 import type { LevelLightJson } from './levels/level-loader';
+import type { LevelWorldStatesJson } from './levels/level-loader';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -40,6 +42,10 @@ let enemiesSystem: ReturnType<typeof createEnemiesSystem> | null = null;
 let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
 let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
 let lightsSystem: ReturnType<typeof createLightsSystem> | null = null;
+let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
+
+let rawTriggers: LevelTriggerJson[] = [];
+let rawLights: LevelLightJson[] = [];
 
 let currentDifficulty: Difficulty = 'lost';
 
@@ -170,12 +176,21 @@ export function setDoorLocks(next: Array<{ x: number; y: number; id: KeyId }>) {
 
 export function setTriggers(next: LevelTriggerJson[]) {
   ensureEngine();
-  triggersSystem?.setTriggers(next);
+  rawTriggers = Array.isArray(next) ? next : [];
+  const enabled = rawTriggers.filter((t) => worldStateSystem?.isEnabled(t) ?? true);
+  triggersSystem?.setTriggers(enabled);
 }
 
 export function setLights(next: LevelLightJson[]) {
   ensureEngine();
-  lightsSystem?.setLights(next);
+  rawLights = Array.isArray(next) ? next : [];
+  const enabled = rawLights.filter((l) => worldStateSystem?.isEnabled(l) ?? true);
+  lightsSystem?.setLights(enabled);
+}
+
+export function setWorldStates(config: LevelWorldStatesJson | null) {
+  ensureEngine();
+  worldStateSystem?.setConfig(config ?? null);
 }
 
 export function getSprites() {
@@ -229,6 +244,14 @@ function ensureEngine() {
     throw new Error('Canvas context is not initialized. Did you import canvas-init first?');
   }
 
+  worldStateSystem = createWorldStateSystem();
+  worldStateSystem.setOnChanged(() => {
+    const enabledTriggers = rawTriggers.filter((t) => worldStateSystem?.isEnabled(t) ?? true);
+    triggersSystem?.setTriggers(enabledTriggers);
+    const enabledLights = rawLights.filter((l) => worldStateSystem?.isEnabled(l) ?? true);
+    lightsSystem?.setLights(enabledLights);
+  });
+
   doorsSystem = createDoorsSystem({
     playDoorOpenSfx: () => audio.playSfx('doorOpen'),
     playDoorDeniedSfx: () => audio.playSfx('damage'),
@@ -242,6 +265,11 @@ function ensureEngine() {
     getPlayerPos: () => ({ x: player.x, y: player.y }),
     getMaterialsWall: () => getMaterialsWallState(),
     setMaterialsWall: (rows) => setMaterialsWallState(rows),
+    isEnabledByWorldState: (opts) => (worldStateSystem ? worldStateSystem.isEnabled(opts) : true),
+    setWorldState: (state, value) => worldStateSystem?.setState(state, value),
+    toggleWorldState: (state) => worldStateSystem?.toggleState(state),
+    setWorldFlag: (flag, value) => worldStateSystem?.setFlag(flag, value),
+    toggleWorldFlag: (flag) => worldStateSystem?.toggleFlag(flag),
   });
 
   enemiesSystem = createEnemiesSystem({
@@ -421,6 +449,9 @@ export function setMap(grid: number[][]) {
   pickupsSystem?.onMapChanged(grid);
   triggersSystem?.onMapChanged();
   lightsSystem?.onMapChanged();
+  worldStateSystem?.onMapChanged();
+  rawTriggers = [];
+  rawLights = [];
 }
 
 export function setMaterialsWall(rows: string[][] | null) {
