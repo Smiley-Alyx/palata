@@ -32,12 +32,22 @@ type LevelJson = {
   audio?: unknown;
   colors?: unknown;
   backgroundMaterials?: unknown;
+  entities?: unknown;
   rows?: string[];
   geometry?: unknown;
   materialsWall?: unknown;
   spawn?: unknown;
   keyPickups?: unknown;
   doorLocks?: unknown;
+};
+
+export type LevelEntityJson = {
+  id?: string;
+  type: string;
+  subtype?: string;
+  x: number;
+  y: number;
+  [k: string]: unknown;
 };
 
 type LevelsIndexJson = {
@@ -167,6 +177,31 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const entities: LevelEntityJson[] = [];
+  if (Array.isArray(data.entities)) {
+    for (const it of data.entities) {
+      if (!it || typeof it !== 'object') continue;
+      const e = it as { id?: unknown; type?: unknown; subtype?: unknown; x?: unknown; y?: unknown; [k: string]: unknown };
+      if (typeof e.type !== 'string' || e.type.length === 0) continue;
+      if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
+      const out: LevelEntityJson = {
+        type: e.type,
+        x: e.x,
+        y: e.y,
+      };
+      if (typeof e.id === 'string') out.id = e.id;
+      if (typeof e.subtype === 'string') out.subtype = e.subtype;
+
+      // Preserve any extra data fields for future systems.
+      for (const [k, v] of Object.entries(e)) {
+        if (k === 'id' || k === 'type' || k === 'subtype' || k === 'x' || k === 'y') continue;
+        out[k] = v;
+      }
+
+      entities.push(out);
+    }
+  }
+
   const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
   if (Array.isArray(data.keyPickups)) {
     for (const it of data.keyPickups) {
@@ -199,6 +234,7 @@ export async function loadLevel(levelUrl: string) {
     audio,
     colors,
     backgroundMaterials,
+    entities,
     keyPickups,
     doorLocks,
   };
