@@ -58,6 +58,7 @@ function reapplyEntities() {
   const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const healthPickupsFromEntities: Array<{ x: number; y: number }> = [];
+  const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -77,11 +78,23 @@ function reapplyEntities() {
     if (e.type === 'health_pickup' || e.type === 'health') {
       healthPickupsFromEntities.push({ x: e.x, y: e.y });
     }
+
+    if (e.type === 'enemy_spawn') {
+      const kind = (e as { kind?: unknown }).kind;
+      enemiesFromEntities.push({
+        x: e.x,
+        y: e.y,
+        kind: kind === 'ghost' || kind === 'zombie' ? kind : undefined,
+      });
+    }
   }
 
   pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
   pickupsSystem?.setHealthPickups(healthPickupsFromEntities);
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
+  if (enemiesFromEntities.length) {
+    enemiesSystem?.setEnemies(enemiesFromEntities);
+  }
 }
 
 function spawnEntityRuntime(entity: unknown) {

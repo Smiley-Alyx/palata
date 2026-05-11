@@ -553,7 +553,10 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   }
 
   const p = getPlayer();
-  setEnemies(placeRandomEnemies({ grid: level.grid, player: p, difficulty }));
+  const hasEntityEnemySpawns = hasEntities && entities.some((e) => e && typeof e === 'object' && (e as any).type === 'enemy_spawn');
+  if (!hasEntityEnemySpawns) {
+    setEnemies(placeRandomEnemies({ grid: level.grid, player: p, difficulty }));
+  }
   setHealthPickups(placeRandomHealthPickups({ grid: level.grid, player: p, difficulty }));
 
   setAudioConfig({
