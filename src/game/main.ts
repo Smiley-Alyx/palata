@@ -18,6 +18,7 @@ import {
   setMap,
   setMaterialsWall,
   setLights,
+  setEntities,
   setWorldStates,
   setMusicEnabled,
   setMusicVolume,
@@ -545,27 +546,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   const hasEntities = Array.isArray(entities) && entities.length > 0;
 
   if (hasEntities) {
-    const keyPickupsFromEntities: Array<{ x: number; y: number; id: 'gold' | 'silver' | 'blood' }> = [];
-    const doorLocksFromEntities: Array<{ x: number; y: number; id: 'gold' | 'silver' | 'blood' }> = [];
-
-    for (const e of entities) {
-      if (!e || typeof e !== 'object') continue;
-      if (e.type === 'key') {
-        const keyId = (e.subtype ?? '') as string;
-        if (keyId === 'gold' || keyId === 'silver' || keyId === 'blood') {
-          keyPickupsFromEntities.push({ x: e.x, y: e.y, id: keyId });
-        }
-      }
-      if (e.type === 'door_lock') {
-        const keyId = (e as { keyId?: unknown }).keyId;
-        if (keyId === 'gold' || keyId === 'silver' || keyId === 'blood') {
-          doorLocksFromEntities.push({ x: Math.floor(e.x), y: Math.floor(e.y), id: keyId });
-        }
-      }
-    }
-
-    setKeyPickups(keyPickupsFromEntities);
-    setDoorLocks(doorLocksFromEntities);
+    setEntities(entities);
   } else {
     setKeyPickups(level.keyPickups ?? []);
     setDoorLocks(level.doorLocks ?? []);

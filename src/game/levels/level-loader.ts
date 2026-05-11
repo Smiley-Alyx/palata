@@ -83,6 +83,14 @@ export type LevelTriggerActionJson =
       material: string;
     }
   | {
+      type: 'spawn_entity';
+      entity: LevelEntityJson;
+    }
+  | {
+      type: 'despawn_entity';
+      id: string;
+    }
+  | {
       type: 'set_state';
       state: string;
       value: boolean;
@@ -331,6 +339,15 @@ export async function loadLevel(levelUrl: string) {
             typeof aa.material === 'string'
           ) {
             actions.push({ type: 'change_wall_material', x: aa.x, y: aa.y, material: aa.material });
+          }
+          if (aa.type === 'spawn_entity' && aa.entity && typeof aa.entity === 'object') {
+            const e = aa.entity as any;
+            if (typeof e.type === 'string' && typeof e.x === 'number' && typeof e.y === 'number') {
+              actions.push({ type: 'spawn_entity', entity: e as LevelEntityJson });
+            }
+          }
+          if (aa.type === 'despawn_entity' && typeof aa.id === 'string') {
+            actions.push({ type: 'despawn_entity', id: aa.id });
           }
           if (aa.type === 'set_state' && typeof aa.state === 'string' && typeof aa.value === 'boolean') {
             actions.push({ type: 'set_state', state: aa.state, value: aa.value });

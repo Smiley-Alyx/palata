@@ -25,6 +25,7 @@ import type { RayHit } from '../raycast/raycaster';
 import type { LevelTriggerJson } from './levels/level-loader';
 import type { LevelLightJson } from './levels/level-loader';
 import type { LevelWorldStatesJson } from './levels/level-loader';
+import type { LevelEntityJson } from './levels/level-loader';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -46,6 +47,60 @@ let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
+let rawEntities: LevelEntityJson[] = [];
+let entityIdSeq = 1;
+
+function reapplyEntities() {
+  const ws = worldStateSystem;
+  if (!ws) return;
+  const enabled = rawEntities.filter((e) => ws.isEnabled(e));
+
+  const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
+  const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
+
+  for (const e of enabled) {
+    if (!e || typeof e !== 'object') continue;
+    if (e.type === 'key') {
+      const keyId = (e.subtype ?? '') as string;
+      if (keyId === 'gold' || keyId === 'silver' || keyId === 'blood') {
+        keyPickupsFromEntities.push({ x: e.x, y: e.y, id: keyId });
+      }
+    }
+    if (e.type === 'door_lock') {
+      const keyId = (e as { keyId?: unknown }).keyId;
+      if (keyId === 'gold' || keyId === 'silver' || keyId === 'blood') {
+        doorLocksFromEntities.push({ x: Math.floor(e.x), y: Math.floor(e.y), id: keyId });
+      }
+    }
+  }
+
+  pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
+  doorsSystem?.setDoorLocks(doorLocksFromEntities);
+}
+
+function spawnEntityRuntime(entity: unknown) {
+  if (!entity || typeof entity !== 'object') return;
+  const e = entity as Partial<LevelEntityJson>;
+  if (typeof e.type !== 'string') return;
+  if (typeof e.x !== 'number' || typeof e.y !== 'number') return;
+
+  const id = typeof e.id === 'string' && e.id.length ? e.id : `e_${entityIdSeq++}`;
+  rawEntities = rawEntities.concat([{ ...(e as LevelEntityJson), id }]);
+  reapplyEntities();
+}
+
+function despawnEntityRuntime(id: string) {
+  if (typeof id !== 'string' || !id) return;
+  const before = rawEntities.length;
+  rawEntities = rawEntities.filter((e) => e.id !== id);
+  if (rawEntities.length !== before) reapplyEntities();
+}
+
+export function setEntities(next: LevelEntityJson[]) {
+  ensureEngine();
+  rawEntities = Array.isArray(next) ? next : [];
+  reapplyEntities();
+}
 
 let currentDifficulty: Difficulty = 'lost';
 
@@ -250,6 +305,7 @@ function ensureEngine() {
     triggersSystem?.setTriggers(enabledTriggers);
     const enabledLights = rawLights.filter((l) => worldStateSystem?.isEnabled(l) ?? true);
     lightsSystem?.setLights(enabledLights);
+    reapplyEntities();
   });
 
   doorsSystem = createDoorsSystem({
@@ -270,6 +326,8 @@ function ensureEngine() {
     toggleWorldState: (state) => worldStateSystem?.toggleState(state),
     setWorldFlag: (flag, value) => worldStateSystem?.setFlag(flag, value),
     toggleWorldFlag: (flag) => worldStateSystem?.toggleFlag(flag),
+    spawnEntity: (entity) => spawnEntityRuntime(entity),
+    despawnEntity: (id) => despawnEntityRuntime(id),
   });
 
   enemiesSystem = createEnemiesSystem({
@@ -452,6 +510,8 @@ export function setMap(grid: number[][]) {
   worldStateSystem?.onMapChanged();
   rawTriggers = [];
   rawLights = [];
+  rawEntities = [];
+  entityIdSeq = 1;
 }
 
 export function setMaterialsWall(rows: string[][] | null) {

@@ -11,6 +11,8 @@ export function createTriggersSystem({
   toggleWorldState,
   setWorldFlag,
   toggleWorldFlag,
+  spawnEntity,
+  despawnEntity,
 }: {
   audio: AudioManager;
   getPlayerPos: () => { x: number; y: number };
@@ -25,6 +27,8 @@ export function createTriggersSystem({
   toggleWorldState: (state: string) => void;
   setWorldFlag: (flag: string, value: boolean) => void;
   toggleWorldFlag: (flag: string) => void;
+  spawnEntity: (entity: unknown) => void;
+  despawnEntity: (id: string) => void;
 }) {
   type TriggerRuntime = {
     id: string;
@@ -80,6 +84,16 @@ export function createTriggersSystem({
       const next = grid.map((row) => row.slice());
       next[y][x] = a.material;
       setMaterialsWall(next);
+      return;
+    }
+
+    if (a.type === 'spawn_entity') {
+      spawnEntity(a.entity);
+      return;
+    }
+
+    if (a.type === 'despawn_entity') {
+      despawnEntity(a.id);
       return;
     }
 
