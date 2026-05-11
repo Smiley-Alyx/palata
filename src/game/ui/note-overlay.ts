@@ -1,0 +1,58 @@
+let bound = false;
+
+function getRoot() {
+  const el = document.getElementById('noteRoot');
+  return el instanceof HTMLElement ? el : null;
+}
+
+function getTitleEl() {
+  const el = document.getElementById('noteTitle');
+  return el instanceof HTMLElement ? el : null;
+}
+
+function getTextEl() {
+  const el = document.getElementById('noteText');
+  return el instanceof HTMLElement ? el : null;
+}
+
+export function isNoteOverlayVisible(): boolean {
+  const root = getRoot();
+  if (!root) return false;
+  return root.style.display !== 'none';
+}
+
+export function showNoteOverlay(title: string, text: string) {
+  const root = getRoot();
+  if (!root) return;
+  const titleEl = getTitleEl();
+  const textEl = getTextEl();
+  if (titleEl) titleEl.textContent = title;
+  if (textEl) textEl.textContent = text;
+  root.style.display = '';
+}
+
+export function hideNoteOverlay() {
+  const root = getRoot();
+  if (!root) return;
+  root.style.display = 'none';
+}
+
+export function bindNoteOverlayControls() {
+  if (bound) return;
+  bound = true;
+
+  const root = getRoot();
+  if (root) {
+    root.addEventListener('click', () => {
+      hideNoteOverlay();
+    });
+  }
+
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.repeat) return;
+    if (e.code !== 'Escape' && e.code !== 'KeyE') return;
+    const root = getRoot();
+    if (!root || root.style.display === 'none') return;
+    hideNoteOverlay();
+  });
+}

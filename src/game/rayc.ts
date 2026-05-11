@@ -27,6 +27,7 @@ import type { LevelLightJson } from './levels/level-loader';
 import type { LevelWorldStatesJson } from './levels/level-loader';
 import type { LevelEntityJson } from './levels/level-loader';
 import type { LevelTriggerActionJson } from './levels/level-loader';
+import { showNoteOverlay } from './ui/note-overlay';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -117,7 +118,7 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
     if (e.type === 'note') {
       const title = typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note';
       const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
-      window.alert(text ? `${title}\n\n${text}` : title);
+      showNoteOverlay(title, text);
       return true;
     }
 

@@ -31,6 +31,7 @@ import {
   type Difficulty,
   unlockAudio,
 } from './rayc';
+import { bindNoteOverlayControls } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
 
@@ -735,6 +736,7 @@ initAudioUi();
 initHpUi();
 initDeathUi();
 initMenu();
+bindNoteOverlayControls();
 void maybeStartCustomFromEditor();
 
 // Watch HP and enter death state.
