@@ -15,6 +15,11 @@ type LevelAudioConfig = {
   };
 };
 
+type LevelBackgroundMaterialsConfig = {
+  ceiling?: string | number | null;
+  floor?: string | number | null;
+};
+
 type LevelColorsConfig = {
   ceiling: string;
   floor: string;
@@ -26,6 +31,7 @@ type LevelJson = {
   legend?: Legend;
   audio?: unknown;
   colors?: unknown;
+  backgroundMaterials?: unknown;
   rows?: string[];
   geometry?: unknown;
   materialsWall?: unknown;
@@ -149,6 +155,18 @@ export async function loadLevel(levelUrl: string) {
     };
   }
 
+  let backgroundMaterials: LevelBackgroundMaterialsConfig | undefined;
+  if (data.backgroundMaterials && typeof data.backgroundMaterials === 'object') {
+    const bm = data.backgroundMaterials as { ceiling?: unknown; floor?: unknown };
+    const ceiling =
+      typeof bm.ceiling === 'string' || typeof bm.ceiling === 'number' ? bm.ceiling : bm.ceiling === null ? null : undefined;
+    const floor =
+      typeof bm.floor === 'string' || typeof bm.floor === 'number' ? bm.floor : bm.floor === null ? null : undefined;
+    if ('ceiling' in bm || 'floor' in bm) {
+      backgroundMaterials = { ceiling, floor };
+    }
+  }
+
   const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
   if (Array.isArray(data.keyPickups)) {
     for (const it of data.keyPickups) {
@@ -180,6 +198,7 @@ export async function loadLevel(levelUrl: string) {
     spawn,
     audio,
     colors,
+    backgroundMaterials,
     keyPickups,
     doorLocks,
   };

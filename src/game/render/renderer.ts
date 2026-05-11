@@ -20,6 +20,9 @@ export function createRenderer({
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
 
+  let ceilingMaterial: string | number | null = null;
+  let floorMaterial: string | number | null = null;
+
   let flash = 0;
   let damagePulse = 0;
   let killFill = 0;
@@ -43,14 +46,41 @@ export function createRenderer({
     if (typeof colors.floor === 'string') floorColor = colors.floor;
   }
 
+  function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
+    if ('ceiling' in materials) ceilingMaterial = materials.ceiling ?? null;
+    if ('floor' in materials) floorMaterial = materials.floor ?? null;
+  }
+
   function drawBackground() {
     const w = getViewWidth();
     const h = getViewHeight();
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = ceilingColor;
+    const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
+    const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
+
+    if (ceilingTexture) {
+      const pat = ctx.createPattern(ceilingTexture, 'repeat');
+      if (pat) {
+        ctx.fillStyle = pat;
+      } else {
+        ctx.fillStyle = ceilingColor;
+      }
+    } else {
+      ctx.fillStyle = ceilingColor;
+    }
     ctx.fillRect(0, 0, w, h / 2);
-    ctx.fillStyle = floorColor;
+
+    if (floorTexture) {
+      const pat = ctx.createPattern(floorTexture, 'repeat');
+      if (pat) {
+        ctx.fillStyle = pat;
+      } else {
+        ctx.fillStyle = floorColor;
+      }
+    } else {
+      ctx.fillStyle = floorColor;
+    }
     ctx.fillRect(0, h / 2, w, h / 2);
 
     // Subtle vertical shading to avoid a flat look.
@@ -263,6 +293,7 @@ export function createRenderer({
     drawMap,
     drawSprites,
     setBackgroundColors,
+    setBackgroundMaterials,
     triggerFlash,
     triggerDamagePulse,
     triggerKillFill,

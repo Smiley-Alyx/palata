@@ -9,6 +9,7 @@ import {
   setDifficulty,
   setAudioConfig,
   setBackgroundColors,
+  setBackgroundMaterials,
   setDoorLocks,
   setEnemies,
   setHealthPickups,
@@ -530,6 +531,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setMaterialsWall(level.materialsWall ?? null);
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
+  setBackgroundMaterials(level.backgroundMaterials ?? {});
 
   resetKeys();
   setKeyPickups(level.keyPickups ?? []);

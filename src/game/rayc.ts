@@ -371,6 +371,11 @@ export function setBackgroundColors(colors: { ceiling?: string; floor?: string }
   renderer?.setBackgroundColors(colors);
 }
 
+export function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
+  ensureEngine();
+  renderer?.setBackgroundMaterials(materials);
+}
+
 export function triggerDeathOverlay() {
   ensureEngine();
   renderer?.triggerKillFill();
