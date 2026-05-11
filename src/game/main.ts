@@ -22,6 +22,7 @@ import {
   setSfxEnabled,
   setSfxVolume,
   setSpawn,
+  setTriggers,
   startRayc,
   stopRayc,
   type Difficulty,
@@ -532,6 +533,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
   setBackgroundMaterials(level.backgroundMaterials ?? {});
+  setTriggers(level.triggers ?? []);
 
   resetKeys();
 

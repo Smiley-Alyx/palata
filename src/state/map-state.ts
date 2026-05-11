@@ -12,6 +12,10 @@ export function setMaterialsWall(rows: string[][] | null) {
   materialsWall = rows;
 }
 
+export function getMaterialsWall(): string[][] | null {
+  return materialsWall;
+}
+
 export function getMap(): Grid | null {
   return map;
 }

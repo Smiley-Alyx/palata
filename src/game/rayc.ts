@@ -11,13 +11,16 @@ import {
   setLegend as setLegendState,
   setMap as setMapState,
   setMaterialsWall as setMaterialsWallState,
+  getMaterialsWall as getMaterialsWallState,
 } from '../state/map-state';
 import { createDoorsSystem, type KeyId } from './systems/doors';
 import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
+import { createTriggersSystem } from './systems/triggers';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
+import type { LevelTriggerJson } from './levels/level-loader';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -33,6 +36,7 @@ let renderer: RendererInstance | null = null;
 let doorsSystem: ReturnType<typeof createDoorsSystem> | null = null;
 let enemiesSystem: ReturnType<typeof createEnemiesSystem> | null = null;
 let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
+let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
 
 let currentDifficulty: Difficulty = 'lost';
 
@@ -161,6 +165,11 @@ export function setDoorLocks(next: Array<{ x: number; y: number; id: KeyId }>) {
   doorsSystem?.setDoorLocks(next);
 }
 
+export function setTriggers(next: LevelTriggerJson[]) {
+  ensureEngine();
+  triggersSystem?.setTriggers(next);
+}
+
 export function getSprites() {
   ensureEngine();
   return pickupsSystem?.getSprites() ?? [];
@@ -218,6 +227,13 @@ function ensureEngine() {
     onDoorOpened: (xMap, yMap) => {
       handleDoorOpened(xMap, yMap);
     },
+  });
+
+  triggersSystem = createTriggersSystem({
+    audio,
+    getPlayerPos: () => ({ x: player.x, y: player.y }),
+    getMaterialsWall: () => getMaterialsWallState(),
+    setMaterialsWall: (rows) => setMaterialsWallState(rows),
   });
 
   enemiesSystem = createEnemiesSystem({
@@ -360,6 +376,7 @@ function ensureEngine() {
         });
         enemiesSystem?.tick(dt);
         pickupsSystem?.tick(dt);
+        triggersSystem?.tick();
       },
     },
   });
@@ -388,6 +405,7 @@ export function setMap(grid: number[][]) {
   doorsSystem?.onMapChanged();
   enemiesSystem?.onMapChanged();
   pickupsSystem?.onMapChanged(grid);
+  triggersSystem?.onMapChanged();
 }
 
 export function setMaterialsWall(rows: string[][] | null) {

@@ -33,6 +33,7 @@ type LevelJson = {
   colors?: unknown;
   backgroundMaterials?: unknown;
   entities?: unknown;
+  triggers?: unknown;
   rows?: string[];
   geometry?: unknown;
   materialsWall?: unknown;
@@ -48,6 +49,34 @@ export type LevelEntityJson = {
   x: number;
   y: number;
   [k: string]: unknown;
+};
+
+export type LevelTriggerZoneJson = {
+  type: 'enter_zone';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  once?: boolean;
+};
+
+export type LevelTriggerActionJson =
+  | {
+      type: 'play_sound';
+      sound: string;
+      volume?: number;
+    }
+  | {
+      type: 'change_wall_material';
+      x: number;
+      y: number;
+      material: string;
+    };
+
+export type LevelTriggerJson = {
+  id: string;
+  trigger: LevelTriggerZoneJson;
+  actions: LevelTriggerActionJson[];
 };
 
 type LevelsIndexJson = {
@@ -202,6 +231,60 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const triggers: LevelTriggerJson[] = [];
+  if (Array.isArray(data.triggers)) {
+    for (const it of data.triggers) {
+      if (!it || typeof it !== 'object') continue;
+      const t = it as { id?: unknown; trigger?: unknown; actions?: unknown };
+      if (typeof t.id !== 'string' || t.id.length === 0) continue;
+      if (!t.trigger || typeof t.trigger !== 'object') continue;
+      const z = t.trigger as { type?: unknown; x?: unknown; y?: unknown; w?: unknown; h?: unknown; once?: unknown };
+      if (z.type !== 'enter_zone') continue;
+      if (typeof z.x !== 'number' || typeof z.y !== 'number' || typeof z.w !== 'number' || typeof z.h !== 'number') continue;
+
+      const actions: LevelTriggerActionJson[] = [];
+      if (Array.isArray(t.actions)) {
+        for (const a of t.actions) {
+          if (!a || typeof a !== 'object') continue;
+          const aa = a as Record<string, unknown>;
+          if (aa.type === 'play_sound') {
+            const sound = aa.sound;
+            const volume = aa.volume;
+            if (typeof sound !== 'string' || sound.length === 0) continue;
+            actions.push({
+              type: 'play_sound',
+              sound,
+              volume: typeof volume === 'number' ? volume : undefined,
+            });
+            continue;
+          }
+          if (aa.type === 'change_wall_material') {
+            const x = aa.x;
+            const y = aa.y;
+            const material = aa.material;
+            if (typeof x !== 'number' || typeof y !== 'number') continue;
+            if (typeof material !== 'string' || material.length === 0) continue;
+            actions.push({ type: 'change_wall_material', x, y, material });
+            continue;
+          }
+        }
+      }
+
+      triggers.push({
+        id: t.id,
+        trigger: {
+          type: 'enter_zone',
+          x: z.x,
+          y: z.y,
+          w: z.w,
+          h: z.h,
+          once: typeof z.once === 'boolean' ? z.once : undefined,
+        },
+        actions,
+      });
+    }
+  }
+
   const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
   if (Array.isArray(data.keyPickups)) {
     for (const it of data.keyPickups) {
@@ -235,6 +318,7 @@ export async function loadLevel(levelUrl: string) {
     colors,
     backgroundMaterials,
     entities,
+    triggers,
     keyPickups,
     doorLocks,
   };
