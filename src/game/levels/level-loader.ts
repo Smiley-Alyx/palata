@@ -26,7 +26,9 @@ type LevelJson = {
   legend?: Legend;
   audio?: unknown;
   colors?: unknown;
-  rows: string[];
+  rows?: string[];
+  geometry?: unknown;
+  materialsWall?: unknown;
   spawn?: unknown;
   keyPickups?: unknown;
   doorLocks?: unknown;
@@ -40,30 +42,54 @@ type LevelsIndexJson = {
 export async function loadLevel(levelUrl: string) {
   const data = await loadJson<LevelJson>(levelUrl);
 
-  if (!data || !Array.isArray(data.rows) || data.rows.length === 0) {
-    throw new Error('Invalid level format: missing rows');
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid level format');
+  }
+
+  // Geometry: prefer explicit geometry (v2) over legacy rows.
+  let geometryRows: string[] | null = null;
+  if (Array.isArray(data.geometry) && data.geometry.every((r) => typeof r === 'string')) {
+    geometryRows = data.geometry as string[];
+  } else if (Array.isArray(data.rows) && data.rows.every((r) => typeof r === 'string')) {
+    geometryRows = data.rows as string[];
+  }
+
+  if (!geometryRows || geometryRows.length === 0) {
+    throw new Error('Invalid level format: missing geometry/rows');
   }
 
   let width = 0;
-  for (let y = 0; y < data.rows.length; y++) {
-    if (typeof data.rows[y] !== 'string') {
-      throw new Error('Invalid level format: each row must be a string');
-    }
-    width = Math.max(width, data.rows[y].length);
+  for (let y = 0; y < geometryRows.length; y++) {
+    width = Math.max(width, geometryRows[y].length);
   }
-  const normalizedRows = data.rows.map((row: string) => row.padEnd(width, '0'));
+  const normalizedGeometry = geometryRows.map((row: string) => row.padEnd(width, '0'));
 
-  const grid = normalizedRows.map((row: string) => {
+  const grid = normalizedGeometry.map((row: string) => {
     const arr = new Array(row.length);
     for (let i = 0; i < row.length; i++) {
       const code = row.charCodeAt(i) - 48;
       if (code < 0 || code > 9) {
-        throw new Error('Invalid cell value at row: only 0-9 supported for now');
+        throw new Error('Invalid cell value at geometry/rows: only 0-9 supported for now');
       }
       arr[i] = code;
     }
     return arr;
   });
+
+  let materialsWall: string[][] | null = null;
+  if (Array.isArray(data.materialsWall) && data.materialsWall.every((r) => typeof r === 'string')) {
+    const mRows = data.materialsWall as string[];
+    materialsWall = new Array(grid.length);
+    for (let y = 0; y < grid.length; y++) {
+      const src = mRows[y] ?? '';
+      const padded = src.padEnd(grid[0]?.length ?? 0, '');
+      const outRow: string[] = new Array(grid[0]?.length ?? 0);
+      for (let x = 0; x < outRow.length; x++) {
+        outRow[x] = padded[x] ?? '';
+      }
+      materialsWall[y] = outRow;
+    }
+  }
 
   let spawn: Spawn | null = null;
   if (data.spawn && typeof data.spawn === 'object') {
@@ -150,6 +176,7 @@ export async function loadLevel(levelUrl: string) {
     name: data.name,
     legend: data.legend ?? {},
     grid,
+    materialsWall,
     spawn,
     audio,
     colors,

@@ -5,7 +5,13 @@ import { createInput } from '../input/input';
 import { createRenderer } from './render/renderer';
 import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX } from './audio/sfx-config';
-import { getCellMaterial, getMap, setLegend as setLegendState, setMap as setMapState } from '../state/map-state';
+import {
+  getCellMaterial,
+  getMap,
+  setLegend as setLegendState,
+  setMap as setMapState,
+  setMaterialsWall as setMaterialsWallState,
+} from '../state/map-state';
 import { createDoorsSystem, type KeyId } from './systems/doors';
 import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
@@ -373,9 +379,15 @@ export function triggerDeathOverlay() {
 export function setMap(grid: number[][]) {
   ensureEngine();
   setMapState(grid);
+  setMaterialsWallState(null);
   doorsSystem?.onMapChanged();
   enemiesSystem?.onMapChanged();
   pickupsSystem?.onMapChanged(grid);
+}
+
+export function setMaterialsWall(rows: string[][] | null) {
+  ensureEngine();
+  setMaterialsWallState(rows);
 }
 
 export function setSpawn(spawn: Spawn | null) {

@@ -2,9 +2,14 @@ import type { Grid, Legend } from '../types/game';
 
 let map: Grid | null = null;
 let cellLegend: Legend = {};
+let materialsWall: string[][] | null = null;
 
 export function setMap(newMap: Grid) {
   map = newMap;
+}
+
+export function setMaterialsWall(rows: string[][] | null) {
+  materialsWall = rows;
 }
 
 export function getMap(): Grid | null {
@@ -54,6 +59,11 @@ export function isDoorCell(xMap: number, yMap: number): boolean {
 
 export function getCellMaterial(xMap: number, yMap: number): string | number {
   if (!map) return 0;
+
+  const materialRow = materialsWall?.[yMap];
+  const materialCell = materialRow?.[xMap];
+  if (typeof materialCell === 'string' && materialCell.length > 0) return materialCell;
+
   const row = map[yMap];
   if (!row) return 0;
   const cellId = row[xMap];

@@ -1,28 +1,30 @@
 import '../canvas-init';
 import {
-  startRayc,
-  stopRayc,
-  setMap,
-  setLegend,
-  setSpawn,
+  disposeRayc,
+  getAudioState,
+  getPlayer,
+  getKeys,
+  playMusic,
+  resetKeys,
+  setDifficulty,
+  setAudioConfig,
   setBackgroundColors,
+  setDoorLocks,
   setEnemies,
   setHealthPickups,
-  setAudioConfig,
-  playMusic,
-  unlockAudio,
-  getPlayer,
-  setDifficulty,
-  getAudioState,
-  setMusicEnabled,
-  setSfxEnabled,
-  setMusicVolume,
-  setSfxVolume,
-  getKeys,
-  type Difficulty,
-  resetKeys,
   setKeyPickups,
-  setDoorLocks,
+  setLegend,
+  setMap,
+  setMaterialsWall,
+  setMusicEnabled,
+  setMusicVolume,
+  setSfxEnabled,
+  setSfxVolume,
+  setSpawn,
+  startRayc,
+  stopRayc,
+  type Difficulty,
+  unlockAudio,
 } from './rayc';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
@@ -525,6 +527,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   stripEnemyCellsFromGrid(level.grid, level.legend);
   setLegend(level.legend);
   setMap(level.grid);
+  setMaterialsWall(level.materialsWall ?? null);
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
 
