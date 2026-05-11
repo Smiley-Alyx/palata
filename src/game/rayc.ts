@@ -26,6 +26,7 @@ import type { LevelTriggerJson } from './levels/level-loader';
 import type { LevelLightJson } from './levels/level-loader';
 import type { LevelWorldStatesJson } from './levels/level-loader';
 import type { LevelEntityJson } from './levels/level-loader';
+import type { LevelTriggerActionJson } from './levels/level-loader';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -50,10 +51,103 @@ let rawLights: LevelLightJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
 let entityIdSeq = 1;
 
+let activeInteractables: Array<{ id?: string; type: string; x: number; y: number; [k: string]: unknown }> = [];
+
+function applyEntityAction(a: LevelTriggerActionJson) {
+  if (a.type === 'play_sound') {
+    const key = a.sound as Parameters<AudioManager['playSfx']>[0];
+    audio.playSfx(key, typeof a.volume === 'number' ? a.volume : 0.7);
+    return;
+  }
+
+  if (a.type === 'change_wall_material') {
+    const grid = getMaterialsWallState();
+    if (!grid || !grid.length || !grid[0]?.length) return;
+    const x = Math.floor(a.x);
+    const y = Math.floor(a.y);
+    if (y < 0 || y >= grid.length) return;
+    if (x < 0 || x >= (grid[0]?.length ?? 0)) return;
+
+    const next = grid.map((row) => row.slice());
+    next[y][x] = a.material;
+    setMaterialsWallState(next);
+    return;
+  }
+
+  if (a.type === 'spawn_entity') {
+    spawnEntityRuntime(a.entity);
+    return;
+  }
+
+  if (a.type === 'despawn_entity') {
+    despawnEntityRuntime(a.id);
+    return;
+  }
+
+  if (a.type === 'set_state') {
+    worldStateSystem?.setState(a.state, a.value);
+    return;
+  }
+
+  if (a.type === 'toggle_state') {
+    worldStateSystem?.toggleState(a.state);
+    return;
+  }
+
+  if (a.type === 'set_flag') {
+    worldStateSystem?.setFlag(a.flag, a.value);
+    return;
+  }
+
+  if (a.type === 'toggle_flag') {
+    worldStateSystem?.toggleFlag(a.flag);
+    return;
+  }
+}
+
+function interactWithEntities(xWorld: number, yWorld: number): boolean {
+  if (!activeInteractables.length) return false;
+
+  const xMap = Math.floor(xWorld);
+  const yMap = Math.floor(yWorld);
+
+  for (const e of activeInteractables) {
+    if (Math.floor(e.x) !== xMap || Math.floor(e.y) !== yMap) continue;
+
+    if (e.type === 'note') {
+      const title = typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note';
+      const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
+      window.alert(text ? `${title}\n\n${text}` : title);
+      return true;
+    }
+
+    if (e.type === 'button' || e.type === 'switch') {
+      const actions = (e as any).actions;
+      if (Array.isArray(actions)) {
+        for (const a of actions) {
+          if (!a || typeof a !== 'object') continue;
+          if (typeof (a as any).type !== 'string') continue;
+          applyEntityAction(a as LevelTriggerActionJson);
+        }
+      }
+      return true;
+    }
+
+    if (e.type === 'door') {
+      doorsSystem?.requestOpenDoor(xMap, yMap, ownedKeys);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function reapplyEntities() {
   const ws = worldStateSystem;
   if (!ws) return;
   const enabled = rawEntities.filter((e) => ws.isEnabled(e));
+
+  activeInteractables = enabled.filter((e) => e.type === 'note' || e.type === 'button' || e.type === 'switch' || e.type === 'door');
 
   const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
@@ -464,6 +558,7 @@ function ensureEngine() {
         );
       },
       interact: (x: number, y: number) => {
+        if (interactWithEntities(x, y)) return;
         doorsSystem?.interactWorld(x, y, ownedKeys);
       },
       getWallTextureId,
@@ -531,6 +626,7 @@ export function setMap(grid: number[][]) {
   rawLights = [];
   rawEntities = [];
   entityIdSeq = 1;
+  activeInteractables = [];
 }
 
 export function setMaterialsWall(rows: string[][] | null) {
