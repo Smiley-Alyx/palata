@@ -1,0 +1,7 @@
+{
+  "fps": 8,
+  "loop": true,
+  "frames": [
+    "sprites/enemies/medical_orderly.png"
+  ]
+}

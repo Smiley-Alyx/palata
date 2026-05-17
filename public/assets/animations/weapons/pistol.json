@@ -1,0 +1,7 @@
+{
+  "fps": 12,
+  "loop": false,
+  "frames": [
+    "sprites/weapons/pistol.png"
+  ]
+}
