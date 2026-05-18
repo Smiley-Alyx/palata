@@ -50,6 +50,10 @@ let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
 let entityIdSeq = 1;
+// Sticky flag: once a level declares any `enemy_spawn` entity we treat enemies
+// as entity-driven. From then on `reapplyEntities` is authoritative for the
+// enemy list (so perception-gated enemies vanish when their state turns off).
+let entityDrivenEnemies = false;
 
 let activeInteractables: Array<{
   id?: string;
@@ -199,7 +203,10 @@ function reapplyEntities() {
   pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
   pickupsSystem?.setHealthPickups(healthPickupsFromEntities);
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
-  if (enemiesFromEntities.length) {
+  if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
+    entityDrivenEnemies = true;
+  }
+  if (entityDrivenEnemies) {
     enemiesSystem?.setEnemies(enemiesFromEntities);
   }
 }
@@ -582,6 +589,7 @@ export function setMap(grid: number[][]) {
   rawLights = [];
   rawEntities = [];
   entityIdSeq = 1;
+  entityDrivenEnemies = false;
   activeInteractables = [];
 }
 
