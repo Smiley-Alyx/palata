@@ -22,9 +22,9 @@
 | Элемент                                                | Код                                           | Статус                                                        |
 | ------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------- |
 | Player base (HP, движение)                             | `src/types/game.d.ts`, `src/engine/engine.ts` | done                                                          |
-| Inventory (медикаменты, инъекторы)                     | `src/game/systems/inventory.ts` + `items.ts`  | partial (счётчики + medication pickup; document/ammo — позже) |
-| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial (states + medication mutex done; pickups/HUD — нет)   |
-| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | todo (canvas есть, логика — нет)                              |
+| Inventory (медикаменты, инъекторы)                     | `src/game/systems/inventory.ts` + `items.ts`  | partial (haloperidol/injector/ammo/docs counters; injector эффект — позже) |
+| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial (states + medication mutex done; HUD overlay done; injector эффект — нет)   |
+| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | partial (portrait по HP есть; perception overlay поверх canvas есть)            |
 
 ## 3. Повествование без катсцен
 
@@ -50,11 +50,11 @@
 | ----------------------------------------- | -------------------------------------- | ------------------------------------ | ------------------------------------------------------------ |
 | `enemy` (generic)                         | `sprites/enemies/enemy.png`            | `src/game/systems/enemies.ts`        | done                                                         |
 | `zombie`                                  | `sprites/enemies/zombie.png`           | `enemies.ts`                         | done                                                         |
-| `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | —                                    | todo                                                         |
-| `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | —                                    | todo                                                         |
-| `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | —                                    | todo                                                         |
-| `flesh_watcher` (perception)              | `sprites/enemies/flesh_watcher.png`    | —                                    | todo                                                         |
-| `doppelganger` (predator-trigger)         | `sprites/enemies/doppelganger.png`     | —                                    | todo                                                         |
+| `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | `enemy-profiles.ts` + `enemies.ts`   | done (sprite + SFX profile + damage bracket)                 |
+| `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | `enemy-profiles.ts` + `enemies.ts`   | done                                                          |
+| `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | `enemy-profiles.ts` + `enemies.ts`   | done (HP/speed tuned, no unique anims yet)                    |
+| `flesh_watcher` (perception)              | `sprites/enemies/flesh_watcher.png`    | `enemy-profiles.ts` + `enemies.ts`   | done (perception-gated via `enabledInStates`)                 |
+| `doppelganger` (predator-trigger)         | `sprites/enemies/doppelganger.png`     | `enemy-profiles.ts` + `enemies.ts`   | done                                                          |
 | `hallucination_entity` / `white_observer` | `sprites/hallucinations/*.png`         | `src/game/systems/hallucinations.ts` | partial (perception-gated спрайты + burst SFX; нет AI, anim) |
 
 ## 7. Боссы
@@ -78,16 +78,17 @@
 | Medication mechanic              | `items.ts`, `setMedication`                                          | partial (haloperidol → medicated; injector только склад) |     |
 | Infection / perception switching | `world-state.ts` (`setMedication`), `triggers.ts` (`set_medication`) | partial (триггеры + API готовы, item-pickups — нет)      |
 | Predator abilities               | —                                                                    | todo                                                     |
+| Weapons (pipe / pistol / shotgun) | `src/game/systems/weapons.ts`                                       | done (per-weapon SFX, ammo from inventory, 1/2/3 + Q switch) |
 
 ## 9. Оружие
 
 | Тир                  | Оружие                                       | Спрайт                                          | Код | Статус                                         |
 | -------------------- | -------------------------------------------- | ----------------------------------------------- | --- | ---------------------------------------------- |
-| 1. Импровизированное | pipe, skalpel                                | `sprites/weapons/pipe.png`, `skalpel.png`       | —   | todo                                           |
-| 2. Индустриальное    | pistol, revolver, shotgun                    | `sprites/weapons/{pistol,revolver,shotgun}.png` | —   | todo (есть только `Space → onShoot` из engine) |
+| 1. Импровизированное | pipe, skalpel                                | `sprites/weapons/pipe.png`, `skalpel.png`       | `weapons.ts` | partial (pipe wired; skalpel — нет)                |
+| 2. Индустриальное    | pistol, revolver, shotgun                    | `sprites/weapons/{pistol,revolver,shotgun}.png` | `weapons.ts` | partial (pistol/shotgun wired; revolver — нет)     |
 | 3. Органическое      | bone_blade, organic_shotgun, parasitic_rifle | `sprites/weapons/*`                             | —   | todo                                           |
 
-HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html`, не подключены.
+HUD: `#hudWeaponValue` / `#hudAmmoValue` показывают текущее оружие и счётчик патронов из инвентаря.
 
 ## 10. Предметы
 
@@ -97,7 +98,7 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 | Health (medkit)           | `sprites/pickups/health/*.png`                                   | `pickups.ts`      | done                                    |
 | Haloperidol               | `sprites/pickups/medication/haloperidol.png`                     | `items.ts`        | done                                    |
 | Experimental injector     | `sprites/pickups/medication/injector.png`                        | `items.ts`        | partial (подбор + счётчик, нет эффекта) |
-| Documents / artifacts     | `sprites/pickups/documents`, `sprites/pickups/artifacts` (пусто) | —                 | todo                                    |
+| Documents / artifacts     | `sprites/pickups/documents`, `sprites/pickups/artifacts` (пусто) | `inventory.ts`, HUD `#hudDocsValue` | partial (счётчик в HUD; entity-pickup ещё нет)                    |
 
 ## 12. Уровни
 
@@ -129,7 +130,7 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 | World state system     | `world-state.ts`           | done                                                                       |
 | Lighting system        | `lights.ts`                | partial                                                                    |
 | Modular asset pipeline | `public/assets/**`         | partial (структура есть, sound categories пустые)                          |
-| HUD framework          | `index.html` + `rayc.ts`   | partial (MEDS counter добавлен; face/distortion/predator overlays впереди) |
+| HUD framework          | `index.html` + `rayc.ts`   | partial (MEDS/DOCS/AMMO/WEAPON + perception overlay; portrait per-state — позже) |
 
 ## 15. Музыка и звук
 
@@ -138,8 +139,8 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 | AudioManager (music + sfx)                               | `src/game/audio/audio-manager.ts` | done                              |
 | SFX registry                                             | `src/game/audio/sfx-config.ts`    | done (namespaced `SFX.*` catalog) |
 | Per-level music                                          | `level*.json` `audio.music`       | done                              |
-| Ambient bed (бесшовный layer per state)                  | —                                 | todo                              |
-| Hallucination audio (whisper, vhs_glitch, insanity_ring) | `hallucinations.ts` (burst, ring) | partial (whisper loop — нет)      |
+| Ambient bed (бесшовный layer per state)                  | `src/game/systems/ambience.ts`    | done (breath + bed per perception, machinery emitters) |
+| Hallucination audio (whisper, vhs_glitch, insanity_ring) | `hallucinations.ts` (burst, ring) + `ambience.ts` (whisper loop) | done                              |
 | Тишина как событие                                       | —                                 | todo                              |
 
 ## 16. Финальная художественная цель
