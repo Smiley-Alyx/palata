@@ -19,12 +19,12 @@
 
 ## 2. Сюжет / 5. Главный герой
 
-| Элемент                                                | Код                                           | Статус                           |
-| ------------------------------------------------------ | --------------------------------------------- | -------------------------------- |
-| Player base (HP, движение)                             | `src/types/game.d.ts`, `src/engine/engine.ts` | done                             |
-| Inventory (медикаменты, инъекторы)                     | —                                             | todo                             |
-| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial                          |
-| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | todo (canvas есть, логика — нет) |
+| Элемент                                                | Код                                           | Статус                                                      |
+| ------------------------------------------------------ | --------------------------------------------- | ----------------------------------------------------------- |
+| Player base (HP, движение)                             | `src/types/game.d.ts`, `src/engine/engine.ts` | done                                                        |
+| Inventory (медикаменты, инъекторы)                     | —                                             | todo                                                        |
+| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial (states + medication mutex done; pickups/HUD — нет) |
+| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | todo (canvas есть, логика — нет)                            |
 
 ## 3. Повествование без катсцен
 
@@ -46,16 +46,16 @@
 
 ## 6. Враги
 
-| Враг                                      | Спрайт                                 | Код                           | Статус |
-| ----------------------------------------- | -------------------------------------- | ----------------------------- | ------ |
-| `enemy` (generic)                         | `sprites/enemies/enemy.png`            | `src/game/systems/enemies.ts` | done   |
-| `zombie`                                  | `sprites/enemies/zombie.png`           | `enemies.ts`                  | done   |
-| `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | —                             | todo   |
-| `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | —                             | todo   |
-| `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | —                             | todo   |
-| `flesh_watcher` (perception)              | `sprites/enemies/flesh_watcher.png`    | —                             | todo   |
-| `doppelganger` (predator-trigger)         | `sprites/enemies/doppelganger.png`     | —                             | todo   |
-| `hallucination_entity` / `white_observer` | `sprites/hallucinations/*.png`         | —                             | todo   |
+| Враг                                      | Спрайт                                 | Код                                  | Статус                                                       |
+| ----------------------------------------- | -------------------------------------- | ------------------------------------ | ------------------------------------------------------------ |
+| `enemy` (generic)                         | `sprites/enemies/enemy.png`            | `src/game/systems/enemies.ts`        | done                                                         |
+| `zombie`                                  | `sprites/enemies/zombie.png`           | `enemies.ts`                         | done                                                         |
+| `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | —                                    | todo                                                         |
+| `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | —                                    | todo                                                         |
+| `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | —                                    | todo                                                         |
+| `flesh_watcher` (perception)              | `sprites/enemies/flesh_watcher.png`    | —                                    | todo                                                         |
+| `doppelganger` (predator-trigger)         | `sprites/enemies/doppelganger.png`     | —                                    | todo                                                         |
+| `hallucination_entity` / `white_observer` | `sprites/hallucinations/*.png`         | `src/game/systems/hallucinations.ts` | partial (perception-gated спрайты + burst SFX; нет AI, anim) |
 
 ## 7. Боссы
 
@@ -69,15 +69,15 @@
 
 ## 8. Игровые механики
 
-| Элемент                          | Код                            | Статус                                            |
-| -------------------------------- | ------------------------------ | ------------------------------------------------- |
-| Базовый movement / collision     | `engine.ts`                    | done                                              |
-| Двери / ключи / замки            | `src/game/systems/doors.ts`    | done                                              |
-| Pickups (health, keys)           | `src/game/systems/pickups.ts`  | done                                              |
-| Triggers (enter_zone + actions)  | `src/game/systems/triggers.ts` | done                                              |
-| Medication mechanic              | —                              | todo                                              |
-| Infection / perception switching | —                              | todo (states есть, переключатели предметов — нет) |
-| Predator abilities               | —                              | todo                                              |
+| Элемент                          | Код                                                                  | Статус                                              |
+| -------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
+| Базовый movement / collision     | `engine.ts`                                                          | done                                                |
+| Двери / ключи / замки            | `src/game/systems/doors.ts`                                          | done                                                |
+| Pickups (health, keys)           | `src/game/systems/pickups.ts`                                        | done                                                |
+| Triggers (enter_zone + actions)  | `src/game/systems/triggers.ts`                                       | done                                                |
+| Medication mechanic              | —                                                                    | todo                                                |
+| Infection / perception switching | `world-state.ts` (`setMedication`), `triggers.ts` (`set_medication`) | partial (триггеры + API готовы, item-pickups — нет) |
+| Predator abilities               | —                                                                    | todo                                                |
 
 ## 9. Оружие
 
@@ -120,27 +120,27 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 
 ## 14. Техническая архитектура
 
-| Элемент                | Код                        | Статус                                            |
-| ---------------------- | -------------------------- | ------------------------------------------------- |
-| DDA raycaster          | `src/raycast/raycaster.ts` | done                                              |
-| Layered map format     | `level-loader.ts`          | done                                              |
-| Entity architecture    | `rayc.ts` `setEntities`    | partial                                           |
-| Trigger / event system | `triggers.ts`              | done                                              |
-| World state system     | `world-state.ts`           | done                                              |
-| Lighting system        | `lights.ts`                | partial                                           |
-| Modular asset pipeline | `public/assets/**`         | partial (структура есть, sound categories пустые) |
-| HUD framework          | `index.html` + `rayc.ts`   | partial (нет face/distortion/predator overlays)   |
+| Элемент                | Код                        | Статус                                                |
+| ---------------------- | -------------------------- | ----------------------------------------------------- |
+| DDA raycaster          | `src/raycast/raycaster.ts` | done                                                  |
+| Layered map format     | `level-loader.ts`          | done                                                  |
+| Entity architecture    | `rayc.ts` `setEntities`    | done (perception-gated, sticky entity-driven enemies) |
+| Trigger / event system | `triggers.ts`              | done                                                  |
+| World state system     | `world-state.ts`           | done                                                  |
+| Lighting system        | `lights.ts`                | partial                                               |
+| Modular asset pipeline | `public/assets/**`         | partial (структура есть, sound categories пустые)     |
+| HUD framework          | `index.html` + `rayc.ts`   | partial (нет face/distortion/predator overlays)       |
 
 ## 15. Музыка и звук
 
-| Элемент                                                  | Код                               | Статус                        |
-| -------------------------------------------------------- | --------------------------------- | ----------------------------- |
-| AudioManager (music + sfx)                               | `src/game/audio/audio-manager.ts` | done                          |
-| SFX registry                                             | `src/game/audio/sfx-config.ts`    | partial (плоский DEFAULT_SFX) |
-| Per-level music                                          | `level*.json` `audio.music`       | done                          |
-| Ambient bed (бесшовный layer per state)                  | —                                 | todo                          |
-| Hallucination audio (whisper, vhs_glitch, insanity_ring) | файлы есть, кода нет              | todo                          |
-| Тишина как событие                                       | —                                 | todo                          |
+| Элемент                                                  | Код                               | Статус                            |
+| -------------------------------------------------------- | --------------------------------- | --------------------------------- |
+| AudioManager (music + sfx)                               | `src/game/audio/audio-manager.ts` | done                              |
+| SFX registry                                             | `src/game/audio/sfx-config.ts`    | done (namespaced `SFX.*` catalog) |
+| Per-level music                                          | `level*.json` `audio.music`       | done                              |
+| Ambient bed (бесшовный layer per state)                  | —                                 | todo                              |
+| Hallucination audio (whisper, vhs_glitch, insanity_ring) | `hallucinations.ts` (burst, ring) | partial (whisper loop — нет)      |
+| Тишина как событие                                       | —                                 | todo                              |
 
 ## 16. Финальная художественная цель
 
