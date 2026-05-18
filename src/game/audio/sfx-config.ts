@@ -12,21 +12,9 @@ function url(path: string) {
  * Namespaced SFX catalog.
  *
  * String values double as the audio-manager key. Use `SFX.weapons.pipe.swing`
- * etc. in callers instead of stringly-typed magic. The legacy short keys
- * (`doorOpen`, `footstep`, ...) are kept here intentionally because existing
- * gameplay systems still reference them by name; later commits in the
- * narrative roadmap will migrate call sites to the namespaced keys.
+ * etc. in callers instead of stringly-typed magic.
  */
 export const SFX = {
-  legacy: {
-    doorOpen: 'doorOpen',
-    footstep: 'footstep',
-    shoot: 'shoot',
-    damage: 'damage',
-    enemy: 'enemy',
-    zombie: 'zombie',
-    health: 'health',
-  },
   ui: {
     menuMove: 'ui.menu.move',
     menuSelect: 'ui.menu.select',
@@ -130,15 +118,6 @@ export const SFX = {
  * Built from the namespaced `SFX` catalog so adding new sounds is one-stop.
  */
 export const DEFAULT_SFX: Record<SfxKey, string> = {
-  // --- Legacy short keys (still consumed by existing gameplay systems) ---
-  [SFX.legacy.doorOpen]: url('/assets/sounds/sfx/door.wav'),
-  [SFX.legacy.footstep]: url('/assets/sounds/sfx/step.wav'),
-  [SFX.legacy.shoot]: url('/assets/sounds/sfx/shoot.wav'),
-  [SFX.legacy.damage]: url('/assets/sounds/sfx/damage.wav'),
-  [SFX.legacy.enemy]: url('/assets/sounds/sfx/enemy.wav'),
-  [SFX.legacy.zombie]: url('/assets/sounds/sfx/zombie.wav'),
-  [SFX.legacy.health]: url('/assets/sounds/sfx/health.wav'),
-
   // --- UI ---
   [SFX.ui.menuMove]: url('/assets/sounds/ui/menu_move.wav'),
   [SFX.ui.menuSelect]: url('/assets/sounds/ui/menu_select.wav'),

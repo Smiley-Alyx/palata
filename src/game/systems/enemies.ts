@@ -1,6 +1,7 @@
 import type { Player } from '../../types/game';
 import type { Difficulty, EnemyKind } from '../game-types';
 import { getMap, hitWall, isDoorCell } from '../../state/map-state';
+import { SFX } from '../audio/sfx-config';
 
 export type Enemy = {
   x: number;
@@ -42,8 +43,8 @@ export function createEnemiesSystem({
   player: Player;
   getDifficulty: () => Difficulty;
   playSfx: (key: string) => void;
-  playLoopingSfx: (key: 'enemy' | 'zombie', volume?: number) => void;
-  stopLoopingSfx: (key: 'enemy' | 'zombie') => void;
+  playLoopingSfx: (key: string, volume?: number) => void;
+  stopLoopingSfx: (key: string) => void;
   onRequestOpenDoor: (xMap: number, yMap: number) => void;
   isDoorBlocking?: (xMap: number, yMap: number) => boolean;
   onEnemyKilled?: () => void;
@@ -57,7 +58,7 @@ export function createEnemiesSystem({
   let enemyAt: Int32Array | null = null;
 
   let enemyDamageCooldownMs = 0;
-  let enemySightLoopKey: 'enemy' | 'zombie' | null = null;
+  let enemySightLoopKey: string | null = null;
 
   function ensureEnemyGridForCurrentMap() {
     const map = getMap();
@@ -295,7 +296,11 @@ export function createEnemiesSystem({
         e.decisionCooldownMs = 180;
       }
 
-      if (isDoorCell(nextX, nextY) && typeof isDoorBlocking === 'function' && !isDoorBlocking(nextX, nextY)) {
+      if (
+        isDoorCell(nextX, nextY) &&
+        typeof isDoorBlocking === 'function' &&
+        !isDoorBlocking(nextX, nextY)
+      ) {
         // Door tile is present but currently not blocking: allow stepping through.
       } else {
         return false;
@@ -398,7 +403,11 @@ export function createEnemiesSystem({
   }
 
   function updateEnemySightLoop(inSightNow: boolean, sawZombieInSight: boolean) {
-    const desiredLoopKey: 'enemy' | 'zombie' | null = inSightNow ? (sawZombieInSight ? 'zombie' : 'enemy') : null;
+    const desiredLoopKey: string | null = inSightNow
+      ? sawZombieInSight
+        ? SFX.enemies.husk.idle
+        : SFX.enemies.orderly.idle
+      : null;
     if (desiredLoopKey !== enemySightLoopKey) {
       if (enemySightLoopKey) stopLoopingSfx(enemySightLoopKey);
       if (desiredLoopKey) playLoopingSfx(desiredLoopKey, 0.35);
@@ -498,7 +507,8 @@ export function createEnemiesSystem({
                 e.decisionCooldownMs = e.mode === 'chase' ? 60 : 220;
               }
             } else {
-              const step = e.mode === 'chase' ? pickChaseStep(selfIndex) : pickPatrolStep(selfIndex);
+              const step =
+                e.mode === 'chase' ? pickChaseStep(selfIndex) : pickPatrolStep(selfIndex);
               if (step.x !== 0 || step.y !== 0) {
                 const changing = step.x !== e.moveDirX || step.y !== e.moveDirY;
                 if (changing && (e.moveDirX !== 0 || e.moveDirY !== 0)) {
@@ -538,11 +548,16 @@ export function createEnemiesSystem({
           }
         }
 
-        if (e.mode === 'chase' && enemyDamageCooldownMs <= 0 && dist < 1.35 && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+        if (
+          e.mode === 'chase' &&
+          enemyDamageCooldownMs <= 0 &&
+          dist < 1.35 &&
+          hasLineOfSight(e.x, e.y, player.x, player.y)
+        ) {
           const dmg = rollEnemyDamage(e.kind, getDifficulty());
           player.hp = Math.max(0, player.hp - dmg);
-          playSfx(e.kind === 'zombie' ? 'zombie' : 'enemy');
-          playSfx('damage');
+          playSfx(e.kind === 'zombie' ? SFX.enemies.husk.attack : SFX.enemies.orderly.attack);
+          playSfx(SFX.player.hurtMedium);
           e.attackFlashMs = 220;
           onDamagePulse?.();
           enemyDamageCooldownMs = 650;

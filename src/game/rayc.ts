@@ -4,7 +4,7 @@ import { getCanvas, getCanvasCssHeight, getCanvasCssWidth, getCtx } from '../can
 import { createInput } from '../input/input';
 import { createRenderer } from './render/renderer';
 import { AudioManager } from './audio/audio-manager';
-import { DEFAULT_SFX } from './audio/sfx-config';
+import { DEFAULT_SFX, SFX } from './audio/sfx-config';
 import {
   getCellMaterial,
   getMap,
@@ -52,7 +52,13 @@ let rawLights: LevelLightJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
 let entityIdSeq = 1;
 
-let activeInteractables: Array<{ id?: string; type: string; x: number; y: number; [k: string]: unknown }> = [];
+let activeInteractables: Array<{
+  id?: string;
+  type: string;
+  x: number;
+  y: number;
+  [k: string]: unknown;
+}> = [];
 
 function applyEntityAction(a: LevelTriggerActionJson) {
   if (a.type === 'play_sound') {
@@ -148,7 +154,9 @@ function reapplyEntities() {
   if (!ws) return;
   const enabled = rawEntities.filter((e) => ws.isEnabled(e));
 
-  activeInteractables = enabled.filter((e) => e.type === 'note' || e.type === 'button' || e.type === 'switch' || e.type === 'door');
+  activeInteractables = enabled.filter(
+    (e) => e.type === 'note' || e.type === 'button' || e.type === 'switch' || e.type === 'door',
+  );
 
   const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
@@ -423,8 +431,8 @@ function ensureEngine() {
   });
 
   doorsSystem = createDoorsSystem({
-    playDoorOpenSfx: () => audio.playSfx('doorOpen'),
-    playDoorDeniedSfx: () => audio.playSfx('damage'),
+    playDoorOpenSfx: () => audio.playSfx(SFX.transitions.hospitalDoorOpen),
+    playDoorDeniedSfx: () => audio.playSfx(SFX.ui.menuError),
     onDoorOpened: (xMap, yMap) => {
       handleDoorOpened(xMap, yMap);
     },
@@ -447,7 +455,7 @@ function ensureEngine() {
   enemiesSystem = createEnemiesSystem({
     player,
     getDifficulty: () => currentDifficulty,
-    playSfx: (key) => audio.playSfx(key as Parameters<typeof audio.playSfx>[0]),
+    playSfx: (key) => audio.playSfx(key),
     playLoopingSfx: (key, volume) => audio.playLoopingSfx(key, volume),
     stopLoopingSfx: (key) => audio.stopLoopingSfx(key),
     onRequestOpenDoor: (xMap, yMap) => doorsSystem?.requestOpenDoor(xMap, yMap),
@@ -460,10 +468,13 @@ function ensureEngine() {
 
   pickupsSystem = createPickupsSystem({
     player,
-    playHealthSfx: () => audio.playSfx('health'),
-    playKeySfx: () => audio.playSfx('footstep'),
+    playHealthSfx: () => audio.playSfx(SFX.ui.pickupMedkit),
+    playKeySfx: () => audio.playSfx(SFX.ui.pickupKey),
     isBlocked: (x, y, r) => {
-      return !!enemiesSystem && (enemiesSystem.hitWallCircle(x, y, r) || enemiesSystem.hitEnemyCircle(x, y, r * 3.0));
+      return (
+        !!enemiesSystem &&
+        (enemiesSystem.hitWallCircle(x, y, r) || enemiesSystem.hitEnemyCircle(x, y, r * 3.0))
+      );
     },
     getDifficulty: () => currentDifficulty,
     onKeyPickup: (id) => {
@@ -570,10 +581,10 @@ function ensureEngine() {
     }),
     events: {
       onFootstep: () => {
-        audio.playSfx('footstep');
+        audio.playSfx(SFX.footsteps.concrete);
       },
       onShoot: () => {
-        audio.playSfx('shoot');
+        audio.playSfx(SFX.weapons.pistol.fire);
         renderer?.triggerFlash();
         enemiesSystem?.alertFromNoise(player.x, player.y, 9);
         enemiesSystem?.tryShootEnemies();
@@ -603,7 +614,10 @@ export function setBackgroundColors(colors: { ceiling?: string; floor?: string }
   renderer?.setBackgroundColors(colors);
 }
 
-export function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
+export function setBackgroundMaterials(materials: {
+  ceiling?: string | number | null;
+  floor?: string | number | null;
+}) {
   ensureEngine();
   renderer?.setBackgroundMaterials(materials);
 }
