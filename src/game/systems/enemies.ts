@@ -2,6 +2,7 @@ import type { Player } from '../../types/game';
 import type { Difficulty, EnemyKind } from '../game-types';
 import { getMap, hitWall, isDoorCell } from '../../state/map-state';
 import { SFX } from '../audio/sfx-config';
+import { getEnemyProfile, rollEnemyDamage } from './enemy-profiles';
 
 export type Enemy = {
   x: number;
@@ -114,42 +115,24 @@ export function createEnemiesSystem({
     if (enemyAt[idx] === i) enemyAt[idx] = -1;
   }
 
-  function ghostWeightForDifficulty(difficulty: Difficulty): number {
+  function orderlyWeightForDifficulty(difficulty: Difficulty): number {
     if (difficulty === 'lost') return 1;
     if (difficulty === 'trapped') return 2;
     return 4;
   }
 
   function rollEnemyKindFromDifficulty(difficulty: Difficulty): EnemyKind {
-    const ghostW = ghostWeightForDifficulty(difficulty);
-    const total = 10 + ghostW;
+    // Random spawner uses only the two baseline kinds. Narrative-specific
+    // kinds (deformed_patient / flesh_watcher / doppelganger) are placed
+    // explicitly via level entities.
+    const orderlyW = orderlyWeightForDifficulty(difficulty);
+    const total = 10 + orderlyW;
     const r = Math.random() * total;
-    return r < ghostW ? 'ghost' : 'zombie';
+    return r < orderlyW ? 'medical_orderly' : 'skeleton_husk';
   }
 
   function rollEnemyKind(): EnemyKind {
     return rollEnemyKindFromDifficulty(getDifficulty());
-  }
-
-  function damageScaleForDifficulty(difficulty: Difficulty): number {
-    if (difficulty === 'lost') return 1.0;
-    if (difficulty === 'trapped') return 1.2;
-    return 1.55;
-  }
-
-  function rollEnemyDamage(kind: EnemyKind, difficulty: Difficulty): number {
-    const scale = damageScaleForDifficulty(difficulty);
-    if (kind === 'zombie') {
-      const baseMin = 4;
-      const baseMax = difficulty === 'lost' ? 7 : difficulty === 'trapped' ? 9 : 12;
-      const raw = baseMin + Math.floor(Math.random() * (baseMax - baseMin + 1));
-      return Math.max(1, Math.round(raw * scale));
-    }
-
-    const baseMin = 16;
-    const baseMax = difficulty === 'lost' ? 24 : difficulty === 'trapped' ? 28 : 36;
-    const raw = baseMin + Math.floor(Math.random() * (baseMax - baseMin + 1));
-    return Math.max(1, Math.round(raw * scale));
   }
 
   function createEnemyAtWorld(
@@ -162,8 +145,8 @@ export function createEnemiesSystem({
     const cx = tileX + 0.5;
     const cy = tileY + 0.5;
     const alerted = opts?.alerted ?? false;
-    const kind = opts?.kind ?? 'ghost';
-    const hp = kind === 'zombie' ? 1 : 2;
+    const kind = opts?.kind ?? 'medical_orderly';
+    const hp = getEnemyProfile(kind).hp;
     return {
       x: cx,
       y: cy,
@@ -402,12 +385,8 @@ export function createEnemiesSystem({
     return { x: 0, y: 0 };
   }
 
-  function updateEnemySightLoop(inSightNow: boolean, sawZombieInSight: boolean) {
-    const desiredLoopKey: string | null = inSightNow
-      ? sawZombieInSight
-        ? SFX.enemies.husk.idle
-        : SFX.enemies.orderly.idle
-      : null;
+  function updateEnemySightLoop(loopKeyInSight: string | null) {
+    const desiredLoopKey = loopKeyInSight;
     if (desiredLoopKey !== enemySightLoopKey) {
       if (enemySightLoopKey) stopLoopingSfx(enemySightLoopKey);
       if (desiredLoopKey) playLoopingSfx(desiredLoopKey, 0.35);
@@ -434,8 +413,7 @@ export function createEnemiesSystem({
   function updateEnemies(dt: number) {
     enemyDamageCooldownMs = Math.max(0, enemyDamageCooldownMs - dt * 1000);
 
-    let inSightNow = false;
-    let sawZombieInSight = false;
+    let nearestVisible: { dist: number; kind: EnemyKind } | null = null;
 
     for (let selfIndex = 0; selfIndex < enemies.length; selfIndex++) {
       const e = enemies[selfIndex];
@@ -452,7 +430,7 @@ export function createEnemiesSystem({
         }
       }
 
-      if (!inSightNow || !sawZombieInSight) {
+      {
         const maxDist = 9;
         const halfAngle = (10 * Math.PI) / 180;
         if (dist <= maxDist) {
@@ -460,8 +438,9 @@ export function createEnemiesSystem({
           let rel = angle - player.rot;
           rel = Math.atan2(Math.sin(rel), Math.cos(rel));
           if (Math.abs(rel) <= halfAngle && hasLineOfSight(player.x, player.y, e.x, e.y)) {
-            inSightNow = true;
-            if (e.kind === 'zombie') sawZombieInSight = true;
+            if (!nearestVisible || dist < nearestVisible.dist) {
+              nearestVisible = { dist, kind: e.kind };
+            }
           }
         }
       }
@@ -534,7 +513,8 @@ export function createEnemiesSystem({
             }
           }
 
-          const speed = e.mode === 'chase' ? 0.95 : 0.65;
+          const profile = getEnemyProfile(e.kind);
+          const speed = e.mode === 'chase' ? profile.speedChase : profile.speedPatrol;
           const move = Math.min(e.moveRemain, speed * dt);
           if (move > 0) {
             const targetX = e.targetTileX + 0.5;
@@ -556,7 +536,7 @@ export function createEnemiesSystem({
         ) {
           const dmg = rollEnemyDamage(e.kind, getDifficulty());
           player.hp = Math.max(0, player.hp - dmg);
-          playSfx(e.kind === 'zombie' ? SFX.enemies.husk.attack : SFX.enemies.orderly.attack);
+          playSfx(getEnemyProfile(e.kind).attack);
           playSfx(SFX.player.hurtMedium);
           e.attackFlashMs = 220;
           onDamagePulse?.();
@@ -568,7 +548,7 @@ export function createEnemiesSystem({
       }
     }
 
-    updateEnemySightLoop(inSightNow, sawZombieInSight);
+    updateEnemySightLoop(nearestVisible ? getEnemyProfile(nearestVisible.kind).sightLoop : null);
   }
 
   function setEnemies(next: Array<{ x: number; y: number; kind?: EnemyKind }>) {
@@ -615,6 +595,8 @@ export function createEnemiesSystem({
       best.e.hp = Math.max(0, best.e.hp - 1);
       if (best.e.hp <= 0) {
         best.e.alive = false;
+        const deathSfx = getEnemyProfile(best.e.kind).death;
+        if (deathSfx) playSfx(deathSfx);
         const i = enemies.indexOf(best.e);
         if (i >= 0) {
           ensureEnemyGridForCurrentMap();

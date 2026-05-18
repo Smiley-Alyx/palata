@@ -199,12 +199,21 @@ function reapplyEntities() {
     }
 
     if (e.type === 'enemy_spawn') {
-      const kind = (e as { kind?: unknown }).kind;
-      enemiesFromEntities.push({
-        x: e.x,
-        y: e.y,
-        kind: kind === 'ghost' || kind === 'zombie' ? kind : undefined,
-      });
+      const kindRaw = (e as { kind?: unknown }).kind;
+      const allowed: ReadonlyArray<EnemyKind> = [
+        'zombie',
+        'ghost',
+        'skeleton_husk',
+        'medical_orderly',
+        'deformed_patient',
+        'flesh_watcher',
+        'doppelganger',
+      ];
+      const kind =
+        typeof kindRaw === 'string' && (allowed as readonly string[]).includes(kindRaw)
+          ? (kindRaw as EnemyKind)
+          : undefined;
+      enemiesFromEntities.push({ x: e.x, y: e.y, kind });
     }
 
     if (e.type === 'medication') {

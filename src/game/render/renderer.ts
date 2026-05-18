@@ -1,6 +1,8 @@
 import type { Player } from '../../types/game';
+import type { EnemyKind } from '../game-types';
 import { getMap } from '../../state/map-state';
 import { getTextureForMaterial } from './materials';
+import { getEnemyProfile } from '../systems/enemy-profiles';
 
 export function createRenderer({
   ctx,
@@ -271,7 +273,8 @@ export function createRenderer({
   function drawSprites(zBuffer: Float64Array) {
     const enemiesRaw = typeof getEnemies === 'function' ? getEnemies() : [];
     const enemies = enemiesRaw.map((e) => {
-      const mat = (e as { kind?: string }).kind === 'zombie' ? 'zombie' : 'enemy';
+      const kind = (e as { kind?: EnemyKind }).kind;
+      const mat = kind ? getEnemyProfile(kind).material : 'enemy';
       return { x: e.x, y: e.y, alive: e.alive, material: mat, attackFlashMs: e.attackFlashMs, scale: 1 };
     });
     drawSpriteList(zBuffer, enemies);

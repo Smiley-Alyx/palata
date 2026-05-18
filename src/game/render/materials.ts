@@ -51,6 +51,11 @@ const materialToDomId = new Map<string, string>([
   // --- Sprite materials (used by entities/pickups) ---
   ['enemy', 'enemy'],
   ['zombie', 'zombie'],
+  ['skeleton_husk', 'skeleton_husk'],
+  ['medical_orderly', 'medical_orderly'],
+  ['deformed_patient', 'deformed_patient'],
+  ['flesh_watcher', 'flesh_watcher'],
+  ['doppelganger', 'doppelganger'],
   ['health', 'health'],
   ['keyGold', 'goldKey'],
   ['keySilver', 'silverKey'],

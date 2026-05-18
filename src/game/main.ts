@@ -265,8 +265,8 @@ function placeRandomEnemies({
   let placed = 0;
   let attempts = 0;
 
-  const ghostW = difficulty === 'lost' ? 1 : difficulty === 'trapped' ? 2 : 4;
-  const result: Array<{ x: number; y: number; kind: 'zombie' | 'ghost' }> = [];
+  const orderlyW = difficulty === 'lost' ? 1 : difficulty === 'trapped' ? 2 : 4;
+  const result: Array<{ x: number; y: number; kind: 'skeleton_husk' | 'medical_orderly' }> = [];
 
   while (placed < count && attempts < 5000) {
     attempts++;
@@ -277,8 +277,8 @@ function placeRandomEnemies({
     if (visible.has(`${x},${y}`)) continue;
     const dist = Math.hypot(player.x - (x + 0.5), player.y - (y + 0.5));
     if (dist < minSpawnDist) continue;
-    const total = 10 + ghostW;
-    const kind = Math.random() * total < ghostW ? 'ghost' : 'zombie';
+    const total = 10 + orderlyW;
+    const kind = Math.random() * total < orderlyW ? 'medical_orderly' : 'skeleton_husk';
     result.push({ x: x + 0.5, y: y + 0.5, kind });
     placed++;
   }
