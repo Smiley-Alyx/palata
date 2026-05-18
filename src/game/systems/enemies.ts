@@ -569,12 +569,27 @@ export function createEnemiesSystem({
     rebuildEnemyGridFromEnemies();
   }
 
-  function tryShootEnemies() {
-    const maxDist = 10;
-    const halfAngle = (3 * Math.PI) / 180;
+  function damageEnemy(e: Enemy, amount: number): boolean {
+    if (!e.alive) return false;
+    e.hp = Math.max(0, e.hp - amount);
+    if (e.hp <= 0) {
+      e.alive = false;
+      const deathSfx = getEnemyProfile(e.kind).death;
+      if (deathSfx) playSfx(deathSfx);
+      const i = enemies.indexOf(e);
+      if (i >= 0) {
+        ensureEnemyGridForCurrentMap();
+        if (enemyAt) clearEnemyFromGrid(i, e.tileX, e.tileY);
+      }
+      onKillFill?.();
+      onEnemyKilled?.();
+      return true;
+    }
+    return false;
+  }
 
+  function pickEnemyInCone(maxDist: number, halfAngle: number): Enemy | null {
     let best: { e: Enemy; dist: number } | null = null;
-
     for (const e of enemies) {
       if (!e.alive) continue;
       const dx = e.x - player.x;
@@ -590,24 +605,25 @@ export function createEnemiesSystem({
 
       if (!best || dist < best.dist) best = { e, dist };
     }
+    return best ? best.e : null;
+  }
 
-    if (best) {
-      best.e.hp = Math.max(0, best.e.hp - 1);
-      if (best.e.hp <= 0) {
-        best.e.alive = false;
-        const deathSfx = getEnemyProfile(best.e.kind).death;
-        if (deathSfx) playSfx(deathSfx);
-        const i = enemies.indexOf(best.e);
-        if (i >= 0) {
-          ensureEnemyGridForCurrentMap();
-          if (enemyAt) {
-            clearEnemyFromGrid(i, best.e.tileX, best.e.tileY);
-          }
-        }
-        onKillFill?.();
-        onEnemyKilled?.();
-      }
-    }
+  /** Bullet-style hit (pistol). Returns true if an enemy was hit. */
+  function tryShootEnemies(opts?: { range?: number; damage?: number }): boolean {
+    const range = opts?.range ?? 10;
+    const damage = opts?.damage ?? 1;
+    const target = pickEnemyInCone(range, (3 * Math.PI) / 180);
+    if (!target) return false;
+    damageEnemy(target, damage);
+    return true;
+  }
+
+  /** Melee hit (pipe). Wider cone, short range. Returns true if hit. */
+  function tryMeleeHitNearest(opts: { range: number; damage: number }): boolean {
+    const target = pickEnemyInCone(opts.range, (35 * Math.PI) / 180);
+    if (!target) return false;
+    damageEnemy(target, opts.damage);
+    return true;
   }
 
   return {
@@ -617,6 +633,7 @@ export function createEnemiesSystem({
     tick: updateEnemies,
     alertFromNoise,
     tryShootEnemies,
+    tryMeleeHitNearest,
     hitEnemyCircle,
     hitWallCircle,
     createEnemyAtWorld,

@@ -5,6 +5,8 @@ import {
   getPlayer,
   getKeys,
   getInventorySnapshot,
+  getCurrentWeaponDef,
+  getCurrentWeaponAmmo,
   playMusic,
   resetKeys,
   setDifficulty,
@@ -355,6 +357,7 @@ function initHpUi() {
   const hpEl = document.getElementById('hpText');
   const hudHpEl = document.getElementById('hudHealthValue');
   const hudAmmoEl = document.getElementById('hudAmmoValue');
+  const hudWeaponEl = document.getElementById('hudWeaponValue');
   const hudArmorEl = document.getElementById('hudArmorValue');
   const hudMedsEl = document.getElementById('hudMedsValue');
 
@@ -373,6 +376,7 @@ function initHpUi() {
   const sidebarEl = hpEl instanceof HTMLElement ? hpEl : null;
   const hudEl = hudHpEl instanceof HTMLElement ? hudHpEl : null;
   const ammoEl = hudAmmoEl instanceof HTMLElement ? hudAmmoEl : null;
+  const weaponEl = hudWeaponEl instanceof HTMLElement ? hudWeaponEl : null;
   const armorEl = hudArmorEl instanceof HTMLElement ? hudArmorEl : null;
   const medsEl = hudMedsEl instanceof HTMLElement ? hudMedsEl : null;
 
@@ -437,7 +441,11 @@ function initHpUi() {
     if (sidebarEl) sidebarEl.textContent = text;
     if (hudEl) hudEl.textContent = `${pct}%`;
 
-    if (ammoEl) ammoEl.textContent = '50';
+    if (weaponEl) weaponEl.textContent = getCurrentWeaponDef().label;
+    if (ammoEl) {
+      const ammo = getCurrentWeaponAmmo();
+      ammoEl.textContent = ammo === null ? '--' : String(ammo);
+    }
     if (armorEl) armorEl.textContent = '0%';
     if (medsEl) {
       const inv = getInventorySnapshot();

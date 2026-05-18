@@ -20,6 +20,7 @@ import { createLightsSystem } from './systems/lights';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
 import { createItemsSystem, type MedicationSpec } from './systems/items';
+import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
@@ -51,6 +52,7 @@ let hallucinationsSystem: ReturnType<typeof createHallucinationsSystem> | null =
 let itemsSystem: ReturnType<typeof createItemsSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 const inventory = createInventory();
+const weaponsSystem = createWeaponsSystem({ inventory });
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -375,6 +377,35 @@ export function setInventoryOnChanged(cb: (() => void) | null) {
   inventory.setOnChanged(cb);
 }
 
+export function getCurrentWeapon(): WeaponId {
+  return weaponsSystem.getCurrent();
+}
+
+export function getCurrentWeaponDef() {
+  return weaponsSystem.getCurrentDef();
+}
+
+export function setCurrentWeapon(id: WeaponId) {
+  weaponsSystem.setWeapon(id);
+}
+
+export function getCurrentWeaponAmmo(): number | null {
+  return weaponsSystem.getAmmo();
+}
+
+export function setWeaponOnChanged(cb: (() => void) | null) {
+  weaponsSystem.setOnChanged(cb);
+}
+
+// Digit keys 1/2/3 select pipe/pistol/shotgun.
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.repeat) return;
+  if (e.code === 'Digit1') weaponsSystem.setWeapon(WEAPON_IDS[0]);
+  else if (e.code === 'Digit2') weaponsSystem.setWeapon(WEAPON_IDS[1]);
+  else if (e.code === 'Digit3') weaponsSystem.setWeapon(WEAPON_IDS[2]);
+  else if (e.code === 'KeyQ') weaponsSystem.cycleWeapon(1);
+});
+
 export function getSprites() {
   ensureEngine();
   return pickupsSystem?.getSprites() ?? [];
@@ -604,10 +635,25 @@ function ensureEngine() {
         audio.playSfx(SFX.footsteps.concrete);
       },
       onShoot: () => {
-        audio.playSfx(SFX.weapons.pistol.fire);
-        renderer?.triggerFlash();
-        enemiesSystem?.alertFromNoise(player.x, player.y, 9);
-        enemiesSystem?.tryShootEnemies();
+        const result = weaponsSystem.tryFire();
+        const def = result.weapon;
+        if (!result.fired) {
+          if (def.emptySfx) audio.playSfx(def.emptySfx);
+          return;
+        }
+        audio.playSfx(def.fireSfx);
+        if (def.flash) renderer?.triggerFlash();
+        enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius);
+        if (result.kind === 'melee') {
+          const hit = enemiesSystem?.tryMeleeHitNearest({
+            range: def.range,
+            damage: def.damage,
+          });
+          if (hit && def.hitFleshSfx) audio.playSfx(def.hitFleshSfx);
+          else if (!hit && def.hitWallSfx) audio.playSfx(def.hitWallSfx);
+        } else {
+          enemiesSystem?.tryShootEnemies({ range: def.range, damage: def.damage });
+        }
       },
       onTick: (dt: number) => {
         lightsSystem?.tick(dt);
@@ -662,6 +708,10 @@ export function setMap(grid: number[][]) {
   itemsSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
   inventory.reset();
+  // Default starter loadout: a few rounds for the pistol so the new
+  // weapon system isn't useless on a fresh map. Tuning happens per-level
+  // once levels are redesigned.
+  weaponsSystem.reset({ pistolAmmo: 12, shotgunAmmo: 0 });
   rawTriggers = [];
   rawLights = [];
   rawEntities = [];
