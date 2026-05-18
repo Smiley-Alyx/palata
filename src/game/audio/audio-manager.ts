@@ -4,7 +4,11 @@ export type MusicConfig = {
   volume?: number;
 };
 
-export type SfxKey = 'doorOpen' | 'footstep' | 'shoot' | 'damage' | 'enemy' | 'zombie' | 'health';
+// SfxKey is intentionally a free-form string so the registry in
+// `sfx-config.ts` can grow without touching the audio manager.
+// The narrative roadmap uses namespaced keys (e.g. `weapon.pipe.swing`)
+// alongside legacy short keys (`doorOpen`, `footstep`, ...) for back-compat.
+export type SfxKey = string;
 
 export class AudioManager {
   private unlocked = false;
