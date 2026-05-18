@@ -6,7 +6,6 @@ import { createRenderer } from './render/renderer';
 import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX, SFX } from './audio/sfx-config';
 import {
-  getCellMaterial,
   getMap,
   setLegend as setLegendState,
   setMap as setMapState,
@@ -242,84 +241,11 @@ export function getKeys() {
   return ownedKeys;
 }
 
-type WallFace = 'N' | 'S' | 'E' | 'W';
-
-type AtlasKind = 'wall' | 'door' | 'stand';
-
-function getAtlasKind(m: string | number): AtlasKind | null {
-  if (m === 'wall' || m === 'brick' || m === 1) return 'wall';
-  if (m === 'door' || m === 6 || m === 3) return 'door';
-  if (m === 'stand' || m === 4) return 'stand';
-  return null;
-}
-
-function encodeAtlasTextureId(kind: AtlasKind, tile: number): number {
-  const t = ((tile % 16) + 16) % 16;
-  if (kind === 'wall') return 100 + t;
-  if (kind === 'door') return 200 + t;
-  return 300 + t;
-}
-
-function getAtlasVariantTextureId({
-  map,
-  xMap,
-  yMap,
-  face,
-  isVerticalHit,
-  kind,
-}: {
-  map: number[][];
-  xMap: number;
-  yMap: number;
-  face: WallFace;
-  isVerticalHit: boolean;
-  kind: AtlasKind;
-}): number {
-  const w = map[0]?.length ?? 0;
-  const h = map.length;
-
-  const isSameKind = (x: number, y: number) => {
-    if (x < 0 || x >= w || y < 0 || y >= h) return false;
-    const m = getCellMaterial(x, y);
-    return getAtlasKind(m) === kind;
-  };
-
-  let segStart = 0;
-  if (isVerticalHit) {
-    segStart = yMap;
-    while (segStart > 0 && isSameKind(xMap, segStart - 1)) segStart--;
-
-    const parity = Math.abs(xMap) % 2;
-    const salt = kind === 'door' ? 101 : kind === 'stand' ? 203 : 307;
-    const base = Math.abs(segStart * 7 + (face === 'W' ? 13 : 29) + salt) % 16;
-    const tile = parity === 0 ? base : (base + 1) % 16;
-    return encodeAtlasTextureId(kind, tile);
-  }
-
-  segStart = xMap;
-  while (segStart > 0 && isSameKind(segStart - 1, yMap)) segStart--;
-
-  const parity = Math.abs(yMap) % 2;
-  const salt = kind === 'door' ? 101 : kind === 'stand' ? 203 : 307;
-  const base = Math.abs(segStart * 7 + (face === 'S' ? 17 : 31) + salt) % 16;
-  const tile = parity === 0 ? base : (base + 1) % 16;
-  return encodeAtlasTextureId(kind, tile);
-}
-
 function getWallTextureId(hit: RayHit<string | number>): string | number {
-  const map = getMap();
-  if (!map) return hit.material;
-  const kind = getAtlasKind(hit.material);
-  if (!kind) return hit.material;
-  const face = hit.face as WallFace;
-  return getAtlasVariantTextureId({
-    map,
-    xMap: hit.xMap,
-    yMap: hit.yMap,
-    face,
-    isVerticalHit: hit.isVerticalHit,
-    kind,
-  });
+  // After moving from sliced 4x4 atlases to single per-material textures,
+  // the wall id is just the raw material name from the legend / materialsWall.
+  // (Per-segment variation will come back later if needed via materialsWall.)
+  return hit.material;
 }
 
 export function setDifficulty(difficulty: Difficulty) {
