@@ -1,137 +1,86 @@
-type AtlasSlice = { domId: string; tile: number };
+/**
+ * Material name -> DOM image id resolver.
+ *
+ * Levels declare cell semantics through their `legend` (e.g. `"1": "wall"`).
+ * The engine then asks `getTextureForMaterial(<material name>)` to draw a
+ * wall slice, sprite or floor/ceiling pattern. We map every supported
+ * material name to a concrete DOM `<img>` id loaded by `index.html`.
+ *
+ * For the narrative-aligned content we use individual textures (no atlas
+ * slicing). Numeric material ids are not used by current levels and are
+ * therefore not supported anymore.
+ */
 
-const textureById = new Map<number, string | AtlasSlice>([
-  [1, { domId: 'wallAtlas', tile: 0 }],
-  [100, { domId: 'wallAtlas', tile: 0 }],
-  [101, { domId: 'wallAtlas', tile: 1 }],
-  [102, { domId: 'wallAtlas', tile: 2 }],
-  [103, { domId: 'wallAtlas', tile: 3 }],
-  [104, { domId: 'wallAtlas', tile: 4 }],
-  [105, { domId: 'wallAtlas', tile: 5 }],
-  [106, { domId: 'wallAtlas', tile: 6 }],
-  [107, { domId: 'wallAtlas', tile: 7 }],
-  [108, { domId: 'wallAtlas', tile: 8 }],
-  [109, { domId: 'wallAtlas', tile: 9 }],
-  [110, { domId: 'wallAtlas', tile: 10 }],
-  [111, { domId: 'wallAtlas', tile: 11 }],
-  [112, { domId: 'wallAtlas', tile: 12 }],
-  [113, { domId: 'wallAtlas', tile: 13 }],
-  [114, { domId: 'wallAtlas', tile: 14 }],
-  [115, { domId: 'wallAtlas', tile: 15 }],
-  [2, { domId: 'windowAtlas', tile: 0 }],
-  [3, { domId: 'doorAtlas', tile: 0 }],
-  [200, { domId: 'doorAtlas', tile: 0 }],
-  [201, { domId: 'doorAtlas', tile: 1 }],
-  [202, { domId: 'doorAtlas', tile: 2 }],
-  [203, { domId: 'doorAtlas', tile: 3 }],
-  [204, { domId: 'doorAtlas', tile: 4 }],
-  [205, { domId: 'doorAtlas', tile: 5 }],
-  [206, { domId: 'doorAtlas', tile: 6 }],
-  [207, { domId: 'doorAtlas', tile: 7 }],
-  [208, { domId: 'doorAtlas', tile: 8 }],
-  [209, { domId: 'doorAtlas', tile: 9 }],
-  [210, { domId: 'doorAtlas', tile: 10 }],
-  [211, { domId: 'doorAtlas', tile: 11 }],
-  [212, { domId: 'doorAtlas', tile: 12 }],
-  [213, { domId: 'doorAtlas', tile: 13 }],
-  [214, { domId: 'doorAtlas', tile: 14 }],
-  [215, { domId: 'doorAtlas', tile: 15 }],
-  [4, { domId: 'standAtlas', tile: 0 }],
-  [300, { domId: 'standAtlas', tile: 0 }],
-  [301, { domId: 'standAtlas', tile: 1 }],
-  [302, { domId: 'standAtlas', tile: 2 }],
-  [303, { domId: 'standAtlas', tile: 3 }],
-  [304, { domId: 'standAtlas', tile: 4 }],
-  [305, { domId: 'standAtlas', tile: 5 }],
-  [306, { domId: 'standAtlas', tile: 6 }],
-  [307, { domId: 'standAtlas', tile: 7 }],
-  [308, { domId: 'standAtlas', tile: 8 }],
-  [309, { domId: 'standAtlas', tile: 9 }],
-  [310, { domId: 'standAtlas', tile: 10 }],
-  [311, { domId: 'standAtlas', tile: 11 }],
-  [312, { domId: 'standAtlas', tile: 12 }],
-  [313, { domId: 'standAtlas', tile: 13 }],
-  [314, { domId: 'standAtlas', tile: 14 }],
-  [315, { domId: 'standAtlas', tile: 15 }],
-  [10, 'enemy'],
-  [11, 'zombie'],
-  [12, 'health'],
-  [13, 'goldKey'],
-  [14, 'silverKey'],
-  [15, 'bloodKey'],
+const materialToDomId = new Map<string, string>([
+  // --- Generic legend names used by the existing levels ---
+  // (level1..level6 hospital theme uses these as defaults)
+  ['wall', 'medical_tiles'],
+  ['window', 'reinforced_window'],
+  ['door', 'medical_door'],
+  ['stand', 'hospital_wall_stripe'],
+
+  // --- level0 (historical) extra names ---
+  ['brick', 'concrete_tunnel'],
+  ['stand1', 'hospital_wall_stripe'],
+  ['stand2', 'hospital_wall_stripe'],
+  ['stand3', 'hospital_wall_stripe'],
+  ['gstand1', 'metal_panels'],
+  ['gstand2', 'metal_panels'],
+
+  // --- Direct narrative texture names (for materialsWall / change_wall_material) ---
+  ['hospital_wall_stripe', 'hospital_wall_stripe'],
+  ['medical_tiles', 'medical_tiles'],
+  ['concrete_tunnel', 'concrete_tunnel'],
+  ['metal_panels', 'metal_panels'],
+  ['metal_emergency', 'metal_emergency'],
+  ['organic_wall', 'organic_wall'],
+  ['ventilation_shaft', 'ventilation_shaft'],
+  ['flesh_wall', 'flesh_wall'],
+  ['industrial_flesh', 'industrial_flesh'],
+  ['medical_door', 'medical_door'],
+  ['blast_door', 'blast_door'],
+  ['reinforced_window', 'reinforced_window'],
+  ['exit', 'exit'],
+  ['key_door', 'keyDoor'],
+
+  // --- Floor / ceiling materials (used by setBackgroundMaterials) ---
+  ['seamless_floor', 'seamless_floor'],
+  ['organic_floor', 'organic_floor'],
+  ['seamless_ceiling', 'seamless_ceiling'],
+
+  // --- Sprite materials (used by entities/pickups) ---
+  ['enemy', 'enemy'],
+  ['zombie', 'zombie'],
+  ['health', 'health'],
+  ['keyGold', 'goldKey'],
+  ['keySilver', 'silverKey'],
+  ['keyBlood', 'bloodKey'],
 ]);
 
-const materialToTextureId: Map<string, number> = new Map([
-  ['wall', 1],
-  ['window', 2],
-  ['door', 3],
-  ['stand', 4],
-  ['enemy', 10],
-  ['zombie', 11],
-  ['health', 12],
-  ['keyGold', 13],
-  ['keySilver', 14],
-  ['keyBlood', 15],
-]);
+const cache = new Map<string, CanvasImageSource | null>();
 
-const cache: Map<string, CanvasImageSource | null> = new Map();
-
-function getDomTextureByNumericId(id: number): CanvasImageSource | null {
-  const entry = textureById.get(id);
-  if (!entry) return null;
-
-  const key = typeof entry === 'string' ? entry : `${entry.domId}#${entry.tile}`;
-  const cached = cache.get(key);
+function lookupByDomId(domId: string): CanvasImageSource | null {
+  const cached = cache.get(domId);
   if (cached !== undefined) return cached;
 
-  if (typeof entry === 'string') {
-    const el = document.getElementById(entry);
-    const img = el instanceof HTMLImageElement ? el : null;
-    cache.set(key, img);
-    return img;
-  }
+  const el = document.getElementById(domId);
+  const img = el instanceof HTMLImageElement ? el : null;
 
-  const baseEl = document.getElementById(entry.domId);
-  const baseImg = baseEl instanceof HTMLImageElement ? baseEl : null;
-  if (!baseImg || baseImg.naturalWidth <= 0 || baseImg.naturalHeight <= 0) {
-    cache.set(key, null);
+  // Don't cache `null` while the image is still loading: a follow-up call
+  // after `naturalWidth` becomes non-zero must resolve to the real texture.
+  if (img && img.naturalWidth <= 0) {
     return null;
   }
 
-  const cols = 4;
-  const rows = 4;
-  const tileW = Math.floor(baseImg.naturalWidth / cols);
-  const tileH = Math.floor(baseImg.naturalHeight / rows);
-  const tx = entry.tile % cols;
-  const ty = Math.floor(entry.tile / cols);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = tileW;
-  canvas.height = tileH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    cache.set(key, null);
-    return null;
-  }
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(baseImg, tx * tileW, ty * tileH, tileW, tileH, 0, 0, tileW, tileH);
-
-  cache.set(key, canvas);
-  return canvas;
+  cache.set(domId, img);
+  return img;
 }
 
-export function getTextureForMaterial(
-  materialOrId: string | number,
-): CanvasImageSource | null {
-  if (typeof materialOrId === 'number') {
-    return getDomTextureByNumericId(materialOrId);
-  }
+export function getTextureForMaterial(materialOrId: string | number): CanvasImageSource | null {
+  if (typeof materialOrId !== 'string') return null;
 
-  if (typeof materialOrId === 'string') {
-    const textureId = materialToTextureId.get(materialOrId);
-    if (!textureId) return null;
-    return getDomTextureByNumericId(textureId);
-  }
+  const domId = materialToDomId.get(materialOrId);
+  if (!domId) return null;
 
-  return null;
+  return lookupByDomId(domId);
 }

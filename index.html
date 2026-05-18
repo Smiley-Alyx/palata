@@ -43,19 +43,34 @@
 
           <div id="bloodOverlay" class="blood-overlay" style="display: none"></div>
           <div style="display: none">
-          <img id="wallAtlas" src="assets/textures/walls/wall.png" />
-          <img id="doorAtlas" src="assets/textures/doors/door.png" />
-          <img id="windowAtlas" src="assets/textures/windows/window.png" />
-          <img id="standAtlas" src="assets/textures/walls/stand.png" />
-          <img id="enemy" src="assets/sprites/enemies/enemy.png" />
-          <img id="zombie" src="assets/sprites/enemies/zombie.png" />
-          <img id="playerSprite" src="assets/sprites/npc/player.png" />
-          <img id="goldKey" src="assets/sprites/pickups/keys/gold_key.png" />
-          <img id="silverKey" src="assets/sprites/pickups/keys/silver_key.png" />
-          <img id="bloodKey" src="assets/sprites/pickups/keys/blood_key.png" />
-          <img id="health" src="assets/sprites/pickups/health/health.png" />
-          <img id="exit" src="assets/textures/doors/exit.png" />
-          <img id="keyDoor" src="assets/textures/doors/key_door.png" />
+            <!-- Wall textures (narrative-aligned) -->
+            <img id="hospital_wall_stripe" src="assets/textures/walls/hospital_wall_stripe.png" />
+            <img id="medical_tiles" src="assets/textures/walls/medical_tiles.png" />
+            <img id="concrete_tunnel" src="assets/textures/walls/concrete_tunnel.png" />
+            <img id="metal_panels" src="assets/textures/walls/metal_panels.png" />
+            <img id="metal_emergency" src="assets/textures/walls/metal_emergency.png" />
+            <img id="organic_wall" src="assets/textures/walls/organic_wall.png" />
+            <img id="ventilation_shaft" src="assets/textures/walls/ventilation_shaft.png" />
+            <img id="flesh_wall" src="assets/textures/flesh/flesh_wall.png" />
+            <img id="industrial_flesh" src="assets/textures/flesh/industrial_flesh.png" />
+            <!-- Doors / windows -->
+            <img id="medical_door" src="assets/textures/doors/medical_door.png" />
+            <img id="blast_door" src="assets/textures/doors/blast_door.png" />
+            <img id="reinforced_window" src="assets/textures/windows/reinforced_window.png" />
+            <img id="exit" src="assets/textures/doors/exit.png" />
+            <img id="keyDoor" src="assets/textures/doors/key_door.png" />
+            <!-- Floors / ceilings -->
+            <img id="seamless_floor" src="assets/textures/floors/seamless_floor.png" />
+            <img id="organic_floor" src="assets/textures/floors/organic_floor.png" />
+            <img id="seamless_ceiling" src="assets/textures/ceilings/seamless_ceiling.png" />
+            <!-- Sprites -->
+            <img id="enemy" src="assets/sprites/enemies/enemy.png" />
+            <img id="zombie" src="assets/sprites/enemies/zombie.png" />
+            <img id="playerSprite" src="assets/sprites/npc/player.png" />
+            <img id="goldKey" src="assets/sprites/pickups/keys/gold_key.png" />
+            <img id="silverKey" src="assets/sprites/pickups/keys/silver_key.png" />
+            <img id="bloodKey" src="assets/sprites/pickups/keys/blood_key.png" />
+            <img id="health" src="assets/sprites/pickups/health/health.png" />
           </div>
           <script type="module" src="/src/game/main.ts"></script>
         </main>
@@ -89,8 +104,16 @@
           <div class="hud-keys hud-block">
             <div class="hud-keys-row">
               <img class="hud-key" id="hudKeyGold" src="assets/sprites/pickups/keys/gold_key.png" />
-              <img class="hud-key" id="hudKeySilver" src="assets/sprites/pickups/keys/silver_key.png" />
-              <img class="hud-key" id="hudKeyBlood" src="assets/sprites/pickups/keys/blood_key.png" />
+              <img
+                class="hud-key"
+                id="hudKeySilver"
+                src="assets/sprites/pickups/keys/silver_key.png"
+              />
+              <img
+                class="hud-key"
+                id="hudKeyBlood"
+                src="assets/sprites/pickups/keys/blood_key.png"
+              />
             </div>
             <div class="hud-label">KEYS</div>
           </div>
@@ -118,12 +141,28 @@
               <button class="btn" id="musicToggleBtn" type="button">Music: on</button>
               <label class="label">
                 Music volume
-                <input class="range" id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.5" />
+                <input
+                  class="range"
+                  id="musicVolume"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.5"
+                />
               </label>
               <button class="btn" id="sfxToggleBtn" type="button">SFX: on</button>
               <label class="label">
                 SFX volume
-                <input class="range" id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.7" />
+                <input
+                  class="range"
+                  id="sfxVolume"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.7"
+                />
               </label>
               <div class="hint">Первый клик по окну игры включает звук (ограничения браузера).</div>
             </div>
