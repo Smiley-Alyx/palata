@@ -122,9 +122,6 @@ export function createEnemiesSystem({
   }
 
   function rollEnemyKindFromDifficulty(difficulty: Difficulty): EnemyKind {
-    // Random spawner uses only the two baseline kinds. Narrative-specific
-    // kinds (deformed_patient / flesh_watcher / doppelganger) are placed
-    // explicitly via level entities.
     const orderlyW = orderlyWeightForDifficulty(difficulty);
     const total = 10 + orderlyW;
     const r = Math.random() * total;

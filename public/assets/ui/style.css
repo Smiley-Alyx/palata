@@ -188,13 +188,6 @@ body {
   opacity: 0.65;
 }
 
-/*
- * Perception-state overlay.
- *
- * Stacked on top of the canvas to add a subtle full-screen "lens" effect that
- * matches the narrative state. Each variant is opt-in via a `data-state` attr
- * driven from main.ts.
- */
 .perception-overlay {
   position: absolute;
   inset: 0;

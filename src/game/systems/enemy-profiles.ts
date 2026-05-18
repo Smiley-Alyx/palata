@@ -1,32 +1,14 @@
 import type { Difficulty, EnemyKind } from '../game-types';
 import { SFX } from '../audio/sfx-config';
 
-/**
- * Per-kind enemy tuning + asset routing.
- *
- * Centralizes everything the AI / renderer / audio layer need to know about
- * a specific enemy kind so that adding a new enemy is one entry here plus a
- * sprite registration in `index.html`.
- *
- * `sightLoop`/`attack`/`death` are namespaced SFX keys (see `sfx-config.ts`).
- * `material` is the DOM image id resolved by `materials.ts`.
- */
-
 export type EnemyProfile = {
-  /** Sprite material name (resolved through `getTextureForMaterial`). */
   material: string;
-  /** HP at spawn. */
   hp: number;
-  /** Patrol/chase speed multipliers. */
   speedPatrol: number;
   speedChase: number;
-  /** Looping idle/sight SFX or `null` to skip. */
   sightLoop: string | null;
-  /** Discrete attack SFX. */
   attack: string;
-  /** Discrete death SFX or `null`. */
   death: string | null;
-  /** Damage-roll bracket per difficulty. */
   damage: Record<Difficulty, { min: number; max: number }>;
 };
 
@@ -106,10 +88,8 @@ const DOPPELGANGER: EnemyProfile = {
 };
 
 const PROFILES: Record<EnemyKind, EnemyProfile> = {
-  // Legacy aliases:
   zombie: HUSK,
   ghost: ORDERLY,
-  // Narrative kinds:
   skeleton_husk: HUSK,
   medical_orderly: ORDERLY,
   deformed_patient: DEFORMED,
@@ -122,8 +102,7 @@ export function getEnemyProfile(kind: EnemyKind): EnemyProfile {
 }
 
 export function rollEnemyDamage(kind: EnemyKind, difficulty: Difficulty): number {
-  const profile = getEnemyProfile(kind);
-  const bracket = profile.damage[difficulty];
+  const bracket = getEnemyProfile(kind).damage[difficulty];
   const raw = bracket.min + Math.floor(Math.random() * (bracket.max - bracket.min + 1));
   return Math.max(1, raw);
 }

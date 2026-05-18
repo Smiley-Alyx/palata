@@ -1,27 +1,6 @@
 import type { PerceptionState } from './world-state';
 import { SFX } from '../audio/sfx-config';
 
-/**
- * Atmospheric layer.
- *
- * Drives two long-running looping audio beds:
- *  - **Breath**  : one of the four player breathing loops, picked from the
- *                  current perception stage (`medicated` -> calm,
- *                  `withdrawal` -> stress, `infected`/`nightmare` -> panic,
- *                  `predator` -> predator).
- *  - **Ambient** : a low whisper / heartbeat / machine bed that mirrors the
- *                  same perception, layered under whatever music is playing.
- *
- * Both are smoothly switched: when the desired loop differs from the active
- * one we stop the previous and start the new (audio-manager handles the
- * underlying `<audio>` lifecycle).
- *
- * Plus distance-attenuated **machinery emitters** placed by levels through
- * `ambient_loop` entities. World-state filtering happens upstream in
- * `rayc.ts/reapplyEntities` (so a `flesh_door` machine can be gated by
- * `infected`).
- */
-
 export type AmbientEmitterSubtype =
   | 'fluorescent_buzz'
   | 'machine_hum'
@@ -34,9 +13,7 @@ export type AmbientEmitterSpec = {
   x: number;
   y: number;
   subtype?: AmbientEmitterSubtype | string;
-  /** Falloff radius — sound is silent beyond this distance. */
   radius?: number;
-  /** Max volume at zero distance. */
   volume?: number;
 };
 
@@ -55,7 +32,6 @@ type Emitter = {
   subtype: AmbientEmitterSubtype;
   radius: number;
   volume: number;
-  /** Stable loop key used when starting/updating the looping SFX. */
   loopKey: string;
 };
 
@@ -71,7 +47,7 @@ function pickAmbientBed(stages: ReadonlyArray<PerceptionState>): string | null {
   if (stages.includes('nightmare')) return SFX.ambient.heartbeatWall;
   if (stages.includes('infected')) return SFX.ambient.distantScream;
   if (stages.includes('withdrawal')) return SFX.hallucinations.whisperLoop;
-  return null; // medicated / clean: no ambient bed (let the music carry).
+  return null;
 }
 
 export function createAmbienceSystem({
@@ -91,14 +67,9 @@ export function createAmbienceSystem({
   let activeBed: string | null = null;
 
   let emitters: Emitter[] = [];
-  // Per-emitter loop key currently playing (for distance-based attenuation).
-  // We give each emitter a unique loop key derived from its index so several
-  // emitters of the same subtype can co-exist without fighting over one
-  // <audio> element in the audio manager.
   let activeEmitterKeys: string[] = [];
 
   function setEmitters(next: AmbientEmitterSpec[]) {
-    // Stop everything that was running.
     for (const k of activeEmitterKeys) stopLoopingSfx(k);
     activeEmitterKeys = [];
 
@@ -140,7 +111,6 @@ export function createAmbienceSystem({
   function tick(_dt: number) {
     const stages = getPerceptionStages();
 
-    // --- Breath loop ---
     const wantBreath = pickBreathLoop(stages);
     if (wantBreath !== activeBreath) {
       if (activeBreath) stopLoopingSfx(activeBreath);
@@ -148,7 +118,6 @@ export function createAmbienceSystem({
       activeBreath = wantBreath;
     }
 
-    // --- Ambient bed ---
     const wantBed = pickAmbientBed(stages);
     if (wantBed !== activeBed) {
       if (activeBed) stopLoopingSfx(activeBed);
@@ -156,28 +125,19 @@ export function createAmbienceSystem({
       activeBed = wantBed;
     }
 
-    // --- Distance-attenuated emitters ---
     const stillActive = new Set<string>();
     for (const e of emitters) {
       const d = Math.hypot(player.x - e.x, player.y - e.y);
       if (d >= e.radius) {
-        // Out of range: silence by stopping the looping element if active.
-        // (We rely on the audio manager keying by string to dedupe.)
-        if (activeEmitterKeys.includes(e.loopKey)) {
-          stopLoopingSfx(e.loopKey);
-        }
+        if (activeEmitterKeys.includes(e.loopKey)) stopLoopingSfx(e.loopKey);
         continue;
       }
       const fall = 1 - d / e.radius;
       const vol = Math.max(0, Math.min(1, e.volume * fall));
-      // Re-issue play call: the audio manager updates volume in-place
-      // when the same key is already running. Override the src so multiple
-      // emitters with the same subtype don't fight over a single channel.
       const src = resolveSfxSrc(EMITTER_SFX[e.subtype]);
       playLoopingSfx(e.loopKey, vol, src);
       stillActive.add(e.loopKey);
     }
-    // Clean up emitters that fell out of range so re-entering retriggers play.
     activeEmitterKeys = Array.from(stillActive);
   }
 

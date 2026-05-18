@@ -460,21 +460,18 @@ function initHpUi() {
       docsEl.textContent = String(inv.document);
     }
     if (overlayEl) {
-      // Pick the strongest active perception stage; `predator` > `nightmare`
-      // > `infected` > `withdrawal` > `medicated`. Default is `clean`.
       const stages = getPerceptionStages();
-      const next =
-        stages.includes('predator')
-          ? 'predator'
-          : stages.includes('nightmare')
-            ? 'nightmare'
-            : stages.includes('infected')
-              ? 'infected'
-              : stages.includes('withdrawal')
-                ? 'withdrawal'
-                : stages.includes('medicated')
-                  ? 'medicated'
-                  : 'clean';
+      const next = stages.includes('predator')
+        ? 'predator'
+        : stages.includes('nightmare')
+          ? 'nightmare'
+          : stages.includes('infected')
+            ? 'infected'
+            : stages.includes('withdrawal')
+              ? 'withdrawal'
+              : stages.includes('medicated')
+                ? 'medicated'
+                : 'clean';
       if (overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
     }
     syncKeys();

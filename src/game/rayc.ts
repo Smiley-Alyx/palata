@@ -420,7 +420,6 @@ export function setWeaponOnChanged(cb: (() => void) | null) {
   weaponsSystem.setOnChanged(cb);
 }
 
-// Digit keys 1/2/3 select pipe/pistol/shotgun.
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.repeat) return;
   if (e.code === 'Digit1') weaponsSystem.setWeapon(WEAPON_IDS[0]);
@@ -741,9 +740,6 @@ export function setMap(grid: number[][]) {
   ambienceSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
   inventory.reset();
-  // Default starter loadout: a few rounds for the pistol so the new
-  // weapon system isn't useless on a fresh map. Tuning happens per-level
-  // once levels are redesigned.
   weaponsSystem.reset({ pistolAmmo: 12, shotgunAmmo: 0 });
   rawTriggers = [];
   rawLights = [];

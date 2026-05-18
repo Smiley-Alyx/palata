@@ -1,20 +1,6 @@
 import type { Inventory, InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 
-/**
- * Player weapon system.
- *
- * Tracks which weapon is currently equipped and routes the engine's
- * `onShoot` event to the right SFX + gameplay effect:
- *
- *  - `pipe`     melee, no ammo, short range (handled by `tryMeleeHitNearest`).
- *  - `pistol`   ranged, consumes `pistol_ammo` from inventory.
- *  - `shotgun`  ranged, consumes `shotgun_ammo` from inventory.
- *
- * Weapon switching is exposed via `setWeapon(id)`; the engine input layer
- * binds digit keys 1/2/3 to it (see `rayc.ts`).
- */
-
 export type WeaponId = 'pipe' | 'pistol' | 'shotgun';
 
 export const WEAPON_IDS: readonly WeaponId[] = ['pipe', 'pistol', 'shotgun'];
@@ -22,22 +8,15 @@ export const WEAPON_IDS: readonly WeaponId[] = ['pipe', 'pistol', 'shotgun'];
 export type WeaponDef = {
   id: WeaponId;
   label: string;
-  /** Inventory ammo bucket, or `null` for melee weapons. */
   ammoId: InventoryItemId | null;
   range: number;
   fireSfx: string;
   emptySfx: string | null;
-  /** Hit-flesh SFX (melee only). */
   hitFleshSfx: string | null;
-  /** Hit-wall SFX (melee only). */
   hitWallSfx: string | null;
-  /** Cooldown between shots / swings (ms). */
   cooldownMs: number;
-  /** Damage per hit. */
   damage: number;
-  /** Whether the weapon plays a muzzle/screen flash. */
   flash: boolean;
-  /** Noise radius alerting nearby enemies. */
   noiseRadius: number;
 };
 
@@ -96,7 +75,6 @@ export type WeaponShotResult = {
   weapon: WeaponDef;
   kind: WeaponShotKind;
   fired: boolean;
-  /** True when the trigger was pulled but no ammo was available. */
   outOfAmmo: boolean;
 };
 
@@ -104,14 +82,11 @@ export function createWeaponsSystem({ inventory }: { inventory: Inventory }) {
   let current: WeaponId = 'pipe';
   let onChanged: (() => void) | null = null;
 
-  /** Default starting ammo on level start: handed out via `reset()`. */
   function reset(opts?: { pistolAmmo?: number; shotgunAmmo?: number }) {
-    const want = {
-      pistol_ammo: opts?.pistolAmmo ?? 0,
-      shotgun_ammo: opts?.shotgunAmmo ?? 0,
-    };
-    if (want.pistol_ammo > 0) inventory.add('pistol_ammo', want.pistol_ammo);
-    if (want.shotgun_ammo > 0) inventory.add('shotgun_ammo', want.shotgun_ammo);
+    const pistolAmmo = opts?.pistolAmmo ?? 0;
+    const shotgunAmmo = opts?.shotgunAmmo ?? 0;
+    if (pistolAmmo > 0) inventory.add('pistol_ammo', pistolAmmo);
+    if (shotgunAmmo > 0) inventory.add('shotgun_ammo', shotgunAmmo);
     current = 'pipe';
     onChanged?.();
   }
@@ -139,8 +114,7 @@ export function createWeaponsSystem({ inventory }: { inventory: Inventory }) {
   function cycleWeapon(direction: 1 | -1) {
     const i = WEAPON_IDS.indexOf(current);
     const n = WEAPON_IDS.length;
-    const next = WEAPON_IDS[(i + direction + n) % n];
-    setWeapon(next);
+    setWeapon(WEAPON_IDS[(i + direction + n) % n]);
   }
 
   function tryFire(): WeaponShotResult {
