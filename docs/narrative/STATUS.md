@@ -19,12 +19,12 @@
 
 ## 2. Сюжет / 5. Главный герой
 
-| Элемент                                                | Код                                           | Статус                                                      |
-| ------------------------------------------------------ | --------------------------------------------- | ----------------------------------------------------------- |
-| Player base (HP, движение)                             | `src/types/game.d.ts`, `src/engine/engine.ts` | done                                                        |
-| Inventory (медикаменты, инъекторы)                     | —                                             | todo                                                        |
-| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial (states + medication mutex done; pickups/HUD — нет) |
-| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | todo (canvas есть, логика — нет)                            |
+| Элемент                                                | Код                                           | Статус                                                        |
+| ------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------- |
+| Player base (HP, движение)                             | `src/types/game.d.ts`, `src/engine/engine.ts` | done                                                          |
+| Inventory (медикаменты, инъекторы)                     | `src/game/systems/inventory.ts` + `items.ts`  | partial (счётчики + medication pickup; document/ammo — позже) |
+| Трансформация (medicated/withdrawal/infected/predator) | `src/game/systems/world-state.ts`             | partial (states + medication mutex done; pickups/HUD — нет)   |
+| HUD-лицо как индикатор состояния                       | `index.html` (`#hudPortrait`)                 | todo (canvas есть, логика — нет)                              |
 
 ## 3. Повествование без катсцен
 
@@ -69,15 +69,15 @@
 
 ## 8. Игровые механики
 
-| Элемент                          | Код                                                                  | Статус                                              |
-| -------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
-| Базовый movement / collision     | `engine.ts`                                                          | done                                                |
-| Двери / ключи / замки            | `src/game/systems/doors.ts`                                          | done                                                |
-| Pickups (health, keys)           | `src/game/systems/pickups.ts`                                        | done                                                |
-| Triggers (enter_zone + actions)  | `src/game/systems/triggers.ts`                                       | done                                                |
-| Medication mechanic              | —                                                                    | todo                                                |
-| Infection / perception switching | `world-state.ts` (`setMedication`), `triggers.ts` (`set_medication`) | partial (триггеры + API готовы, item-pickups — нет) |
-| Predator abilities               | —                                                                    | todo                                                |
+| Элемент                          | Код                                                                  | Статус                                                   |
+| -------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------- | --- |
+| Базовый movement / collision     | `engine.ts`                                                          | done                                                     |
+| Двери / ключи / замки            | `src/game/systems/doors.ts`                                          | done                                                     |
+| Pickups (health, keys)           | `src/game/systems/pickups.ts`                                        | done                                                     |
+| Triggers (enter_zone + actions)  | `src/game/systems/triggers.ts`                                       | done                                                     |
+| Medication mechanic              | `items.ts`, `setMedication`                                          | partial (haloperidol → medicated; injector только склад) |     |
+| Infection / perception switching | `world-state.ts` (`setMedication`), `triggers.ts` (`set_medication`) | partial (триггеры + API готовы, item-pickups — нет)      |
+| Predator abilities               | —                                                                    | todo                                                     |
 
 ## 9. Оружие
 
@@ -91,13 +91,13 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 
 ## 10. Предметы
 
-| Элемент                   | Ассеты                                                           | Код               | Статус |
-| ------------------------- | ---------------------------------------------------------------- | ----------------- | ------ |
-| Silver / Gold / Blood key | `sprites/pickups/keys/*.png`                                     | `pickups.ts`, HUD | done   |
-| Health (medkit)           | `sprites/pickups/health/*.png`                                   | `pickups.ts`      | done   |
-| Haloperidol               | `sprites/pickups/medication/haloperidol.png`                     | —                 | todo   |
-| Experimental injector     | `sprites/pickups/medication/injector.png`                        | —                 | todo   |
-| Documents / artifacts     | `sprites/pickups/documents`, `sprites/pickups/artifacts` (пусто) | —                 | todo   |
+| Элемент                   | Ассеты                                                           | Код               | Статус                                  |
+| ------------------------- | ---------------------------------------------------------------- | ----------------- | --------------------------------------- |
+| Silver / Gold / Blood key | `sprites/pickups/keys/*.png`                                     | `pickups.ts`, HUD | done                                    |
+| Health (medkit)           | `sprites/pickups/health/*.png`                                   | `pickups.ts`      | done                                    |
+| Haloperidol               | `sprites/pickups/medication/haloperidol.png`                     | `items.ts`        | done                                    |
+| Experimental injector     | `sprites/pickups/medication/injector.png`                        | `items.ts`        | partial (подбор + счётчик, нет эффекта) |
+| Documents / artifacts     | `sprites/pickups/documents`, `sprites/pickups/artifacts` (пусто) | —                 | todo                                    |
 
 ## 12. Уровни
 
@@ -120,16 +120,16 @@ HUD: `#hudWeaponValue` / `#hudAmmoValue` присутствуют в `index.html
 
 ## 14. Техническая архитектура
 
-| Элемент                | Код                        | Статус                                                |
-| ---------------------- | -------------------------- | ----------------------------------------------------- |
-| DDA raycaster          | `src/raycast/raycaster.ts` | done                                                  |
-| Layered map format     | `level-loader.ts`          | done                                                  |
-| Entity architecture    | `rayc.ts` `setEntities`    | done (perception-gated, sticky entity-driven enemies) |
-| Trigger / event system | `triggers.ts`              | done                                                  |
-| World state system     | `world-state.ts`           | done                                                  |
-| Lighting system        | `lights.ts`                | partial                                               |
-| Modular asset pipeline | `public/assets/**`         | partial (структура есть, sound categories пустые)     |
-| HUD framework          | `index.html` + `rayc.ts`   | partial (нет face/distortion/predator overlays)       |
+| Элемент                | Код                        | Статус                                                                     |
+| ---------------------- | -------------------------- | -------------------------------------------------------------------------- |
+| DDA raycaster          | `src/raycast/raycaster.ts` | done                                                                       |
+| Layered map format     | `level-loader.ts`          | done                                                                       |
+| Entity architecture    | `rayc.ts` `setEntities`    | done (perception-gated, sticky entity-driven enemies)                      |
+| Trigger / event system | `triggers.ts`              | done                                                                       |
+| World state system     | `world-state.ts`           | done                                                                       |
+| Lighting system        | `lights.ts`                | partial                                                                    |
+| Modular asset pipeline | `public/assets/**`         | partial (структура есть, sound categories пустые)                          |
+| HUD framework          | `index.html` + `rayc.ts`   | partial (MEDS counter добавлен; face/distortion/predator overlays впереди) |
 
 ## 15. Музыка и звук
 
