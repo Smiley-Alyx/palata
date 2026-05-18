@@ -55,6 +55,10 @@ const materialToDomId = new Map<string, string>([
   ['keyGold', 'goldKey'],
   ['keySilver', 'silverKey'],
   ['keyBlood', 'bloodKey'],
+
+  // --- Hallucination sprites (perception-gated by hallucinations system) ---
+  ['hallucination_entity', 'hallucination_entity'],
+  ['hallucination_white_observer', 'hallucination_white_observer'],
 ]);
 
 const cache = new Map<string, CanvasImageSource | null>();

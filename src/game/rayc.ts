@@ -17,6 +17,7 @@ import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
+import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
@@ -44,6 +45,7 @@ let enemiesSystem: ReturnType<typeof createEnemiesSystem> | null = null;
 let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
 let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
 let lightsSystem: ReturnType<typeof createLightsSystem> | null = null;
+let hallucinationsSystem: ReturnType<typeof createHallucinationsSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 
 let rawTriggers: LevelTriggerJson[] = [];
@@ -170,6 +172,7 @@ function reapplyEntities() {
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
   const healthPickupsFromEntities: Array<{ x: number; y: number }> = [];
   const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
+  const hallucinationsFromEntities: HallucinationSpec[] = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -198,11 +201,33 @@ function reapplyEntities() {
         kind: kind === 'ghost' || kind === 'zombie' ? kind : undefined,
       });
     }
+
+    if (e.type === 'hallucination') {
+      const raw = e as unknown as {
+        id?: string;
+        x: number;
+        y: number;
+        subtype?: string;
+        appearDistance?: number;
+        vanishDistance?: number;
+        scale?: number;
+      };
+      hallucinationsFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+        appearDistance: raw.appearDistance,
+        vanishDistance: raw.vanishDistance,
+        scale: raw.scale,
+      });
+    }
   }
 
   pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
   pickupsSystem?.setHealthPickups(healthPickupsFromEntities);
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
+  hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
   }
@@ -498,10 +523,17 @@ function ensureEngine() {
     getViewHeight,
     player,
     getEnemies: () => enemiesSystem?.getEnemies() ?? [],
-    getSprites: () => pickupsSystem?.getSprites() ?? [],
+    getSprites: () => [
+      ...(pickupsSystem?.getSprites() ?? []),
+      ...(hallucinationsSystem?.getSprites() ?? []),
+    ],
   });
 
   lightsSystem = createLightsSystem();
+  hallucinationsSystem = createHallucinationsSystem({
+    player,
+    playSfx: (key) => audio.playSfx(key),
+  });
 
   engine = createEngine({
     getViewWidth,
@@ -539,6 +571,7 @@ function ensureEngine() {
       },
       onTick: (dt: number) => {
         lightsSystem?.tick(dt);
+        hallucinationsSystem?.tick(dt);
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
@@ -584,6 +617,7 @@ export function setMap(grid: number[][]) {
   pickupsSystem?.onMapChanged(grid);
   triggersSystem?.onMapChanged();
   lightsSystem?.onMapChanged();
+  hallucinationsSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
   rawTriggers = [];
   rawLights = [];
