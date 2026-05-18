@@ -21,6 +21,7 @@ import { createHallucinationsSystem, type HallucinationSpec } from './systems/ha
 import { createInventory, type InventorySnapshot } from './systems/inventory';
 import { createItemsSystem, type MedicationSpec } from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
+import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
@@ -50,6 +51,7 @@ let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
 let lightsSystem: ReturnType<typeof createLightsSystem> | null = null;
 let hallucinationsSystem: ReturnType<typeof createHallucinationsSystem> | null = null;
 let itemsSystem: ReturnType<typeof createItemsSystem> | null = null;
+let ambienceSystem: ReturnType<typeof createAmbienceSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
@@ -180,6 +182,7 @@ function reapplyEntities() {
   const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
+  const emittersFromEntities: AmbientEmitterSpec[] = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -228,6 +231,25 @@ function reapplyEntities() {
       });
     }
 
+    if (e.type === 'ambient_loop') {
+      const raw = e as unknown as {
+        id?: string;
+        x: number;
+        y: number;
+        subtype?: string;
+        radius?: number;
+        volume?: number;
+      };
+      emittersFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+        radius: raw.radius,
+        volume: raw.volume,
+      });
+    }
+
     if (e.type === 'hallucination') {
       const raw = e as unknown as {
         id?: string;
@@ -255,6 +277,7 @@ function reapplyEntities() {
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
+  ambienceSystem?.setEmitters(emittersFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
   }
@@ -605,6 +628,14 @@ function ensureEngine() {
     playSfx: (key) => audio.playSfx(key),
     setMedication: (on) => worldStateSystem?.setMedication(on),
   });
+  ambienceSystem = createAmbienceSystem({
+    player,
+    getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
+    playLoopingSfx: (key, volume, srcOverride) =>
+      audio.playLoopingSfx(key, volume, srcOverride),
+    stopLoopingSfx: (key) => audio.stopLoopingSfx(key),
+    resolveSfxSrc: (key) => audio.getSfxSrc(key),
+  });
 
   engine = createEngine({
     getViewWidth,
@@ -659,6 +690,7 @@ function ensureEngine() {
         lightsSystem?.tick(dt);
         hallucinationsSystem?.tick(dt);
         itemsSystem?.tick();
+        ambienceSystem?.tick(dt);
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
@@ -706,6 +738,7 @@ export function setMap(grid: number[][]) {
   lightsSystem?.onMapChanged();
   hallucinationsSystem?.onMapChanged();
   itemsSystem?.onMapChanged();
+  ambienceSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
   inventory.reset();
   // Default starter loadout: a few rounds for the pistol so the new

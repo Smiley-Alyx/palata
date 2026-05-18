@@ -140,6 +140,10 @@ export class AudioManager {
     this.sfxSrcByKey = sources ?? {};
   }
 
+  getSfxSrc(key: SfxKey): string | undefined {
+    return this.sfxSrcByKey[key];
+  }
+
   playSfx(key: SfxKey, volume = 0.7) {
     if (!this.unlocked) return;
     if (!this.sfxEnabled) return;
@@ -153,11 +157,18 @@ export class AudioManager {
     });
   }
 
-  playLoopingSfx(key: SfxKey, volume = 0.7) {
+  /**
+   * Start (or update volume of) a looping SFX channel keyed by `key`.
+   *
+   * When `srcOverride` is provided it bypasses the registry — useful for
+   * systems that want multiple instances of the same registered sound to
+   * play independently (each with a unique key).
+   */
+  playLoopingSfx(key: SfxKey, volume = 0.7, srcOverride?: string) {
     if (!this.unlocked) return;
     if (!this.sfxEnabled) return;
 
-    const src = this.sfxSrcByKey[key];
+    const src = srcOverride ?? this.sfxSrcByKey[key];
     if (!src) return;
 
     const existing = this.loopingSfxElByKey[key];
