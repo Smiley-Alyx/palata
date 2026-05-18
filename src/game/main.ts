@@ -7,6 +7,7 @@ import {
   getInventorySnapshot,
   getCurrentWeaponDef,
   getCurrentWeaponAmmo,
+  getPerceptionStages,
   playMusic,
   resetKeys,
   setDifficulty,
@@ -360,6 +361,8 @@ function initHpUi() {
   const hudWeaponEl = document.getElementById('hudWeaponValue');
   const hudArmorEl = document.getElementById('hudArmorValue');
   const hudMedsEl = document.getElementById('hudMedsValue');
+  const hudDocsEl = document.getElementById('hudDocsValue');
+  const perceptionOverlayEl = document.getElementById('perceptionOverlay');
 
   const keyGoldEl = document.getElementById('hudKeyGold');
   const keySilverEl = document.getElementById('hudKeySilver');
@@ -379,6 +382,8 @@ function initHpUi() {
   const weaponEl = hudWeaponEl instanceof HTMLElement ? hudWeaponEl : null;
   const armorEl = hudArmorEl instanceof HTMLElement ? hudArmorEl : null;
   const medsEl = hudMedsEl instanceof HTMLElement ? hudMedsEl : null;
+  const docsEl = hudDocsEl instanceof HTMLElement ? hudDocsEl : null;
+  const overlayEl = perceptionOverlayEl instanceof HTMLElement ? perceptionOverlayEl : null;
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
@@ -447,9 +452,30 @@ function initHpUi() {
       ammoEl.textContent = ammo === null ? '--' : String(ammo);
     }
     if (armorEl) armorEl.textContent = '0%';
+    const inv = getInventorySnapshot();
     if (medsEl) {
-      const inv = getInventorySnapshot();
       medsEl.textContent = String(inv.haloperidol + inv.injector);
+    }
+    if (docsEl) {
+      docsEl.textContent = String(inv.document);
+    }
+    if (overlayEl) {
+      // Pick the strongest active perception stage; `predator` > `nightmare`
+      // > `infected` > `withdrawal` > `medicated`. Default is `clean`.
+      const stages = getPerceptionStages();
+      const next =
+        stages.includes('predator')
+          ? 'predator'
+          : stages.includes('nightmare')
+            ? 'nightmare'
+            : stages.includes('infected')
+              ? 'infected'
+              : stages.includes('withdrawal')
+                ? 'withdrawal'
+                : stages.includes('medicated')
+                  ? 'medicated'
+                  : 'clean';
+      if (overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
     }
     syncKeys();
     renderPortrait(hp / maxHp);
