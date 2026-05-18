@@ -11,6 +11,7 @@ export function createTriggersSystem({
   toggleWorldState,
   setWorldFlag,
   toggleWorldFlag,
+  setMedication,
   spawnEntity,
   despawnEntity,
 }: {
@@ -27,6 +28,7 @@ export function createTriggersSystem({
   toggleWorldState: (state: string) => void;
   setWorldFlag: (flag: string, value: boolean) => void;
   toggleWorldFlag: (flag: string) => void;
+  setMedication: (on: boolean) => void;
   spawnEntity: (entity: unknown) => void;
   despawnEntity: (id: string) => void;
 }) {
@@ -60,7 +62,10 @@ export function createTriggersSystem({
     triggers = [];
   }
 
-  function isInsideZone(z: { x: number; y: number; w: number; h: number }, p: { x: number; y: number }) {
+  function isInsideZone(
+    z: { x: number; y: number; w: number; h: number },
+    p: { x: number; y: number },
+  ) {
     return p.x >= z.x && p.y >= z.y && p.x < z.x + z.w && p.y < z.y + z.h;
   }
 
@@ -114,6 +119,11 @@ export function createTriggersSystem({
 
     if (a.type === 'toggle_flag') {
       toggleWorldFlag(a.flag);
+      return;
+    }
+
+    if (a.type === 'set_medication') {
+      setMedication(a.on);
       return;
     }
   }

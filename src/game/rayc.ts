@@ -17,7 +17,7 @@ import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
-import { createWorldStateSystem } from './systems/world-state';
+import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
@@ -107,6 +107,11 @@ function applyEntityAction(a: LevelTriggerActionJson) {
 
   if (a.type === 'toggle_flag') {
     worldStateSystem?.toggleFlag(a.flag);
+    return;
+  }
+
+  if (a.type === 'set_medication') {
+    worldStateSystem?.setMedication(a.on);
     return;
   }
 }
@@ -296,6 +301,15 @@ export function setWorldStates(config: LevelWorldStatesJson | null) {
   worldStateSystem?.setConfig(config ?? null);
 }
 
+export function setMedication(on: boolean) {
+  ensureEngine();
+  worldStateSystem?.setMedication(on);
+}
+
+export function getPerceptionStages(): PerceptionState[] {
+  return worldStateSystem?.getPerceptionStages() ?? [];
+}
+
 export function getSprites() {
   ensureEngine();
   return pickupsSystem?.getSprites() ?? [];
@@ -374,6 +388,7 @@ function ensureEngine() {
     toggleWorldState: (state) => worldStateSystem?.toggleState(state),
     setWorldFlag: (flag, value) => worldStateSystem?.setFlag(flag, value),
     toggleWorldFlag: (flag) => worldStateSystem?.toggleFlag(flag),
+    setMedication: (on) => worldStateSystem?.setMedication(on),
     spawnEntity: (entity) => spawnEntityRuntime(entity),
     despawnEntity: (id) => despawnEntityRuntime(id),
   });
