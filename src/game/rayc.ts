@@ -206,8 +206,6 @@ function reapplyEntities() {
     if (e.type === 'enemy_spawn') {
       const kindRaw = (e as { kind?: unknown }).kind;
       const allowed: ReadonlyArray<EnemyKind> = [
-        'zombie',
-        'ghost',
         'skeleton_husk',
         'medical_orderly',
         'deformed_patient',

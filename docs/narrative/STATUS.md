@@ -49,7 +49,6 @@
 | Враг                                      | Спрайт                                 | Код                                  | Статус                                                       |
 | ----------------------------------------- | -------------------------------------- | ------------------------------------ | ------------------------------------------------------------ |
 | `enemy` (generic)                         | `sprites/enemies/enemy.png`            | `src/game/systems/enemies.ts`        | done                                                         |
-| `zombie`                                  | `sprites/enemies/zombie.png`           | `enemies.ts`                         | done                                                         |
 | `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | `enemy-profiles.ts` + `enemies.ts`   | done (sprite + SFX profile + damage bracket)                 |
 | `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | `enemy-profiles.ts` + `enemies.ts`   | done                                                          |
 | `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | `enemy-profiles.ts` + `enemies.ts`   | done (HP/speed tuned, no unique anims yet)                    |

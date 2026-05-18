@@ -88,8 +88,6 @@ const DOPPELGANGER: EnemyProfile = {
 };
 
 const PROFILES: Record<EnemyKind, EnemyProfile> = {
-  zombie: HUSK,
-  ghost: ORDERLY,
   skeleton_husk: HUSK,
   medical_orderly: ORDERLY,
   deformed_patient: DEFORMED,

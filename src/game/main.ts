@@ -293,7 +293,7 @@ function stripEnemyCellsFromGrid(grid: number[][], legend: Record<string, string
   if (!grid.length || !grid[0]?.length) return;
   const enemyIds = new Set<number>();
   for (const [k, v] of Object.entries(legend)) {
-    if (v === 'enemy' || v === 'zombie' || v === 'ghost') {
+    if (v === 'enemy' || v === 'skeleton_husk' || v === 'medical_orderly') {
       const id = Number(k);
       if (Number.isFinite(id)) enemyIds.add(id);
     }
