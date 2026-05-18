@@ -18,6 +18,8 @@ import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
+import { createInventory, type InventorySnapshot } from './systems/inventory';
+import { createItemsSystem, type MedicationSpec } from './systems/items';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
@@ -46,7 +48,9 @@ let pickupsSystem: ReturnType<typeof createPickupsSystem> | null = null;
 let triggersSystem: ReturnType<typeof createTriggersSystem> | null = null;
 let lightsSystem: ReturnType<typeof createLightsSystem> | null = null;
 let hallucinationsSystem: ReturnType<typeof createHallucinationsSystem> | null = null;
+let itemsSystem: ReturnType<typeof createItemsSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
+const inventory = createInventory();
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -173,6 +177,7 @@ function reapplyEntities() {
   const healthPickupsFromEntities: Array<{ x: number; y: number }> = [];
   const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
   const hallucinationsFromEntities: HallucinationSpec[] = [];
+  const medicationsFromEntities: MedicationSpec[] = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -202,6 +207,16 @@ function reapplyEntities() {
       });
     }
 
+    if (e.type === 'medication') {
+      const raw = e as unknown as { id?: string; x: number; y: number; subtype?: string };
+      medicationsFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+      });
+    }
+
     if (e.type === 'hallucination') {
       const raw = e as unknown as {
         id?: string;
@@ -228,6 +243,7 @@ function reapplyEntities() {
   pickupsSystem?.setHealthPickups(healthPickupsFromEntities);
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
+  itemsSystem?.setMedicationPickups(medicationsFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
   }
@@ -340,6 +356,14 @@ export function setMedication(on: boolean) {
 
 export function getPerceptionStages(): PerceptionState[] {
   return worldStateSystem?.getPerceptionStages() ?? [];
+}
+
+export function getInventorySnapshot(): InventorySnapshot {
+  return inventory.snapshot();
+}
+
+export function setInventoryOnChanged(cb: (() => void) | null) {
+  inventory.setOnChanged(cb);
 }
 
 export function getSprites() {
@@ -525,6 +549,7 @@ function ensureEngine() {
     getEnemies: () => enemiesSystem?.getEnemies() ?? [],
     getSprites: () => [
       ...(pickupsSystem?.getSprites() ?? []),
+      ...(itemsSystem?.getSprites() ?? []),
       ...(hallucinationsSystem?.getSprites() ?? []),
     ],
   });
@@ -533,6 +558,12 @@ function ensureEngine() {
   hallucinationsSystem = createHallucinationsSystem({
     player,
     playSfx: (key) => audio.playSfx(key),
+  });
+  itemsSystem = createItemsSystem({
+    player,
+    inventory,
+    playSfx: (key) => audio.playSfx(key),
+    setMedication: (on) => worldStateSystem?.setMedication(on),
   });
 
   engine = createEngine({
@@ -572,6 +603,7 @@ function ensureEngine() {
       onTick: (dt: number) => {
         lightsSystem?.tick(dt);
         hallucinationsSystem?.tick(dt);
+        itemsSystem?.tick();
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
@@ -618,7 +650,9 @@ export function setMap(grid: number[][]) {
   triggersSystem?.onMapChanged();
   lightsSystem?.onMapChanged();
   hallucinationsSystem?.onMapChanged();
+  itemsSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
+  inventory.reset();
   rawTriggers = [];
   rawLights = [];
   rawEntities = [];

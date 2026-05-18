@@ -59,6 +59,10 @@ const materialToDomId = new Map<string, string>([
   // --- Hallucination sprites (perception-gated by hallucinations system) ---
   ['hallucination_entity', 'hallucination_entity'],
   ['hallucination_white_observer', 'hallucination_white_observer'],
+
+  // --- Item sprites (medication, ammo, documents) ---
+  ['haloperidol', 'haloperidol'],
+  ['injector', 'injector'],
 ]);
 
 const cache = new Map<string, CanvasImageSource | null>();

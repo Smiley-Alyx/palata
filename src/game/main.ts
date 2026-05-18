@@ -4,6 +4,7 @@ import {
   getAudioState,
   getPlayer,
   getKeys,
+  getInventorySnapshot,
   playMusic,
   resetKeys,
   setDifficulty,
@@ -355,6 +356,7 @@ function initHpUi() {
   const hudHpEl = document.getElementById('hudHealthValue');
   const hudAmmoEl = document.getElementById('hudAmmoValue');
   const hudArmorEl = document.getElementById('hudArmorValue');
+  const hudMedsEl = document.getElementById('hudMedsValue');
 
   const keyGoldEl = document.getElementById('hudKeyGold');
   const keySilverEl = document.getElementById('hudKeySilver');
@@ -372,12 +374,16 @@ function initHpUi() {
   const hudEl = hudHpEl instanceof HTMLElement ? hudHpEl : null;
   const ammoEl = hudAmmoEl instanceof HTMLElement ? hudAmmoEl : null;
   const armorEl = hudArmorEl instanceof HTMLElement ? hudArmorEl : null;
+  const medsEl = hudMedsEl instanceof HTMLElement ? hudMedsEl : null;
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
-    if (keyGoldEl instanceof HTMLImageElement) keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
-    if (keySilverEl instanceof HTMLImageElement) keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
-    if (keyBloodEl instanceof HTMLImageElement) keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
+    if (keyGoldEl instanceof HTMLImageElement)
+      keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
+    if (keySilverEl instanceof HTMLImageElement)
+      keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
+    if (keyBloodEl instanceof HTMLImageElement)
+      keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
   };
   syncKeys();
 
@@ -433,6 +439,10 @@ function initHpUi() {
 
     if (ammoEl) ammoEl.textContent = '50';
     if (armorEl) armorEl.textContent = '0%';
+    if (medsEl) {
+      const inv = getInventorySnapshot();
+      medsEl.textContent = String(inv.haloperidol + inv.injector);
+    }
     syncKeys();
     renderPortrait(hp / maxHp);
     requestAnimationFrame(update);
@@ -522,9 +532,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   hideBloodOverlay();
 
   const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
-  const levelEntry = levelsIndex.levels.find(
-    (l: { id: string; file: string }) => l.id === levelId,
-  );
+  const levelEntry = levelsIndex.levels.find((l: { id: string; file: string }) => l.id === levelId);
   if (!levelEntry) {
     throw new Error('Level not found in levels index: ' + levelId);
   }
@@ -554,7 +562,9 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   }
 
   const p = getPlayer();
-  const hasEntityEnemySpawns = hasEntities && entities.some((e) => e && typeof e === 'object' && (e as any).type === 'enemy_spawn');
+  const hasEntityEnemySpawns =
+    hasEntities &&
+    entities.some((e) => e && typeof e === 'object' && (e as any).type === 'enemy_spawn');
   if (!hasEntityEnemySpawns) {
     setEnemies(placeRandomEnemies({ grid: level.grid, player: p, difficulty }));
   }
@@ -595,7 +605,12 @@ function parseCustomLevelJson(raw: string): CustomLevelJson {
   if (!Array.isArray(p.rows) || !p.rows.every((r) => typeof r === 'string')) {
     throw new Error('Custom level must have rows: string[]');
   }
-  if (!p.spawn || typeof p.spawn.x !== 'number' || typeof p.spawn.y !== 'number' || typeof p.spawn.rot !== 'number') {
+  if (
+    !p.spawn ||
+    typeof p.spawn.x !== 'number' ||
+    typeof p.spawn.y !== 'number' ||
+    typeof p.spawn.rot !== 'number'
+  ) {
     throw new Error('Custom level must have spawn');
   }
   return p as CustomLevelJson;
