@@ -1,16 +1,3 @@
-/**
- * Material name -> DOM image id resolver.
- *
- * Levels declare cell semantics through their `legend` (e.g. `"1": "wall"`).
- * The engine then asks `getTextureForMaterial(<material name>)` to draw a
- * wall slice, sprite or floor/ceiling pattern. We map every supported
- * material name to a concrete DOM `<img>` id loaded by `index.html`.
- *
- * For the narrative-aligned content we use individual textures (no atlas
- * slicing). Numeric material ids are not used by current levels and are
- * therefore not supported anymore.
- */
-
 const materialToDomId = new Map<string, string>([
   // --- Generic legend names used by the existing levels ---
   // (level1..level6 hospital theme uses these as defaults)
@@ -49,11 +36,12 @@ const materialToDomId = new Map<string, string>([
   ['seamless_ceiling', 'seamless_ceiling'],
 
   // --- Sprite materials (used by entities/pickups) ---
-  ['enemy', 'enemy'],
   ['skeleton_husk', 'skeleton_husk'],
   ['medical_orderly', 'medical_orderly'],
   ['deformed_patient', 'deformed_patient'],
   ['flesh_watcher', 'flesh_watcher'],
+  ['flesh_eye', 'flesh_eye'],
+  ['flesh_machine', 'flesh_machine'],
   ['doppelganger', 'doppelganger'],
   ['health', 'health'],
   ['keyGold', 'goldKey'],

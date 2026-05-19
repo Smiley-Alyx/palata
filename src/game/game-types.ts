@@ -5,4 +5,6 @@ export type EnemyKind =
   | 'medical_orderly'
   | 'deformed_patient'
   | 'flesh_watcher'
+  | 'flesh_eye'
+  | 'flesh_machine'
   | 'doppelganger';

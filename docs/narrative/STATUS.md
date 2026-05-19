@@ -48,13 +48,14 @@
 
 | Враг                                      | Спрайт                                 | Код                                  | Статус                                                       |
 | ----------------------------------------- | -------------------------------------- | ------------------------------------ | ------------------------------------------------------------ |
-| `enemy` (generic)                         | `sprites/enemies/enemy.png`            | `src/game/systems/enemies.ts`        | done                                                         |
 | `skeleton_husk`                           | `sprites/enemies/skeleton_husk.png`    | `enemy-profiles.ts` + `enemies.ts`   | done (sprite + SFX profile + damage bracket)                 |
 | `medical_orderly`                         | `sprites/enemies/medical_orderly.png`  | `enemy-profiles.ts` + `enemies.ts`   | done                                                          |
 | `deformed_patient`                        | `sprites/enemies/deformed_patient.png` | `enemy-profiles.ts` + `enemies.ts`   | done (HP/speed tuned, no unique anims yet)                    |
 | `flesh_watcher` (perception)              | `sprites/enemies/flesh_watcher.png`    | `enemy-profiles.ts` + `enemies.ts`   | done (perception-gated via `enabledInStates`)                 |
+| `flesh_eye` (wall-pulse)                  | `sprites/enemies/flesh_eye.png`        | `enemy-profiles.ts` + `enemies.ts`   | partial (профиль есть, sheet 3 кадра — анимация не нарезана) |
+| `flesh_machine` (heavy hybrid)            | `sprites/enemies/flesh_machine.png`    | `enemy-profiles.ts` + `enemies.ts`   | partial (профиль есть, 5-rows animation sheet не нарезан)    |
 | `doppelganger` (predator-trigger)         | `sprites/enemies/doppelganger.png`     | `enemy-profiles.ts` + `enemies.ts`   | done                                                          |
-| `hallucination_entity` / `white_observer` | `sprites/hallucinations/*.png`         | `src/game/systems/hallucinations.ts` | partial (perception-gated спрайты + burst SFX; нет AI, anim) |
+| `hallucination_entity` / `white_observer` | `sprites/enemies/{hallucination_entity,white_observer}.png` | `src/game/systems/hallucinations.ts` | partial (perception-gated спрайты + burst SFX; нет AI, anim) |
 
 ## 7. Боссы
 

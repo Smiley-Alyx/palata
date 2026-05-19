@@ -210,6 +210,8 @@ function reapplyEntities() {
         'medical_orderly',
         'deformed_patient',
         'flesh_watcher',
+        'flesh_eye',
+        'flesh_machine',
         'doppelganger',
       ];
       const kind =

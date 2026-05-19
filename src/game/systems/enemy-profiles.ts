@@ -72,6 +72,36 @@ const FLESH_WATCHER: EnemyProfile = {
   },
 };
 
+const FLESH_EYE: EnemyProfile = {
+  material: 'flesh_eye',
+  hp: 2,
+  speedPatrol: 0.0,
+  speedChase: 0.0,
+  sightLoop: SFX.hallucinations.whisperLoop,
+  attack: SFX.hallucinations.burst,
+  death: SFX.hallucinations.insanityRing,
+  damage: {
+    lost: { min: 6, max: 10 },
+    trapped: { min: 8, max: 14 },
+    consumed: { min: 10, max: 18 },
+  },
+};
+
+const FLESH_MACHINE: EnemyProfile = {
+  material: 'flesh_machine',
+  hp: 8,
+  speedPatrol: 0.4,
+  speedChase: 0.7,
+  sightLoop: SFX.transitions.predatorGrowl,
+  attack: SFX.weapons.shotgun.fire,
+  death: SFX.enemies.orderly.death,
+  damage: {
+    lost: { min: 18, max: 28 },
+    trapped: { min: 22, max: 34 },
+    consumed: { min: 28, max: 44 },
+  },
+};
+
 const DOPPELGANGER: EnemyProfile = {
   material: 'doppelganger',
   hp: 4,
@@ -92,6 +122,8 @@ const PROFILES: Record<EnemyKind, EnemyProfile> = {
   medical_orderly: ORDERLY,
   deformed_patient: DEFORMED,
   flesh_watcher: FLESH_WATCHER,
+  flesh_eye: FLESH_EYE,
+  flesh_machine: FLESH_MACHINE,
   doppelganger: DOPPELGANGER,
 };
 
