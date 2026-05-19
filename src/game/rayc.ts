@@ -23,6 +23,7 @@ import { createItemsSystem, type MedicationSpec, type ArtifactSpec, type AmmoSpe
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
+import { createPortalsSystem, type PortalSpec } from './systems/portals';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
@@ -53,6 +54,7 @@ let hallucinationsSystem: ReturnType<typeof createHallucinationsSystem> | null =
 let itemsSystem: ReturnType<typeof createItemsSystem> | null = null;
 let ambienceSystem: ReturnType<typeof createAmbienceSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
+let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
 
@@ -189,6 +191,7 @@ function reapplyEntities() {
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
   const ammoFromEntities: AmmoSpec[] = [];
+  const portalsFromEntities: PortalSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
 
   for (const e of enabled) {
@@ -304,6 +307,33 @@ function reapplyEntities() {
         scale: raw.scale,
       });
     }
+
+    if (e.type === 'portal') {
+      const raw = e as unknown as {
+        id?: string;
+        x: number;
+        y: number;
+        toX?: number;
+        toY?: number;
+        toRot?: number;
+        radius?: number;
+        once?: boolean;
+        cooldownMs?: number;
+      };
+      if (typeof raw.toX === 'number' && typeof raw.toY === 'number') {
+        portalsFromEntities.push({
+          id: raw.id,
+          x: raw.x,
+          y: raw.y,
+          toX: raw.toX,
+          toY: raw.toY,
+          toRot: raw.toRot,
+          radius: raw.radius,
+          once: raw.once,
+          cooldownMs: raw.cooldownMs,
+        });
+      }
+    }
   }
 
   pickupsSystem?.setKeyPickups(keyPickupsFromEntities);
@@ -313,6 +343,7 @@ function reapplyEntities() {
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
   itemsSystem?.setAmmoPickups(ammoFromEntities);
+  portalsSystem?.setPortals(portalsFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
@@ -665,6 +696,9 @@ function ensureEngine() {
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
     setWorldState: (state, value) => worldStateSystem?.setState(state, value),
   });
+  portalsSystem = createPortalsSystem({
+    player,
+  });
   ambienceSystem = createAmbienceSystem({
     player,
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
@@ -727,6 +761,7 @@ function ensureEngine() {
         lightsSystem?.tick(dt);
         hallucinationsSystem?.tick(dt);
         itemsSystem?.tick();
+        portalsSystem?.tick(dt);
         ambienceSystem?.tick(dt);
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
