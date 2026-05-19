@@ -19,7 +19,7 @@ import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
-import { createItemsSystem, type MedicationSpec, type ArtifactSpec } from './systems/items';
+import { createItemsSystem, type MedicationSpec, type ArtifactSpec, type AmmoSpec } from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
@@ -142,6 +142,11 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
     if (e.type === 'note') {
       const title = typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note';
       const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
+      const isDocument = !!(e as any).isDocument;
+      if (isDocument && !(e as any).__collectedDocument) {
+        (e as any).__collectedDocument = true;
+        inventory.add('document', 1);
+      }
       showNoteOverlay(title, text);
       return true;
     }
@@ -183,6 +188,7 @@ function reapplyEntities() {
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
+  const ammoFromEntities: AmmoSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
 
   for (const e of enabled) {
@@ -242,6 +248,23 @@ function reapplyEntities() {
       });
     }
 
+    if (e.type === 'ammo') {
+      const raw = e as unknown as {
+        id?: string;
+        x: number;
+        y: number;
+        subtype?: string;
+        amount?: number;
+      };
+      ammoFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+        amount: raw.amount,
+      });
+    }
+
     if (e.type === 'ambient_loop') {
       const raw = e as unknown as {
         id?: string;
@@ -289,6 +312,7 @@ function reapplyEntities() {
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
+  itemsSystem?.setAmmoPickups(ammoFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
@@ -638,6 +662,8 @@ function ensureEngine() {
     inventory,
     playSfx: (key) => audio.playSfx(key),
     setMedication: (on) => worldStateSystem?.setMedication(on),
+    getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
+    setWorldState: (state, value) => worldStateSystem?.setState(state, value),
   });
   ambienceSystem = createAmbienceSystem({
     player,

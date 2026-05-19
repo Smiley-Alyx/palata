@@ -59,19 +59,53 @@ const ARTIFACT_SPRITE: Record<ArtifactSubtype, string> = {
   vhs: 'artifact_vhs',
 };
 
+export type AmmoSubtype = 'pistol' | 'shotgun';
+
+export type AmmoSpec = {
+  id?: string;
+  x: number;
+  y: number;
+  subtype?: AmmoSubtype | string;
+  amount?: number;
+};
+
+type AmmoPickup = {
+  id?: string;
+  x: number;
+  y: number;
+  subtype: AmmoSubtype;
+  amount: number;
+  alive: boolean;
+};
+
+const AMMO_SPRITE: Record<AmmoSubtype, string> = {
+  pistol: 'ammo_pistol',
+  shotgun: 'ammo_shotgun',
+};
+
+const AMMO_INVENTORY_ID: Record<AmmoSubtype, InventoryItemId> = {
+  pistol: 'pistol_ammo',
+  shotgun: 'shotgun_ammo',
+};
+
 export function createItemsSystem({
   player,
   inventory,
   playSfx,
   setMedication,
+  getPerceptionStages,
+  setWorldState,
 }: {
   player: Player;
   inventory: Inventory;
   playSfx: (key: string) => void;
   setMedication: (on: boolean) => void;
+  getPerceptionStages: () => ReadonlyArray<string>;
+  setWorldState: (state: string, value: boolean) => void;
 }) {
   let medications: MedicationPickup[] = [];
   let artifacts: ArtifactPickup[] = [];
+  let ammo: AmmoPickup[] = [];
 
   function setMedicationPickups(next: MedicationSpec[]) {
     medications = Array.isArray(next)
@@ -101,13 +135,33 @@ export function createItemsSystem({
       : [];
   }
 
+  function setAmmoPickups(next: AmmoSpec[]) {
+    ammo = Array.isArray(next)
+      ? next
+          .filter((a) => a && typeof a.x === 'number' && typeof a.y === 'number')
+          .map((a) => {
+            const subtype: AmmoSubtype = a.subtype === 'shotgun' ? 'shotgun' : 'pistol';
+            const amount = typeof a.amount === 'number' && a.amount > 0 ? Math.floor(a.amount) : 6;
+            return {
+              id: a.id,
+              x: a.x,
+              y: a.y,
+              subtype,
+              amount,
+              alive: true,
+            };
+          })
+      : [];
+  }
+
   function onMapChanged() {
     medications = [];
     artifacts = [];
+    ammo = [];
   }
 
   function tick() {
-    if (!medications.length && !artifacts.length) return;
+    if (!medications.length && !artifacts.length && !ammo.length) return;
     const pickupR = 0.42;
     for (const m of medications) {
       if (!m.alive) continue;
@@ -120,8 +174,20 @@ export function createItemsSystem({
         // Discrete dose: immediately stabilize perception.
         setMedication(true);
       }
-      // Injector handling (perception progression) will be wired in a later
-      // phase together with infection mechanics. For now we only stockpile it.
+      if (m.subtype === 'injector') {
+        // Experimental injector: forcibly destabilize (withdrawal) and advance
+        // perception progression stages.
+        setMedication(false);
+
+        const stages = getPerceptionStages();
+        if (!stages.includes('infected')) {
+          setWorldState('infected', true);
+        } else if (!stages.includes('nightmare')) {
+          setWorldState('nightmare', true);
+        } else if (!stages.includes('predator')) {
+          setWorldState('predator', true);
+        }
+      }
 
       playSfx(SFX.ui.pickupMedkit);
     }
@@ -133,12 +199,20 @@ export function createItemsSystem({
       inventory.add('artifact', 1);
       playSfx(SFX.ui.secretFound);
     }
+
+    for (const a of ammo) {
+      if (!a.alive) continue;
+      if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
+      a.alive = false;
+      inventory.add(AMMO_INVENTORY_ID[a.subtype], a.amount);
+      playSfx(SFX.ui.pickupMedkit);
+    }
   }
 
   function getSprites() {
     const out: Array<{ x: number; y: number; material: string; alive: boolean; scale: number }> =
       [];
-    if (!medications.length && !artifacts.length) return out;
+    if (!medications.length && !artifacts.length && !ammo.length) return out;
     for (const m of medications) {
       if (!m.alive) continue;
       out.push({
@@ -159,12 +233,23 @@ export function createItemsSystem({
         scale: 0.45,
       });
     }
+    for (const a of ammo) {
+      if (!a.alive) continue;
+      out.push({
+        x: a.x,
+        y: a.y,
+        material: AMMO_SPRITE[a.subtype],
+        alive: true,
+        scale: 0.33,
+      });
+    }
     return out;
   }
 
   return {
     setMedicationPickups,
     setArtifactPickups,
+    setAmmoPickups,
     onMapChanged,
     tick,
     getSprites,
