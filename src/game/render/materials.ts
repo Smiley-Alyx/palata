@@ -55,6 +55,8 @@ const materialToDomId = new Map<string, string>([
   // --- Item sprites (medication, ammo, documents) ---
   ['haloperidol', 'haloperidol'],
   ['injector', 'injector'],
+  ['ammo_pistol', 'ammo_pistol'],
+  ['ammo_shotgun', 'ammo_shotgun'],
 
   // --- Artifact pickups ---
   ['artifact_hallucination', 'artifact_hallucination'],
