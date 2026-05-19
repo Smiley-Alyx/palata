@@ -362,6 +362,7 @@ function initHpUi() {
   const hudArmorEl = document.getElementById('hudArmorValue');
   const hudMedsEl = document.getElementById('hudMedsValue');
   const hudDocsEl = document.getElementById('hudDocsValue');
+  const hudArtifactsEl = document.getElementById('hudArtifactsValue');
   const perceptionOverlayEl = document.getElementById('perceptionOverlay');
 
   const keyGoldEl = document.getElementById('hudKeyGold');
@@ -383,6 +384,7 @@ function initHpUi() {
   const armorEl = hudArmorEl instanceof HTMLElement ? hudArmorEl : null;
   const medsEl = hudMedsEl instanceof HTMLElement ? hudMedsEl : null;
   const docsEl = hudDocsEl instanceof HTMLElement ? hudDocsEl : null;
+  const artifactsEl = hudArtifactsEl instanceof HTMLElement ? hudArtifactsEl : null;
   const overlayEl = perceptionOverlayEl instanceof HTMLElement ? perceptionOverlayEl : null;
 
   const syncKeys = () => {
@@ -458,6 +460,9 @@ function initHpUi() {
     }
     if (docsEl) {
       docsEl.textContent = String(inv.document);
+    }
+    if (artifactsEl) {
+      artifactsEl.textContent = String(inv.artifact);
     }
     if (overlayEl) {
       const stages = getPerceptionStages();

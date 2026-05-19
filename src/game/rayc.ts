@@ -19,7 +19,7 @@ import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
-import { createItemsSystem, type MedicationSpec } from './systems/items';
+import { createItemsSystem, type MedicationSpec, type ArtifactSpec } from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
@@ -182,6 +182,7 @@ function reapplyEntities() {
   const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
+  const artifactsFromEntities: ArtifactSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
 
   for (const e of enabled) {
@@ -224,6 +225,16 @@ function reapplyEntities() {
     if (e.type === 'medication') {
       const raw = e as unknown as { id?: string; x: number; y: number; subtype?: string };
       medicationsFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+      });
+    }
+
+    if (e.type === 'artifact') {
+      const raw = e as unknown as { id?: string; x: number; y: number; subtype?: string };
+      artifactsFromEntities.push({
         id: raw.id,
         x: raw.x,
         y: raw.y,
@@ -277,6 +288,7 @@ function reapplyEntities() {
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
+  itemsSystem?.setArtifactPickups(artifactsFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;

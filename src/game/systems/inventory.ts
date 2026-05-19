@@ -1,18 +1,8 @@
-/**
- * Player inventory.
- *
- * A tiny in-memory store of counters keyed by narrative item id. Decoupled
- * from gameplay systems so other modules (pickups, weapons, HUD) can read
- * and mutate it without coupling to one another.
- *
- * Item ids deliberately overlap with sprite material names where possible
- * (`haloperidol`, `injector`, ...).
- */
-
 export type InventoryItemId =
   | 'haloperidol'
   | 'injector'
   | 'document'
+  | 'artifact'
   | 'pistol_ammo'
   | 'shotgun_ammo';
 
@@ -22,6 +12,7 @@ const ITEM_IDS: readonly InventoryItemId[] = [
   'haloperidol',
   'injector',
   'document',
+  'artifact',
   'pistol_ammo',
   'shotgun_ammo',
 ];
@@ -31,6 +22,7 @@ export function createInventory() {
     haloperidol: 0,
     injector: 0,
     document: 0,
+    artifact: 0,
     pistol_ammo: 0,
     shotgun_ammo: 0,
   };

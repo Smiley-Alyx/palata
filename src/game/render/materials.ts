@@ -55,6 +55,10 @@ const materialToDomId = new Map<string, string>([
   // --- Item sprites (medication, ammo, documents) ---
   ['haloperidol', 'haloperidol'],
   ['injector', 'injector'],
+
+  // --- Artifact pickups ---
+  ['artifact_hallucination', 'artifact_hallucination'],
+  ['artifact_vhs', 'artifact_vhs'],
 ]);
 
 const cache = new Map<string, CanvasImageSource | null>();
