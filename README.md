@@ -1,6 +1,8 @@
-# Raycasting Engine (JavaScript)
+# PALATA
 
-Небольшой учебный движок в стиле «ранних 3D» (как Wolfenstein 3D), написанный на чистом JavaScript и Canvas 2D.
+Atmospheric retro-industrial psychological horror FPS на собственном raycasting-движке в духе DOOM / Wolfenstein 3D / Blood. Советская психиатрическая больница, скрытый под ней исследовательский комплекс, оккультный ритуал и постепенная трансформация главного героя из жертвы в хищника.
+
+Технически — чистый TypeScript + Canvas 2D + Vite, со стилями на Stylus и UI на Pug.
 
 Демо (GitHub Pages):
 
