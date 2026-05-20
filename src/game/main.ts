@@ -364,6 +364,7 @@ function initHpUi() {
   const hudDocsEl = document.getElementById('hudDocsValue');
   const hudArtifactsEl = document.getElementById('hudArtifactsValue');
   const perceptionOverlayEl = document.getElementById('perceptionOverlay');
+  const vhsOverlayEl = document.getElementById('vhsOverlay');
 
   const keyGoldEl = document.getElementById('hudKeyGold');
   const keySilverEl = document.getElementById('hudKeySilver');
@@ -386,6 +387,7 @@ function initHpUi() {
   const docsEl = hudDocsEl instanceof HTMLElement ? hudDocsEl : null;
   const artifactsEl = hudArtifactsEl instanceof HTMLElement ? hudArtifactsEl : null;
   const overlayEl = perceptionOverlayEl instanceof HTMLElement ? perceptionOverlayEl : null;
+  const vhsEl = vhsOverlayEl instanceof HTMLElement ? vhsOverlayEl : null;
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
@@ -464,7 +466,7 @@ function initHpUi() {
     if (artifactsEl) {
       artifactsEl.textContent = String(inv.artifact);
     }
-    if (overlayEl) {
+    if (overlayEl || vhsEl) {
       const stages = getPerceptionStages();
       const next = stages.includes('predator')
         ? 'predator'
@@ -477,7 +479,8 @@ function initHpUi() {
               : stages.includes('medicated')
                 ? 'medicated'
                 : 'clean';
-      if (overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
+      if (overlayEl && overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
+      if (vhsEl && vhsEl.dataset.state !== next) vhsEl.dataset.state = next;
     }
     syncKeys();
     renderPortrait(hp / maxHp);

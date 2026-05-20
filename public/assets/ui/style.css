@@ -268,6 +268,107 @@ body {
   }
 }
 
+.vhs-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.vhs-overlay > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.vhs-overlay__scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.28) 0px,
+    rgba(0, 0, 0, 0.28) 1px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0) 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+.vhs-overlay__noise {
+  background-image: url('../overlays/overlay_vhs.png');
+  background-size: 256px 256px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  opacity: 0.35;
+  mix-blend-mode: screen;
+  animation: vhs-noise-pan 0.18s steps(4) infinite;
+}
+
+.vhs-overlay__chroma {
+  box-shadow:
+    inset 1px 0 0 rgba(255, 0, 80, 0.25),
+    inset -1px 0 0 rgba(0, 200, 255, 0.25);
+  mix-blend-mode: screen;
+  animation: vhs-chroma-shift 1.8s ease-in-out infinite;
+}
+
+.vhs-overlay[data-state='clean'],
+.vhs-overlay[data-state='medicated'] {
+  opacity: 0;
+}
+
+.vhs-overlay[data-state='withdrawal'] {
+  opacity: 0.35;
+}
+
+.vhs-overlay[data-state='infected'] {
+  opacity: 0.5;
+}
+
+.vhs-overlay[data-state='nightmare'] {
+  opacity: 0.75;
+}
+
+.vhs-overlay[data-state='predator'] {
+  opacity: 0.55;
+}
+
+@keyframes vhs-noise-pan {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 32px -16px;
+  }
+  50% {
+    background-position: -24px 20px;
+  }
+  75% {
+    background-position: 12px -28px;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@keyframes vhs-chroma-shift {
+  0% {
+    box-shadow:
+      inset 1px 0 0 rgba(255, 0, 80, 0.25),
+      inset -1px 0 0 rgba(0, 200, 255, 0.25);
+  }
+  50% {
+    box-shadow:
+      inset 2px 0 0 rgba(255, 0, 80, 0.35),
+      inset -2px 0 0 rgba(0, 200, 255, 0.35);
+  }
+  100% {
+    box-shadow:
+      inset 1px 0 0 rgba(255, 0, 80, 0.25),
+      inset -1px 0 0 rgba(0, 200, 255, 0.25);
+  }
+}
+
 .menu {
   position: absolute;
   inset: 0;

@@ -41,7 +41,7 @@
 | Layered map (geometry + materialsWall) | `src/game/levels/level-loader.ts` | done                                                         |
 | World states / flags                   | `src/game/systems/world-state.ts` | done                                                         |
 | Floor/ceiling casting                  | `src/game/render/renderer.ts`     | partial (плоский цвет / pattern fill, без distance shading)  |
-| VHS / chromatic aberration / scanlines | `assets/overlays/overlay_vhs.png` | todo                                                         |
+| VHS / chromatic aberration / scanlines | `assets/overlays/overlay_vhs.png`, `style.css` `.vhs-overlay` | done (perception-driven intensity)                |
 | Динамический свет                      | `src/game/systems/lights.ts`      | partial (radius + flicker bool, нет emergency/pulse/organic) |
 
 ## 6. Враги
@@ -77,7 +77,7 @@
 | Triggers (enter_zone + actions)  | `src/game/systems/triggers.ts`                                       | done                                         |
 | Medication mechanic              | `items.ts`, `setMedication`                                          | done                                                     |     |
 | Infection / perception switching | `world-state.ts` (`setMedication`), `triggers.ts` (`set_medication`) | done                                                     |
-| Predator abilities               | —                                                                    | todo                                                     |
+| Predator abilities               | `src/game/systems/predator.ts`                                       | partial (speed/sprint/damage mul + slow HP regen)        |
 | Weapons (pipe / pistol / shotgun) | `src/game/systems/weapons.ts`                                       | done (per-weapon SFX, ammo from inventory, 1/2/3 + Q switch) |
 
 ## 9. Оружие
