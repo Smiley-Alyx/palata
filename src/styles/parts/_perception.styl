@@ -1,0 +1,65 @@
+// Perception-state visuals applied to the HUD bar + portrait.
+// State is propagated via `body[data-perception]` from main.ts.
+
+// Clean: no overrides (default look).
+
+// Medicated: cold, washed-out, slightly sedated.
+body[data-perception='medicated'] .hud
+  filter saturate(0.55) hue-rotate(-12deg) brightness(0.92)
+
+body[data-perception='medicated'] .hud-face canvas
+  filter saturate(0.6) brightness(0.9)
+
+// Withdrawal: jittery, red-tinted, anxious.
+body[data-perception='withdrawal'] .hud
+  filter saturate(1.15) hue-rotate(-6deg) contrast(1.08)
+  animation hud-jitter 1.8s infinite steps(8)
+
+body[data-perception='withdrawal'] .hud-face canvas
+  filter contrast(1.15) brightness(1.05)
+
+// Infected: bilious green, sickly.
+body[data-perception='infected'] .hud
+  filter sepia(0.35) hue-rotate(40deg) saturate(1.2)
+
+body[data-perception='infected'] .hud-face canvas
+  filter sepia(0.25) hue-rotate(35deg) saturate(1.25)
+
+// Nightmare: desaturated violet, broken signal.
+body[data-perception='nightmare'] .hud
+  filter saturate(0.4) hue-rotate(220deg) contrast(1.15) brightness(0.85)
+  animation hud-glitch 2.4s infinite steps(12)
+
+body[data-perception='nightmare'] .hud-face canvas
+  filter grayscale(0.4) brightness(0.85)
+
+// Predator: hot red, predatory.
+body[data-perception='predator'] .hud
+  filter saturate(1.4) hue-rotate(-18deg) contrast(1.15) brightness(1.05)
+
+body[data-perception='predator'] .hud-face canvas
+  filter saturate(1.6) hue-rotate(-15deg) contrast(1.2)
+
+@keyframes hud-jitter
+  0%, 100%
+    transform translate(0, 0)
+  25%
+    transform translate(0.5px, -0.5px)
+  50%
+    transform translate(-0.5px, 0)
+  75%
+    transform translate(0, 0.5px)
+
+@keyframes hud-glitch
+  0%, 90%, 100%
+    transform translate(0, 0)
+    opacity 1
+  92%
+    transform translate(-2px, 1px)
+    opacity 0.85
+  94%
+    transform translate(2px, -1px)
+    opacity 1
+  96%
+    transform translate(-1px, 0)
+    opacity 0.92

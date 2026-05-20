@@ -111,6 +111,10 @@ export type LevelTriggerActionJson =
   | {
       type: 'set_medication';
       on: boolean;
+    }
+  | {
+      type: 'silence_burst';
+      durationMs?: number;
     };
 
 export type LevelTriggerJson = {
@@ -395,6 +399,12 @@ export async function loadLevel(levelUrl: string) {
           }
           if (aa.type === 'set_medication' && typeof aa.on === 'boolean') {
             actions.push({ type: 'set_medication', on: aa.on });
+          }
+          if (aa.type === 'silence_burst') {
+            actions.push({
+              type: 'silence_burst',
+              durationMs: typeof aa.durationMs === 'number' ? aa.durationMs : undefined,
+            });
           }
         }
       }

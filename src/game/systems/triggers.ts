@@ -126,6 +126,11 @@ export function createTriggersSystem({
       setMedication(a.on);
       return;
     }
+
+    if (a.type === 'silence_burst') {
+      audio.silenceFor(typeof a.durationMs === 'number' ? a.durationMs : 2500);
+      return;
+    }
   }
 
   function tick() {

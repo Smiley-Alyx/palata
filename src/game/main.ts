@@ -489,6 +489,9 @@ function initHpUi() {
                 : 'clean';
       if (overlayEl && overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
       if (vhsEl && vhsEl.dataset.state !== next) vhsEl.dataset.state = next;
+      if (document.body.dataset.perception !== next) {
+        document.body.dataset.perception = next;
+      }
 
       if (bloodEl) {
         const isPredator = stages.includes('predator');

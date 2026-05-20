@@ -26,6 +26,9 @@ export class AudioManager {
 
   private loopingSfxElByKey: Partial<Record<SfxKey, HTMLAudioElement>> = {};
 
+  private silent = false;
+  private silenceTimer: number | null = null;
+
   unlock() {
     if (this.unlocked) return;
     this.unlocked = true;
@@ -125,9 +128,48 @@ export class AudioManager {
     if (!this.musicEl || !this.musicConfig) return;
     if (!this.unlocked) return;
     if (!this.musicEnabled) return;
+    if (this.silent) return;
     void this.musicEl.play().catch(() => {
       // ignore
     });
+  }
+
+  // Hard-mute everything for a window. Used for "silence as event" horror beats.
+  silenceFor(durationMs: number) {
+    const ms = Math.max(0, Math.floor(durationMs));
+    if (this.silenceTimer !== null) {
+      window.clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+    this.setSilent(true);
+    if (ms === 0) {
+      this.setSilent(false);
+      return;
+    }
+    this.silenceTimer = window.setTimeout(() => {
+      this.silenceTimer = null;
+      this.setSilent(false);
+    }, ms);
+  }
+
+  private setSilent(silent: boolean) {
+    if (this.silent === silent) return;
+    this.silent = silent;
+
+    if (silent) {
+      if (this.musicEl) this.musicEl.pause();
+      for (const el of Object.values(this.loopingSfxElByKey)) {
+        if (el && !el.paused) el.pause();
+      }
+    } else {
+      this.playMusic();
+      for (const el of Object.values(this.loopingSfxElByKey)) {
+        if (!el) continue;
+        void el.play().catch(() => {
+          // ignore
+        });
+      }
+    }
   }
 
   stopMusic() {
@@ -147,6 +189,7 @@ export class AudioManager {
   playSfx(key: SfxKey, volume = 0.7) {
     if (!this.unlocked) return;
     if (!this.sfxEnabled) return;
+    if (this.silent) return;
     const src = this.sfxSrcByKey[key];
     if (!src) return;
 
@@ -160,6 +203,7 @@ export class AudioManager {
   playLoopingSfx(key: SfxKey, volume = 0.7, srcOverride?: string) {
     if (!this.unlocked) return;
     if (!this.sfxEnabled) return;
+    if (this.silent) return;
 
     const src = srcOverride ?? this.sfxSrcByKey[key];
     if (!src) return;
