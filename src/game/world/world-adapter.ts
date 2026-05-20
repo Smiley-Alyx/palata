@@ -1,4 +1,4 @@
-import { getCellMaterial, hitWall } from '../../state/map-state';
+import { getCellMaterial, hitWall, isDoorCell } from '../../state/map-state';
 import type { World } from '../../engine/engine';
 import type { RayHit } from '../../raycast/raycaster';
 
@@ -18,7 +18,14 @@ export function createWorldAdapter({
   return {
     isSolid,
     isRaySolid: (x: number, y: number) => {
-      if (typeof isDoorBlocking === 'function' && isDoorBlocking(x, y)) return true;
+      // Door cells have non-zero legend ids (so `hitWall` would always say
+      // solid). Delegate their ray-solidness entirely to the doors system so
+      // an opened door becomes transparent and the ray hits the wall behind.
+      const xMap = Math.floor(x);
+      const yMap = Math.floor(y);
+      if (isDoorCell(xMap, yMap)) {
+        return typeof isDoorBlocking === 'function' ? isDoorBlocking(x, y) : true;
+      }
       return hitWall(x, y);
     },
     getMaterial: (x: number, y: number) => {

@@ -181,18 +181,30 @@ export function createEnemiesSystem({
     return enemy;
   }
 
+  function hitSolid(x: number, y: number): boolean {
+    if (!hitWall(x, y)) return false;
+    // Door cells are non-zero in the legend, so `hitWall` reports solid even
+    // when the door is open. Defer to the doors system in that case.
+    const xMap = Math.floor(x);
+    const yMap = Math.floor(y);
+    if (isDoorCell(xMap, yMap) && typeof isDoorBlocking === 'function') {
+      return isDoorBlocking(xMap, yMap);
+    }
+    return true;
+  }
+
   function hitWallCircle(x: number, y: number, r: number): boolean {
-    if (hitWall(x, y)) return true;
+    if (hitSolid(x, y)) return true;
     const s = r * 0.95;
     return (
-      hitWall(x - s, y) ||
-      hitWall(x + s, y) ||
-      hitWall(x, y - s) ||
-      hitWall(x, y + s) ||
-      hitWall(x - s, y - s) ||
-      hitWall(x + s, y - s) ||
-      hitWall(x - s, y + s) ||
-      hitWall(x + s, y + s)
+      hitSolid(x - s, y) ||
+      hitSolid(x + s, y) ||
+      hitSolid(x, y - s) ||
+      hitSolid(x, y + s) ||
+      hitSolid(x - s, y - s) ||
+      hitSolid(x + s, y - s) ||
+      hitSolid(x - s, y + s) ||
+      hitSolid(x + s, y + s)
     );
   }
 
