@@ -8,6 +8,7 @@ import {
   getCurrentWeaponDef,
   getCurrentWeaponAmmo,
   getPerceptionStages,
+  getNearestEnemyDistance,
   playMusic,
   resetKeys,
   setDifficulty,
@@ -365,6 +366,7 @@ function initHpUi() {
   const hudArtifactsEl = document.getElementById('hudArtifactsValue');
   const perceptionOverlayEl = document.getElementById('perceptionOverlay');
   const vhsOverlayEl = document.getElementById('vhsOverlay');
+  const bloodSenseEl = document.getElementById('bloodSenseOverlay');
 
   const keyGoldEl = document.getElementById('hudKeyGold');
   const keySilverEl = document.getElementById('hudKeySilver');
@@ -388,6 +390,7 @@ function initHpUi() {
   const artifactsEl = hudArtifactsEl instanceof HTMLElement ? hudArtifactsEl : null;
   const overlayEl = perceptionOverlayEl instanceof HTMLElement ? perceptionOverlayEl : null;
   const vhsEl = vhsOverlayEl instanceof HTMLElement ? vhsOverlayEl : null;
+  const bloodEl = bloodSenseEl instanceof HTMLElement ? bloodSenseEl : null;
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
@@ -481,6 +484,19 @@ function initHpUi() {
                 : 'clean';
       if (overlayEl && overlayEl.dataset.state !== next) overlayEl.dataset.state = next;
       if (vhsEl && vhsEl.dataset.state !== next) vhsEl.dataset.state = next;
+
+      if (bloodEl) {
+        const isPredator = stages.includes('predator');
+        if (!isPredator) {
+          bloodEl.style.opacity = '0';
+        } else {
+          const d = getNearestEnemyDistance();
+          // Blood sense: vignette intensifies as nearest enemy approaches.
+          const senseRange = 8;
+          const ratio = d === null ? 0 : Math.max(0, Math.min(1, 1 - d / senseRange));
+          bloodEl.style.opacity = String(ratio * 0.8);
+        }
+      }
     }
     syncKeys();
     renderPortrait(hp / maxHp);

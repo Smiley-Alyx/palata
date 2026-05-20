@@ -351,6 +351,31 @@ body {
   }
 }
 
+.blood-sense-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(120, 0, 0, 0.55) 100%
+  );
+  mix-blend-mode: screen;
+  animation: blood-sense-pulse 0.9s ease-in-out infinite;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes blood-sense-pulse {
+  0%, 100% {
+    filter: brightness(0.9);
+  }
+  50% {
+    filter: brightness(1.25);
+  }
+}
+
 @keyframes vhs-chroma-shift {
   0% {
     box-shadow:

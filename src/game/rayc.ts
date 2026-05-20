@@ -495,7 +495,34 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   else if (e.code === 'Digit2') weaponsSystem.setWeapon(WEAPON_IDS[1]);
   else if (e.code === 'Digit3') weaponsSystem.setWeapon(WEAPON_IDS[2]);
   else if (e.code === 'KeyQ') weaponsSystem.cycleWeapon(1);
+  else if (e.code === 'KeyV') tryPredatorDash();
 });
+
+function tryPredatorDash() {
+  if (!predatorSystem) return;
+  predatorSystem.tryDash((x, y) => {
+    const r = 0.22;
+    const wallBlocked = !!enemiesSystem && enemiesSystem.hitWallCircle(x, y, r);
+    const enemyBlocked = !!enemiesSystem && enemiesSystem.hitEnemyCircle(x, y, r + 0.18);
+    return !wallBlocked && !enemyBlocked;
+  });
+}
+
+export function getNearestEnemyDistance(): number | null {
+  if (!enemiesSystem) return null;
+  const list = enemiesSystem.getEnemies();
+  let best: number | null = null;
+  for (const e of list) {
+    if (!e.alive) continue;
+    const d = Math.hypot(player.x - e.x, player.y - e.y);
+    if (best === null || d < best) best = d;
+  }
+  return best;
+}
+
+export function getPredatorDashCooldownRatio(): number {
+  return predatorSystem?.getDashCooldownRatio() ?? 0;
+}
 
 export function getSprites() {
   ensureEngine();
@@ -751,7 +778,8 @@ function ensureEngine() {
         }
         audio.playSfx(def.fireSfx);
         if (def.flash) renderer?.triggerFlash();
-        enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius);
+        const noiseMul = predatorSystem?.getNoiseMultiplier() ?? 1;
+        enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius * noiseMul);
         const dmgMul = predatorSystem?.getDamageMultiplier() ?? 1;
         const scaledDamage = def.damage * dmgMul;
         if (result.kind === 'melee') {
