@@ -1,4 +1,7 @@
-import '../canvas-init';
+import '../styles/main.styl';
+import { initCanvas } from '../canvas-init';
+import { mountAppDom } from './ui/dom';
+import { startAssetPreload, getImage } from './assets/loader';
 import {
   disposeRayc,
   getAudioState,
@@ -39,8 +42,6 @@ import {
 import { bindNoteOverlayControls } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
-
-const CUSTOM_LEVEL_STORAGE_KEY = 'rayc.customLevel';
 
 function getDefaultMusicForLevelId(levelId: string) {
   const base = new URL(import.meta.env.BASE_URL, window.location.origin);
@@ -376,8 +377,7 @@ function initHpUi() {
   const hudCanvas = hudCanvasEl instanceof HTMLCanvasElement ? hudCanvasEl : null;
   const hudCtx = hudCanvas ? hudCanvas.getContext('2d') : null;
 
-  const spriteEl = document.getElementById('playerSprite');
-  const spriteImg = spriteEl instanceof HTMLImageElement ? spriteEl : null;
+  const spriteImg = getImage('playerSprite');
 
   if (!(hpEl instanceof HTMLElement) && !(hudHpEl instanceof HTMLElement)) return;
   const sidebarEl = hpEl instanceof HTMLElement ? hpEl : null;
@@ -636,89 +636,12 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   running = true;
 }
 
-type CustomLevelJson = {
-  id?: string;
-  legend: Record<string, string>;
-  rows: string[];
-  spawn: { x: number; y: number; rot: number };
-  colors?: { ceiling?: string; floor?: string };
-  audio?: { music?: Parameters<typeof setAudioConfig>[0]['music'] };
-};
-
-function parseCustomLevelJson(raw: string): CustomLevelJson {
-  const parsed = JSON.parse(raw) as unknown;
-  if (typeof parsed !== 'object' || parsed === null) {
-    throw new Error('Invalid custom level JSON');
-  }
-  const p = parsed as Partial<CustomLevelJson>;
-  if ((p.id ?? 'custom') !== 'custom') {
-    throw new Error('Custom level must have id="custom"');
-  }
-  if (!p.legend || typeof p.legend !== 'object') {
-    throw new Error('Custom level must have legend');
-  }
-  if (!Array.isArray(p.rows) || !p.rows.every((r) => typeof r === 'string')) {
-    throw new Error('Custom level must have rows: string[]');
-  }
-  if (
-    !p.spawn ||
-    typeof p.spawn.x !== 'number' ||
-    typeof p.spawn.y !== 'number' ||
-    typeof p.spawn.rot !== 'number'
-  ) {
-    throw new Error('Custom level must have spawn');
-  }
-  return p as CustomLevelJson;
-}
-
-async function maybeStartCustomFromEditor() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('play') !== 'custom') return;
-  const raw = localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY);
-  if (!raw) return;
-
-  dead = false;
-  if (deathTimer !== null) window.clearTimeout(deathTimer);
-  hideDeathScreen();
-  hideBloodOverlay();
-
-  const level = parseCustomLevelJson(raw);
-
-  const baseLegend = level.legend as unknown as Record<string, string>;
-  setLegend(baseLegend as unknown as Record<number, string>);
-  const grid = level.rows.map((row) => row.split('').map((c) => Number(c) || 0));
-  stripEnemyCellsFromGrid(grid, baseLegend);
-  setMap(grid);
-  setSpawn(level.spawn);
-  setBackgroundColors(level.colors ?? {});
-
-  resetKeys();
-  setKeyPickups([]);
-  setDoorLocks([]);
-
-  const p = getPlayer();
-  setEnemies(placeRandomEnemies({ grid, player: p, difficulty: 'lost' }));
-  setHealthPickups(placeRandomHealthPickups({ grid, player: p, difficulty: 'lost' }));
-
-  setAudioConfig({
-    music: level.audio?.music ?? getDefaultMusicForLevelId('custom'),
-    sfx: DEFAULT_SFX,
-  });
-  playMusic();
-
-  hideMenu();
-  startRayc();
-  running = true;
-}
-
 function initMenu() {
   showMenu();
   hideDeathScreen();
 
   const levelsRoot = document.getElementById('menuLevels');
   const difficultyRoot = document.getElementById('menuDifficulty');
-  const editorBtn = document.getElementById('menuEditorBtn');
-
   let currentDifficulty: Difficulty = 'lost';
 
   if (difficultyRoot instanceof HTMLElement) {
@@ -779,12 +702,6 @@ function initMenu() {
     })();
   }
 
-  if (editorBtn instanceof HTMLButtonElement) {
-    editorBtn.addEventListener('click', () => {
-      const base = new URL(import.meta.env.BASE_URL, window.location.origin);
-      window.location.href = new URL('editor.html', base).toString();
-    });
-  }
 }
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -802,12 +719,27 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   const p = getPlayer();
   p.hp = Math.max(0, p.hp - 10);
 });
-initAudioUi();
-initHpUi();
-initDeathUi();
-initMenu();
-bindNoteOverlayControls();
-void maybeStartCustomFromEditor();
+function bootstrap() {
+  const appRoot = document.getElementById('app');
+  if (!(appRoot instanceof HTMLElement)) {
+    throw new Error('Missing #app root element');
+  }
+  mountAppDom(appRoot);
+  startAssetPreload();
+  initCanvas();
+
+  initAudioUi();
+  initHpUi();
+  initDeathUi();
+  initMenu();
+  bindNoteOverlayControls();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
+} else {
+  bootstrap();
+}
 
 // Watch HP and enter death state.
 requestAnimationFrame(function watchDeath() {

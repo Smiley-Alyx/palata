@@ -1,0 +1,115 @@
+.frame#frame
+  main#canvas1.viewport
+    .menu#menuRoot
+      .menu-box
+        .menu-title Raycasting
+        .menu-subtitle Old-school demo
+        .menu-buttons
+          #menuDifficulty
+          #menuLevels
+
+    .menu#deathRoot(style="display: none")
+      .menu-box
+        .menu-title You Die
+        .menu-subtitle Press restart to try again
+        .menu-buttons
+          button.btn#deathRestartBtn(type="button") Restart
+
+    .note#noteRoot(style="display: none")
+      .note-box
+        .note-title#noteTitle
+        .note-text#noteText
+        .note-hint Press E or Esc to close
+
+    #bloodOverlay.blood-overlay(style="display: none")
+    #perceptionOverlay.perception-overlay(data-state="clean")
+    #vhsOverlay.vhs-overlay(data-state="clean")
+      .vhs-overlay__scanlines
+      .vhs-overlay__noise
+      .vhs-overlay__chroma
+    #bloodSenseOverlay.blood-sense-overlay
+
+  .hud#hudRoot
+    .hud-block
+      .hud-value#hudHealthValue 100%
+      .hud-label HEALTH
+    .hud-block
+      .hud-value#hudArmorValue 0%
+      .hud-label ARMOR
+    .hud-face
+      canvas#hudPortrait(width="128" height="96")
+    .hud-block.hud-weapon
+      .hud-weapon-row
+        .hud-weapon-title WEAPON
+        .hud-weapon-value#hudWeaponValue -
+      .hud-weapon-row
+        .hud-weapon-title AMMO
+        .hud-weapon-value#hudAmmoValue 50
+    .hud-block
+      .hud-value#hudMedsValue 0
+      .hud-label MEDS
+    .hud-block
+      .hud-value#hudDocsValue 0
+      .hud-label DOCS
+    .hud-block
+      .hud-value#hudArtifactsValue 0
+      .hud-label ARTIFACTS
+    .hud-keys.hud-block
+      .hud-keys-row
+        img.hud-key#hudKeyGold(src=assets.goldKey)
+        img.hud-key#hudKeySilver(src=assets.silverKey)
+        img.hud-key#hudKeyBlood(src=assets.bloodKey)
+      .hud-label KEYS
+
+  aside.sidebar
+    section.panel
+      h2.panel-title Status
+      .hint#hpText HP: 100/100
+    section.panel
+      h2.panel-title Controls
+      ul.help-list
+        li
+          span.key W/A/S/D
+          |  / 
+          span.key Arrows
+          |  — движение
+        li
+          span.key Shift
+          |  — спринт
+        li
+          span.key E
+          |  — открыть дверь
+        li
+          span.key Space
+          |  — выстрел / удар
+        li
+          span.key 1/2/3
+          |  — труба / пистолет / дробовик
+        li
+          span.key Q
+          |  — циклически переключать оружие
+        li
+          span.key V
+          |  — рывок (predator)
+        li
+          span.key M
+          |  — карта
+        li
+          span.key F
+          |  — fullscreen
+    section.panel
+      h2.panel-title Audio
+      .control-group
+        button.btn#musicToggleBtn(type="button") Music: on
+        label.label
+          | Music volume
+          input.range#musicVolume(type="range" min="0" max="1" step="0.01" value="0.5")
+        button.btn#sfxToggleBtn(type="button") SFX: on
+        label.label
+          | SFX volume
+          input.range#sfxVolume(type="range" min="0" max="1" step="0.01" value="0.7")
+        .hint Первый клик по окну игры включает звук (ограничения браузера).
+    section.panel
+      h2.panel-title System
+      .control-group
+        button.btn#fullscreenBtn(type="button") Fullscreen

@@ -19,7 +19,12 @@ export function getCanvasCssHeight() {
   return canvasCssHeight;
 }
 
-(() => {
+let initialized = false;
+
+export function initCanvas(): void {
+  if (initialized) return;
+  initialized = true;
+
   const host = document.getElementById('canvas1');
   if (!host) {
     throw new Error('Missing #canvas1 element');
@@ -112,4 +117,4 @@ export function getCanvasCssHeight() {
       });
     });
   });
-})();
+}

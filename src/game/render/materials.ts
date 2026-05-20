@@ -1,3 +1,5 @@
+import { getImage } from '../assets/loader';
+
 const materialToDomId = new Map<string, string>([
   // --- Generic legend names used by the existing levels ---
   // (level1..level6 hospital theme uses these as defaults)
@@ -65,28 +67,27 @@ const materialToDomId = new Map<string, string>([
 
 const cache = new Map<string, CanvasImageSource | null>();
 
-function lookupByDomId(domId: string): CanvasImageSource | null {
-  const cached = cache.get(domId);
+function lookupAsset(assetId: string): CanvasImageSource | null {
+  const cached = cache.get(assetId);
   if (cached !== undefined) return cached;
 
-  const el = document.getElementById(domId);
-  const img = el instanceof HTMLImageElement ? el : null;
+  const img = getImage(assetId);
 
-  // Don't cache `null` while the image is still loading: a follow-up call
-  // after `naturalWidth` becomes non-zero must resolve to the real texture.
+  // Don't cache while the image hasn't decoded yet: a follow-up call after
+  // `naturalWidth` becomes non-zero must resolve to the real texture.
   if (img && img.naturalWidth <= 0) {
     return null;
   }
 
-  cache.set(domId, img);
+  cache.set(assetId, img);
   return img;
 }
 
 export function getTextureForMaterial(materialOrId: string | number): CanvasImageSource | null {
   if (typeof materialOrId !== 'string') return null;
 
-  const domId = materialToDomId.get(materialOrId);
-  if (!domId) return null;
+  const assetId = materialToDomId.get(materialOrId);
+  if (!assetId) return null;
 
-  return lookupByDomId(domId);
+  return lookupAsset(assetId);
 }

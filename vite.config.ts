@@ -1,4 +1,30 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+import { readFileSync } from 'node:fs';
+import pug from 'pug';
+
+// Precompile *.pug?compiled imports into a tiny ES module that exports a
+// `render(locals)` function. Pug's full parser stays out of the bundle —
+// only the small `pug-runtime` helper module is shipped.
+function pugCompilePlugin(): Plugin {
+  const SUFFIX = '?compiled';
+  return {
+    name: 'pug-compile-client',
+    enforce: 'pre',
+    transform(_code, id) {
+      if (!id.includes('.pug')) return null;
+      if (!id.endsWith(`.pug${SUFFIX}`)) return null;
+      const filename = id.slice(0, -SUFFIX.length);
+      const source = readFileSync(filename, 'utf8');
+      const fnSource = pug.compileClient(source, {
+        filename,
+        name: 'pugRender',
+        compileDebug: false,
+      });
+      const code = `${fnSource}\nexport default pugRender;\n`;
+      return { code, map: null };
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   // GitHub Pages serves the app under /<repo>/.
@@ -7,5 +33,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     base,
+    plugins: [pugCompilePlugin()],
   };
 });
