@@ -605,6 +605,9 @@ function ensureEngine() {
     setMedication: (on) => worldStateSystem?.setMedication(on),
     spawnEntity: (entity) => spawnEntityRuntime(entity),
     despawnEntity: (id) => despawnEntityRuntime(id),
+    onEnding: (stage) => {
+      window.dispatchEvent(new CustomEvent('rayc:ending', { detail: { stage } }));
+    },
   });
 
   enemiesSystem = createEnemiesSystem({

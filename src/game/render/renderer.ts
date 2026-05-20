@@ -91,18 +91,24 @@ export function createRenderer({
     }
     ctx.fillRect(0, h / 2, w, h / 2);
 
-    // Subtle vertical shading to avoid a flat look.
+    // Distance shading for ceiling/floor: darker at the horizon (far),
+    // brighter near the camera. This is a cheap stand-in for proper
+    // floor/ceiling raycasting and reads as proper depth at retro res.
     ctx.save();
-    const topShade = ctx.createLinearGradient(0, 0, 0, h / 2);
-    topShade.addColorStop(0, 'rgba(0,0,0,0.22)');
-    topShade.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = topShade;
+    const ceilingShade = ctx.createLinearGradient(0, 0, 0, h / 2);
+    // Near top of screen = horizon (far away) → fully black.
+    ceilingShade.addColorStop(0, 'rgba(0,0,0,0.72)');
+    ceilingShade.addColorStop(0.55, 'rgba(0,0,0,0.32)');
+    ceilingShade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ceilingShade;
     ctx.fillRect(0, 0, w, h / 2);
 
-    const bottomShade = ctx.createLinearGradient(0, h / 2, 0, h);
-    bottomShade.addColorStop(0, 'rgba(0,0,0,0)');
-    bottomShade.addColorStop(1, 'rgba(0,0,0,0.28)');
-    ctx.fillStyle = bottomShade;
+    const floorShade = ctx.createLinearGradient(0, h / 2, 0, h);
+    // Near horizon = far away → dark; near bottom = close → bright.
+    floorShade.addColorStop(0, 'rgba(0,0,0,0.72)');
+    floorShade.addColorStop(0.45, 'rgba(0,0,0,0.32)');
+    floorShade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = floorShade;
     ctx.fillRect(0, h / 2, w, h / 2);
 
     // Light vignette.

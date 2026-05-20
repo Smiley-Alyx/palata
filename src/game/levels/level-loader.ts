@@ -115,6 +115,10 @@ export type LevelTriggerActionJson =
   | {
       type: 'silence_burst';
       durationMs?: number;
+    }
+  | {
+      type: 'show_ending';
+      stage?: string;
     };
 
 export type LevelTriggerJson = {
@@ -133,6 +137,7 @@ export type LevelLightJson = {
   color?: string;
   intensity?: number;
   flicker?: boolean;
+  mode?: 'steady' | 'flicker' | 'emergency' | 'pulse' | 'organic';
   enabledInStates?: string[];
   disabledInStates?: string[];
   enabledIfFlags?: Record<string, boolean>;
@@ -406,6 +411,12 @@ export async function loadLevel(levelUrl: string) {
               durationMs: typeof aa.durationMs === 'number' ? aa.durationMs : undefined,
             });
           }
+          if (aa.type === 'show_ending') {
+            actions.push({
+              type: 'show_ending',
+              stage: typeof aa.stage === 'string' ? aa.stage : undefined,
+            });
+          }
         }
       }
 
@@ -445,6 +456,7 @@ export async function loadLevel(levelUrl: string) {
         color?: unknown;
         intensity?: unknown;
         flicker?: unknown;
+        mode?: unknown;
         enabledInStates?: unknown;
         disabledInStates?: unknown;
         enabledIfFlags?: unknown;
@@ -452,6 +464,15 @@ export async function loadLevel(levelUrl: string) {
       if (typeof l.x !== 'number' || typeof l.y !== 'number' || typeof l.radius !== 'number')
         continue;
       if (!Number.isFinite(l.radius) || l.radius <= 0) continue;
+      const modeRaw = l.mode;
+      const mode =
+        modeRaw === 'steady' ||
+        modeRaw === 'flicker' ||
+        modeRaw === 'emergency' ||
+        modeRaw === 'pulse' ||
+        modeRaw === 'organic'
+          ? modeRaw
+          : undefined;
       lights.push({
         x: l.x,
         y: l.y,
@@ -459,6 +480,7 @@ export async function loadLevel(levelUrl: string) {
         color: typeof l.color === 'string' ? l.color : undefined,
         intensity: typeof l.intensity === 'number' ? l.intensity : undefined,
         flicker: typeof l.flicker === 'boolean' ? l.flicker : undefined,
+        mode,
         enabledInStates: Array.isArray(l.enabledInStates)
           ? (l.enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
           : undefined,

@@ -170,6 +170,19 @@ function initDeathUi() {
       showMenu();
     });
   }
+
+  const endingBtn = document.getElementById('endingContinueBtn');
+  if (endingBtn instanceof HTMLButtonElement) {
+    endingBtn.addEventListener('click', () => {
+      hideEndingScreen();
+      showMenu();
+    });
+  }
+
+  window.addEventListener('rayc:ending', (e) => {
+    const stage = (e as CustomEvent<{ stage?: string }>).detail?.stage;
+    showEndingScreen(stage);
+  });
 }
 
 function computeInitialVisibleCells({
@@ -614,6 +627,83 @@ function hideDeathScreen() {
   el.style.display = 'none';
 }
 
+// Endings. Не дают однозначного ответа — каждый зависит от состояния восприятия
+// игрока в момент финального триггера.
+const ENDINGS: Record<string, { title: string; body: string; subtitle: string }> = {
+  clean: {
+    title: 'You walk out',
+    body:
+      'The exit was always there.\n' +
+      'You stand under a dead grey sky and try to remember\n' +
+      'who walked in.',
+    subtitle: 'Nothing followed you. You think.',
+  },
+  medicated: {
+    title: 'Discharge',
+    body:
+      'A nurse signs a form.\n' +
+      'A doctor nods at a chart that does not have your name on it.\n' +
+      'They tell you the treatment was a success.',
+    subtitle: 'You believe them.',
+  },
+  withdrawal: {
+    title: 'No more pills',
+    body:
+      'Your hands have stopped shaking.\n' +
+      'The corridors stopped breathing as soon as you stopped looking.\n' +
+      'Or you stopped looking as soon as they stopped breathing.',
+    subtitle: 'You do not know which came first.',
+  },
+  infected: {
+    title: 'Carrier',
+    body:
+      'Something is moving under your skin.\n' +
+      'It is patient. It will introduce itself when the time is right.\n' +
+      'You walk back out into the city with it.',
+    subtitle: 'The city was always its first.',
+  },
+  nightmare: {
+    title: 'There is no door',
+    body:
+      'The corridor loops once more and ends at the cell you started in.\n' +
+      'You sit on the cot.\n' +
+      'You wait for the door to open again.',
+    subtitle: 'It will. It always does.',
+  },
+  predator: {
+    title: 'New ward',
+    body:
+      'The complex is quiet.\n' +
+      'You walk between rooms and decide which one to use next,\n' +
+      'and which body to leave in it.',
+    subtitle: 'The hunt has a new owner.',
+  },
+};
+
+function showEndingScreen(stage?: string) {
+  const root = document.getElementById('endingRoot');
+  if (!(root instanceof HTMLElement)) return;
+  const key = stage && stage in ENDINGS ? stage : currentPerceptionStage();
+  const ending = ENDINGS[key] ?? ENDINGS.clean;
+
+  const titleEl = document.getElementById('endingTitle');
+  const bodyEl = document.getElementById('endingBody');
+  const subEl = document.getElementById('endingSubtitle');
+  if (titleEl instanceof HTMLElement) titleEl.textContent = ending.title;
+  if (bodyEl instanceof HTMLElement) bodyEl.textContent = ending.body;
+  if (subEl instanceof HTMLElement) subEl.textContent = ending.subtitle;
+
+  stopRayc();
+  running = false;
+  root.style.display = '';
+}
+
+function hideEndingScreen() {
+  const el = document.getElementById('endingRoot');
+  if (!(el instanceof HTMLElement)) return;
+  el.style.display = 'none';
+}
+
 const LOADING_SUBTITLES = [
   'Lights dim along the corridor',
   'The orderlies take their positions',
@@ -737,6 +827,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
 function initMenu() {
   showMenu();
   hideDeathScreen();
+  hideEndingScreen();
 
   const levelsRoot = document.getElementById('menuLevels');
   const difficultyRoot = document.getElementById('menuDifficulty');

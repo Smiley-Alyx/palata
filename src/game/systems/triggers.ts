@@ -14,6 +14,7 @@ export function createTriggersSystem({
   setMedication,
   spawnEntity,
   despawnEntity,
+  onEnding,
 }: {
   audio: AudioManager;
   getPlayerPos: () => { x: number; y: number };
@@ -31,6 +32,7 @@ export function createTriggersSystem({
   setMedication: (on: boolean) => void;
   spawnEntity: (entity: unknown) => void;
   despawnEntity: (id: string) => void;
+  onEnding?: (stage?: string) => void;
 }) {
   type TriggerRuntime = {
     id: string;
@@ -129,6 +131,11 @@ export function createTriggersSystem({
 
     if (a.type === 'silence_burst') {
       audio.silenceFor(typeof a.durationMs === 'number' ? a.durationMs : 2500);
+      return;
+    }
+
+    if (a.type === 'show_ending') {
+      onEnding?.(a.stage);
       return;
     }
   }

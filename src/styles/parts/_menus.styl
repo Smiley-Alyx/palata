@@ -52,6 +52,36 @@
   flex-direction column
   gap 10px
 
+.menu--ending
+  background radial-gradient(circle at center, rgba(20, 10, 30, 0.7) 0%, rgba(0, 0, 0, 0.95) 70%)
+  animation ending-fade 1.6s ease-in 0s 1 both
+
+.menu--ending .menu-box
+  border-color #5b3a76
+  box-shadow 0 0 0 4px #2a1638, 0 16px 48px rgba(0, 0, 0, 0.75)
+
+.menu--ending .menu-title
+  color #d8c7ff
+  font-size 32px
+  letter-spacing 4px
+  text-shadow 0 0 18px rgba(170, 120, 220, 0.45)
+
+.menu--ending .menu-epitaph
+  color rgba(220, 200, 240, 0.85)
+  font-size 14px
+
+.menu--ending .menu-subtitle
+  color rgba(200, 180, 220, 0.65)
+  font-style italic
+
+@keyframes ending-fade
+  from
+    opacity 0
+    filter brightness(0)
+  to
+    opacity 1
+    filter brightness(1)
+
 .note
   position absolute
   inset 0
