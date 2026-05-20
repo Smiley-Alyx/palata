@@ -80,6 +80,15 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   // by the raycaster (cell becomes ray-transparent at `open01 >= 0.98`).
   medical_door: 'animations/world/door_medical_door.json',
   blast_door: 'animations/world/door_blast_door.json',
+
+  // Pickup sprites — 1536x1024 horizontal triptychs (idle / damaged / glitched).
+  // Slice the idle frame, cropping the label band at the bottom of each cell.
+  health: 'animations/pickups/aid_kit.json',
+  haloperidol: 'animations/pickups/haloperidol.json',
+  injector: 'animations/pickups/injector.json',
+  goldKey: 'animations/pickups/gold_key.json',
+  silverKey: 'animations/pickups/silver_key.json',
+  bloodKey: 'animations/pickups/blood_key.json',
 });
 
 export async function loadAnimationRegistry(

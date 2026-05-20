@@ -1,0 +1,11 @@
+{
+  "fps": 1,
+  "loop": false,
+  "_comment": "1536x1024 sheet (3 horizontal frames). Use only the IDLE frame (cols 0..512), cropping label band at the bottom.",
+  "sheet": {
+    "src": "sprites/pickups/health/aid_kit.png",
+    "frames": [
+      { "x": 0, "y": 0, "w": 512, "h": 870 }
+    ]
+  }
+}

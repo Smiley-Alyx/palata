@@ -1,0 +1,11 @@
+{
+  "fps": 1,
+  "loop": false,
+  "_comment": "1536x1024 sheet. Idle frame only.",
+  "sheet": {
+    "src": "sprites/pickups/keys/blood_key.png",
+    "frames": [
+      { "x": 0, "y": 0, "w": 512, "h": 870 }
+    ]
+  }
+}
