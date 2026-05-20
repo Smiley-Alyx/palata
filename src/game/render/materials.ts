@@ -92,16 +92,22 @@ function lookupAsset(assetId: string): CanvasImageSource | null {
 export function getTextureForMaterial(materialOrId: string | number): CanvasImageSource | null {
   if (typeof materialOrId !== 'string') return null;
 
-  // Animation runtime takes precedence: if a material has a multi-frame anim,
-  // serve the current frame. Single-frame anims and missing entries fall
-  // through to the static manifest lookup below.
+  // Animation runtime takes precedence. Check by raw material name first
+  // (e.g. "medical_door") and then by the mapped asset id (e.g. legend's
+  // "door" -> "medical_door") so registrations work regardless of which key
+  // a level uses. Single-frame anims and missing entries fall through to the
+  // static manifest lookup below.
   if (hasAnimation(materialOrId)) {
     const frame = getAnimatedFrame(materialOrId);
     if (frame) return frame;
   }
 
   const assetId = materialToDomId.get(materialOrId);
-  if (!assetId) return null;
+  if (assetId && assetId !== materialOrId && hasAnimation(assetId)) {
+    const frame = getAnimatedFrame(assetId);
+    if (frame) return frame;
+  }
 
+  if (!assetId) return null;
   return lookupAsset(assetId);
 }
