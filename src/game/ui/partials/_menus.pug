@@ -8,10 +8,11 @@
       #menuDifficulty
       #menuLevels
 
-.menu#deathRoot(style="display: none")
+.menu.menu--death#deathRoot(style="display: none")
   .menu-box
-    .menu-title You Die
-    .menu-subtitle Press restart to try again
+    .menu-title#deathTitle You Die
+    .menu-epitaph#deathEpitaph
+    .menu-subtitle The ward keeps its patients
     .menu-buttons
       button.btn#deathRestartBtn(type="button") Restart
 

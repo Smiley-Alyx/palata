@@ -160,9 +160,14 @@ function initDeathUi() {
   const restartBtn = document.getElementById('deathRestartBtn');
   if (restartBtn instanceof HTMLButtonElement) {
     restartBtn.addEventListener('click', () => {
-      // Simplest robust restart: reload page.
-      window.location.href = '/';
-      window.location.reload();
+      hideDeathScreen();
+      hideBloodOverlay();
+      dead = false;
+      if (deathTimer !== null) {
+        window.clearTimeout(deathTimer);
+        deathTimer = null;
+      }
+      showMenu();
     });
   }
 }
@@ -548,9 +553,55 @@ function hideBloodOverlay() {
   el.style.display = 'none';
 }
 
+const DEATH_EPITAPHS: Record<string, string[]> = {
+  clean: [
+    'They will note the time of death in chalk\nand wash the floor before morning rounds.',
+    'No one comes when the bell rings here.',
+  ],
+  medicated: [
+    'The dose was correct. The patient was not.',
+    'You drift below the ward, soft and quiet.',
+  ],
+  withdrawal: [
+    'The pills wore off a corridor too late.',
+    'Your hands shook. The ward did not.',
+  ],
+  infected: [
+    'Something inside you finished first.',
+    'The walls were never the wet thing.',
+  ],
+  nightmare: [
+    'You woke up. You were still here.',
+    'The dream kept your body for itself.',
+  ],
+  predator: [
+    'The hunter became meat again.',
+    'Even teeth grow tired in this place.',
+  ],
+};
+
+function pickEpitaph(stage: string) {
+  const list = DEATH_EPITAPHS[stage] ?? DEATH_EPITAPHS.clean;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function currentPerceptionStage(): string {
+  const stages = getPerceptionStages();
+  if (stages.includes('predator')) return 'predator';
+  if (stages.includes('nightmare')) return 'nightmare';
+  if (stages.includes('infected')) return 'infected';
+  if (stages.includes('withdrawal')) return 'withdrawal';
+  if (stages.includes('medicated')) return 'medicated';
+  return 'clean';
+}
+
 function showDeathScreen() {
   const el = document.getElementById('deathRoot');
   if (!(el instanceof HTMLElement)) return;
+  const epitaphEl = document.getElementById('deathEpitaph');
+  if (epitaphEl instanceof HTMLElement) {
+    epitaphEl.textContent = pickEpitaph(currentPerceptionStage());
+  }
   el.style.display = '';
 }
 
@@ -558,6 +609,47 @@ function hideDeathScreen() {
   const el = document.getElementById('deathRoot');
   if (!(el instanceof HTMLElement)) return;
   el.style.display = 'none';
+}
+
+const LOADING_SUBTITLES = [
+  'Lights dim along the corridor',
+  'The orderlies take their positions',
+  'The walls remember you',
+  'Stand by',
+  'Inhale, hold, exhale',
+];
+
+function showLoadingScreen({ levelName }: { levelName: string }) {
+  return new Promise<void>((resolve) => {
+    const root = document.getElementById('loadingRoot');
+    const titleEl = document.getElementById('loadingTitle');
+    const subEl = document.getElementById('loadingSubtitle');
+    const fillEl = document.getElementById('loadingBarFill');
+    if (!(root instanceof HTMLElement)) {
+      resolve();
+      return;
+    }
+    if (titleEl instanceof HTMLElement) titleEl.textContent = `Entering ${levelName}`;
+    if (subEl instanceof HTMLElement) {
+      subEl.textContent = LOADING_SUBTITLES[Math.floor(Math.random() * LOADING_SUBTITLES.length)];
+    }
+    if (fillEl instanceof HTMLElement) fillEl.style.width = '0%';
+    root.style.display = '';
+
+    const totalMs = 1400;
+    const startedAt = performance.now();
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - startedAt) / totalMs);
+      if (fillEl instanceof HTMLElement) fillEl.style.width = `${Math.round(t * 100)}%`;
+      if (t >= 1) {
+        root.style.display = 'none';
+        resolve();
+      } else {
+        requestAnimationFrame(tick);
+      }
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 function enterDeathState() {
@@ -591,6 +683,9 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   if (!levelEntry) {
     throw new Error('Level not found in levels index: ' + levelId);
   }
+
+  hideMenu();
+  const loadingDone = showLoadingScreen({ levelName: levelEntry.name ?? levelEntry.id });
 
   const level = await loadLevel(levelEntry.file);
   stripEnemyCellsFromGrid(level.grid, level.legend);
