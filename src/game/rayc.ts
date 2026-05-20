@@ -24,6 +24,7 @@ import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapon
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
 import { createPortalsSystem, type PortalSpec } from './systems/portals';
+import { createPredatorSystem } from './systems/predator';
 import { createWorldAdapter } from './world/world-adapter';
 import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
@@ -55,6 +56,7 @@ let itemsSystem: ReturnType<typeof createItemsSystem> | null = null;
 let ambienceSystem: ReturnType<typeof createAmbienceSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
+let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
 
@@ -699,6 +701,10 @@ function ensureEngine() {
   portalsSystem = createPortalsSystem({
     player,
   });
+  predatorSystem = createPredatorSystem({
+    player,
+    getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
+  });
   ambienceSystem = createAmbienceSystem({
     player,
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
@@ -746,15 +752,17 @@ function ensureEngine() {
         audio.playSfx(def.fireSfx);
         if (def.flash) renderer?.triggerFlash();
         enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius);
+        const dmgMul = predatorSystem?.getDamageMultiplier() ?? 1;
+        const scaledDamage = def.damage * dmgMul;
         if (result.kind === 'melee') {
           const hit = enemiesSystem?.tryMeleeHitNearest({
             range: def.range,
-            damage: def.damage,
+            damage: scaledDamage,
           });
           if (hit && def.hitFleshSfx) audio.playSfx(def.hitFleshSfx);
           else if (!hit && def.hitWallSfx) audio.playSfx(def.hitWallSfx);
         } else {
-          enemiesSystem?.tryShootEnemies({ range: def.range, damage: def.damage });
+          enemiesSystem?.tryShootEnemies({ range: def.range, damage: scaledDamage });
         }
       },
       onTick: (dt: number) => {
@@ -762,6 +770,7 @@ function ensureEngine() {
         hallucinationsSystem?.tick(dt);
         itemsSystem?.tick();
         portalsSystem?.tick(dt);
+        predatorSystem?.tick(dt);
         ambienceSystem?.tick(dt);
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         doorsSystem?.tick(dt, (xMap, yMap) => {
@@ -812,6 +821,7 @@ export function setMap(grid: number[][]) {
   itemsSystem?.onMapChanged();
   ambienceSystem?.onMapChanged();
   worldStateSystem?.onMapChanged();
+  predatorSystem?.onMapChanged();
   inventory.reset();
   weaponsSystem.reset({ pistolAmmo: 12, shotgunAmmo: 0 });
   rawTriggers = [];
