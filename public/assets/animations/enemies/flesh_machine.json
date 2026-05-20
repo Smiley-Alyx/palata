@@ -1,0 +1,15 @@
+{
+  "fps": 6,
+  "loop": true,
+  "_comment": "IDLE row only (5 frames). Sheet has 5 rows (idle/walk/ranged/damaged/death) but the runtime currently has no per-AI-state animation; idle is used as the universal cycle. Rects are best-effort approximations of the 1536x1024 sheet — tweak x/y/w/h here if frames clip or include the left-side label.",
+  "sheet": {
+    "src": "sprites/enemies/flesh_machine.png",
+    "frames": [
+      { "x":  80, "y": 0, "w": 280, "h": 200 },
+      { "x": 360, "y": 0, "w": 280, "h": 200 },
+      { "x": 640, "y": 0, "w": 280, "h": 200 },
+      { "x": 920, "y": 0, "w": 280, "h": 200 },
+      { "x": 1200, "y": 0, "w": 280, "h": 200 }
+    ]
+  }
+}

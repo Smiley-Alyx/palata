@@ -1,0 +1,12 @@
+{
+  "fps": 4,
+  "loop": true,
+  "sheet": {
+    "src": "sprites/enemies/flesh_eye.png",
+    "frames": [
+      { "x": 0,    "y": 0, "w": 512, "h": 768 },
+      { "x": 512,  "y": 0, "w": 512, "h": 768 },
+      { "x": 1024, "y": 0, "w": 512, "h": 768 }
+    ]
+  }
+}

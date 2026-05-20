@@ -1,7 +1,10 @@
 export type AnimationDescriptor = {
   fps: number;
   loop: boolean;
-  frames: HTMLImageElement[];
+  // Each frame is either an HTMLImageElement (one image per frame) or an
+  // HTMLCanvasElement carrying a slice of a sprite sheet. Both satisfy
+  // CanvasImageSource, which is what the renderer ultimately consumes.
+  frames: Array<HTMLImageElement | HTMLCanvasElement>;
 };
 
 const animations = new Map<string, AnimationDescriptor>();
@@ -25,16 +28,52 @@ function loadFrame(src: string): HTMLImageElement {
   return img;
 }
 
+type SheetRect = { x: number; y: number; w: number; h: number };
+
+function loadSheetImage(src: string): HTMLImageElement {
+  return loadFrame(src);
+}
+
+// Carve a sheet into per-frame off-screen canvases. The canvas list is built
+// up-front but each canvas is painted lazily once the source image decodes.
+function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
+  const img = loadSheetImage(src);
+  const canvases: HTMLCanvasElement[] = rects.map((r) => {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.floor(r.w));
+    c.height = Math.max(1, Math.floor(r.h));
+    return c;
+  });
+
+  const paint = () => {
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      const c = canvases[i];
+      const ctx = c.getContext('2d');
+      if (!ctx) continue;
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
+    }
+  };
+
+  if (img.complete && img.naturalWidth > 0) {
+    paint();
+  } else {
+    img.addEventListener('load', paint, { once: true });
+  }
+
+  return canvases;
+}
+
 // Mapping from in-world material id to its animation descriptor file under
 // `public/assets/animations/`. Only materials with multi-frame anims need to
 // be listed here; single-frame materials gain nothing from registration and
 // are kept on the static-texture path.
 const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
-  // Add multi-frame descriptors here as art lands. Keys are material ids
-  // used in entity/material lookups (see render/materials.ts).
-  //
-  // Example, once an actual sheet is authored:
-  //   flesh_eye: 'animations/enemies/flesh_eye.json',
+  // Material id -> path under `public/assets/animations/`.
+  flesh_eye: 'animations/enemies/flesh_eye.json',
+  flesh_machine: 'animations/enemies/flesh_machine.json',
 });
 
 export async function loadAnimationRegistry(
@@ -66,9 +105,35 @@ function defaultFetchJson(jsonPath: string): Promise<unknown> {
 
 function parseDescriptor(data: unknown): AnimationDescriptor | null {
   if (!data || typeof data !== 'object') return null;
-  const d = data as { fps?: unknown; loop?: unknown; frames?: unknown };
+  const d = data as { fps?: unknown; loop?: unknown; frames?: unknown; sheet?: unknown };
   const fps = typeof d.fps === 'number' && d.fps > 0 ? d.fps : 8;
   const loop = typeof d.loop === 'boolean' ? d.loop : true;
+
+  // Sheet form: `{ src, frames: [{x,y,w,h}, ...] }` — slices a single image
+  // into per-frame canvases. Preferred for tightly packed sprite sheets where
+  // frame regions are not uniform across rows.
+  if (d.sheet && typeof d.sheet === 'object') {
+    const s = d.sheet as { src?: unknown; frames?: unknown };
+    if (typeof s.src === 'string' && Array.isArray(s.frames)) {
+      const rects: SheetRect[] = [];
+      for (const f of s.frames) {
+        if (!f || typeof f !== 'object') continue;
+        const fr = f as { x?: unknown; y?: unknown; w?: unknown; h?: unknown };
+        if (
+          typeof fr.x !== 'number' ||
+          typeof fr.y !== 'number' ||
+          typeof fr.w !== 'number' ||
+          typeof fr.h !== 'number'
+        )
+          continue;
+        rects.push({ x: fr.x, y: fr.y, w: fr.w, h: fr.h });
+      }
+      if (rects.length === 0) return null;
+      return { fps, loop, frames: sliceSheet(s.src, rects) };
+    }
+  }
+
+  // Multi-image form: `{ frames: [url1, url2, ...] }` — one file per frame.
   const framesArr = Array.isArray(d.frames) ? d.frames : [];
   const urls = framesArr.filter((f): f is string => typeof f === 'string');
   if (urls.length === 0) return null;
@@ -79,11 +144,18 @@ export function tickAnimations(dt: number) {
   timeSec += Math.max(0, dt);
 }
 
-export function getAnimatedFrame(material: string): HTMLImageElement | null {
+function isReady(frame: HTMLImageElement | HTMLCanvasElement): boolean {
+  if (frame instanceof HTMLImageElement) return frame.naturalWidth > 0;
+  // Canvas frames are valid as soon as they have non-zero size; the lazy
+  // paint inside `sliceSheet` keeps them blank until the source image loads.
+  return frame.width > 0 && frame.height > 0;
+}
+
+export function getAnimatedFrame(material: string): CanvasImageSource | null {
   const desc = animations.get(material);
   if (!desc || desc.frames.length === 0) return null;
   if (desc.frames.length === 1) {
-    return desc.frames[0].naturalWidth > 0 ? desc.frames[0] : null;
+    return isReady(desc.frames[0]) ? desc.frames[0] : null;
   }
   const frameDur = 1 / desc.fps;
   const totalDur = frameDur * desc.frames.length;
@@ -96,8 +168,8 @@ export function getAnimatedFrame(material: string): HTMLImageElement | null {
   let idx = Math.floor(t / frameDur);
   if (idx < 0) idx = 0;
   if (idx >= desc.frames.length) idx = desc.frames.length - 1;
-  const img = desc.frames[idx];
-  return img.naturalWidth > 0 ? img : null;
+  const frame = desc.frames[idx];
+  return isReady(frame) ? frame : null;
 }
 
 export function hasAnimation(material: string): boolean {
