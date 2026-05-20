@@ -1,7 +1,11 @@
 {
-  "fps": 8,
-  "loop": true,
-  "frames": [
-    "textures/doors/blast_door.png"
-  ]
+  "fps": 1,
+  "loop": false,
+  "_comment": "Same layout as medical_door: 724x2172, 3 stacked states. Top frame only.",
+  "sheet": {
+    "src": "textures/doors/blast_door.png",
+    "frames": [
+      { "x": 0, "y": 0, "w": 724, "h": 724 }
+    ]
+  }
 }

@@ -73,6 +73,13 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   // Material id -> path under `public/assets/animations/`.
   flesh_eye: 'animations/enemies/flesh_eye.json',
   flesh_machine: 'animations/enemies/flesh_machine.json',
+
+  // Door textures are 724x2172 sprite-sheets (3 stacked frames).
+  // The runtime slices out only the top "closed" frame so the wall slice
+  // doesn't get a 3-door stack stretched into it. Opening/closing is handled
+  // by the raycaster (cell becomes ray-transparent at `open01 >= 0.98`).
+  medical_door: 'animations/world/door_medical_door.json',
+  blast_door: 'animations/world/door_blast_door.json',
 });
 
 export async function loadAnimationRegistry(
