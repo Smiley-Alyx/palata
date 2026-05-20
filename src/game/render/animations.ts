@@ -1,9 +1,8 @@
+import { loadJson } from '../content/content';
+
 export type AnimationDescriptor = {
   fps: number;
   loop: boolean;
-  // Each frame is either an HTMLImageElement (one image per frame) or an
-  // HTMLCanvasElement carrying a slice of a sprite sheet. Both satisfy
-  // CanvasImageSource, which is what the renderer ultimately consumes.
   frames: Array<HTMLImageElement | HTMLCanvasElement>;
 };
 
@@ -95,12 +94,8 @@ export async function loadAnimationRegistry(
 }
 
 function defaultFetchJson(jsonPath: string): Promise<unknown> {
-  const baseUrl = new URL(import.meta.env.BASE_URL ?? '/', window.location.origin).toString();
-  const url = new URL(`assets/${jsonPath.replace(/^\/?(assets\/)?/, '')}`, baseUrl).toString();
-  return fetch(url).then((r) => {
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-    return r.json();
-  });
+  const cleaned = jsonPath.replace(/^\/?(assets\/)?/, '');
+  return loadJson<unknown>(`assets/${cleaned}`);
 }
 
 function parseDescriptor(data: unknown): AnimationDescriptor | null {

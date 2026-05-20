@@ -4,38 +4,38 @@
     {
       "id": "level0",
       "name": "Level 0 (historical)",
-      "file": "/levels/level0.json",
+      "file": "/assets/data/levels/level0.json",
       "hidden": true
     },
     {
       "id": "level1",
       "name": "Level 1",
-      "file": "/levels/level1.json"
+      "file": "/assets/data/levels/level1.json"
     },
     {
       "id": "level2",
       "name": "Level 2",
-      "file": "/levels/level2.json"
+      "file": "/assets/data/levels/level2.json"
     },
     {
       "id": "level3",
       "name": "Level 3",
-      "file": "/levels/level3.json"
+      "file": "/assets/data/levels/level3.json"
     },
     {
       "id": "level4",
       "name": "Level 4",
-      "file": "/levels/level4.json"
+      "file": "/assets/data/levels/level4.json"
     },
     {
       "id": "level5",
       "name": "Level 5",
-      "file": "/levels/level5.json"
+      "file": "/assets/data/levels/level5.json"
     },
     {
       "id": "level6",
       "name": "Level 6",
-      "file": "/levels/level6.json"
+      "file": "/assets/data/levels/level6.json"
     }
   ]
 }
