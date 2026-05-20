@@ -1,0 +1,22 @@
+//- Main menu, death modal and note overlay.
+
+.menu#menuRoot
+  .menu-box
+    .menu-title PALATA
+    .menu-subtitle Soviet psychiatric horror
+    .menu-buttons
+      #menuDifficulty
+      #menuLevels
+
+.menu#deathRoot(style="display: none")
+  .menu-box
+    .menu-title You Die
+    .menu-subtitle Press restart to try again
+    .menu-buttons
+      button.btn#deathRestartBtn(type="button") Restart
+
+.note#noteRoot(style="display: none")
+  .note-box
+    .note-title#noteTitle
+    .note-text#noteText
+    .note-hint Press E or Esc to close

@@ -15,12 +15,15 @@ function pugCompilePlugin(): Plugin {
       if (!id.endsWith(`.pug${SUFFIX}`)) return null;
       const filename = id.slice(0, -SUFFIX.length);
       const source = readFileSync(filename, 'utf8');
-      const fnSource = pug.compileClient(source, {
+      const result = pug.compileClientWithDependenciesTracked(source, {
         filename,
         name: 'pugRender',
         compileDebug: false,
       });
-      const code = `${fnSource}\nexport default pugRender;\n`;
+      for (const dep of result.dependencies) {
+        this.addWatchFile(dep);
+      }
+      const code = `${result.body}\nexport default pugRender;\n`;
       return { code, map: null };
     },
   };
@@ -29,7 +32,7 @@ function pugCompilePlugin(): Plugin {
 export default defineConfig(({ mode }) => {
   // GitHub Pages serves the app under /<repo>/.
   // Build with `vite build --mode gh-pages` to enable it.
-  const base = mode === 'gh-pages' ? '/raycasting-engine/' : '/';
+  const base = mode === 'gh-pages' ? '/palata/' : '/';
 
   return {
     base,

@@ -1,0 +1,35 @@
+// Generic form controls used inside panels and menus.
+
+.btn
+  width 100%
+  padding 8px 10px
+  border 2px solid $wood
+  background #23160f
+  color $accent
+  font inherit
+  cursor pointer
+
+  &.is-selected
+    background #3a2418
+    border-color $accent
+
+  &:active
+    transform translateY(1px)
+
+.control-group
+  display flex
+  flex-direction column
+  gap 8px
+
+.label
+  display grid
+  grid-template-columns 1fr
+  gap 6px
+  font-size 12px
+  color $text
+
+.range
+  width 100%
+  box-sizing border-box
+  font inherit
+  color inherit

@@ -1,0 +1,132 @@
+// Full-viewport overlays: blood, perception, VHS noise, blood-sense vignette.
+
+.blood-overlay
+  overlay-base()
+  background rgb(120, 0, 0)
+  opacity 0
+  transition opacity 2s linear
+  z-index 9
+
+  &.is-active
+    opacity 0.65
+
+.perception-overlay
+  overlay-base()
+  z-index 8
+  opacity 0
+  transition opacity 1.2s ease
+  mix-blend-mode screen
+
+  &[data-state='medicated']
+    opacity 0.18
+    background radial-gradient(circle at center, rgba(120, 180, 220, 0.0) 40%, rgba(40, 60, 90, 0.55) 100%)
+    mix-blend-mode multiply
+
+  &[data-state='withdrawal']
+    opacity 0.45
+    background repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0px, rgba(0, 0, 0, 0.18) 1px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0) 4px), radial-gradient(circle at center, rgba(140, 50, 120, 0.0) 35%, rgba(80, 0, 60, 0.5) 100%)
+    mix-blend-mode multiply
+    animation perception-jitter 0.25s steps(2) infinite
+
+  &[data-state='infected']
+    opacity 0.55
+    background radial-gradient(circle at center, rgba(180, 0, 0, 0.0) 25%, rgba(120, 0, 0, 0.6) 100%)
+    mix-blend-mode multiply
+
+  &[data-state='nightmare']
+    opacity 0.65
+    background repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 1px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0) 5px), radial-gradient(circle at center, rgba(0, 0, 0, 0.0) 20%, rgba(0, 0, 0, 0.85) 100%)
+    mix-blend-mode multiply
+    animation perception-jitter 0.18s steps(3) infinite
+
+  &[data-state='predator']
+    opacity 0.55
+    background radial-gradient(circle at center, rgba(255, 60, 20, 0.0) 20%, rgba(180, 30, 0, 0.7) 100%)
+    mix-blend-mode screen
+    filter saturate(1.4)
+
+@keyframes perception-jitter
+  0%
+    transform translate(0, 0)
+  50%
+    transform translate(0.5px, -0.5px)
+  100%
+    transform translate(-0.5px, 0.5px)
+
+.vhs-overlay
+  overlay-base()
+  z-index 9
+  opacity 0
+  transition opacity 0.8s ease
+
+  > *
+    overlay-base()
+
+  &__scanlines
+    background repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0px, rgba(0, 0, 0, 0.28) 1px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0) 3px)
+    mix-blend-mode multiply
+
+  &__noise
+    background-image url('/assets/overlays/overlay_vhs.png')
+    background-size 256px 256px
+    background-repeat repeat
+    image-rendering pixelated
+    opacity 0.35
+    mix-blend-mode screen
+    animation vhs-noise-pan 0.18s steps(4) infinite
+
+  &__chroma
+    box-shadow inset 1px 0 0 rgba(255, 0, 80, 0.25), inset -1px 0 0 rgba(0, 200, 255, 0.25)
+    mix-blend-mode screen
+    animation vhs-chroma-shift 1.8s ease-in-out infinite
+
+  &[data-state='clean'],
+  &[data-state='medicated']
+    opacity 0
+
+  &[data-state='withdrawal']
+    opacity 0.35
+
+  &[data-state='infected']
+    opacity 0.5
+
+  &[data-state='nightmare']
+    opacity 0.75
+
+  &[data-state='predator']
+    opacity 0.55
+
+@keyframes vhs-noise-pan
+  0%
+    background-position 0 0
+  25%
+    background-position 32px -16px
+  50%
+    background-position -24px 20px
+  75%
+    background-position 12px -28px
+  100%
+    background-position 0 0
+
+@keyframes vhs-chroma-shift
+  0%
+    box-shadow inset 1px 0 0 rgba(255, 0, 80, 0.25), inset -1px 0 0 rgba(0, 200, 255, 0.25)
+  50%
+    box-shadow inset 2px 0 0 rgba(255, 0, 80, 0.35), inset -2px 0 0 rgba(0, 200, 255, 0.35)
+  100%
+    box-shadow inset 1px 0 0 rgba(255, 0, 80, 0.25), inset -1px 0 0 rgba(0, 200, 255, 0.25)
+
+.blood-sense-overlay
+  overlay-base()
+  z-index 9
+  opacity 0
+  background radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(120, 0, 0, 0.55) 100%)
+  mix-blend-mode screen
+  animation blood-sense-pulse 0.9s ease-in-out infinite
+  transition opacity 0.3s ease
+
+@keyframes blood-sense-pulse
+  0%, 100%
+    filter brightness(0.9)
+  50%
+    filter brightness(1.25)
