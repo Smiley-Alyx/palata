@@ -19,10 +19,6 @@
     "ceiling": "#0c0c12",
     "floor": "#1a1a1c"
   },
-  "backgroundMaterials": {
-    "ceiling": "seamless_ceiling",
-    "floor": "seamless_floor"
-  },
   "spawn": {
     "x": 27.5,
     "y": 38.5,
