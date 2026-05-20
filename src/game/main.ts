@@ -2,6 +2,7 @@ import '../styles/main.styl';
 import { initCanvas } from '../canvas-init';
 import { mountAppDom } from './ui/dom';
 import { startAssetPreload, getImage } from './assets/loader';
+import { loadAnimationRegistry } from './render/animations';
 import {
   disposeRayc,
   getAudioState,
@@ -26,6 +27,7 @@ import {
   setMap,
   setMaterialsWall,
   setLights,
+  setGeometryOverrides,
   setEntities,
   setWorldStates,
   setMusicEnabled,
@@ -791,6 +793,7 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   setWorldStates(level.worldStates ?? null);
   setTriggers(level.triggers ?? []);
   setLights(level.lights ?? []);
+  setGeometryOverrides(level.geometryOverrides ?? []);
 
   resetKeys();
 
@@ -915,6 +918,10 @@ function bootstrap() {
   }
   mountAppDom(appRoot);
   startAssetPreload();
+  // Fire-and-forget: animations load asynchronously alongside other assets.
+  // Missing descriptors fail soft and the static material fallback keeps the
+  // game playable.
+  void loadAnimationRegistry();
   initCanvas();
 
   initAudioUi();

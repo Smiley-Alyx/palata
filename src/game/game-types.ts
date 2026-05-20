@@ -7,4 +7,9 @@ export type EnemyKind =
   | 'flesh_watcher'
   | 'flesh_eye'
   | 'flesh_machine'
-  | 'doppelganger';
+  | 'doppelganger'
+  | 'boss_chief_doctor'
+  | 'boss_choir'
+  | 'boss_dade_keeper'
+  | 'boss_heart_hospital'
+  | 'boss_shepherd';

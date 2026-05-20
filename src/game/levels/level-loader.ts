@@ -36,6 +36,7 @@ type LevelJson = {
   entities?: unknown;
   triggers?: unknown;
   lights?: unknown;
+  geometryOverrides?: unknown;
   rows?: string[];
   geometry?: unknown;
   materialsWall?: unknown;
@@ -128,6 +129,14 @@ export type LevelTriggerJson = {
   enabledInStates?: string[];
   disabledInStates?: string[];
   enabledIfFlags?: Record<string, boolean>;
+};
+
+export type LevelGeometryOverrideJson = {
+  id?: string;
+  enabledInStates?: string[];
+  disabledInStates?: string[];
+  enabledIfFlags?: Record<string, boolean>;
+  cells: Array<{ x: number; y: number; value: number }>;
 };
 
 export type LevelLightJson = {
@@ -495,6 +504,44 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const geometryOverrides: LevelGeometryOverrideJson[] = [];
+  if (Array.isArray(data.geometryOverrides)) {
+    for (const it of data.geometryOverrides) {
+      if (!it || typeof it !== 'object') continue;
+      const g = it as {
+        id?: unknown;
+        enabledInStates?: unknown;
+        disabledInStates?: unknown;
+        enabledIfFlags?: unknown;
+        cells?: unknown;
+      };
+      if (!Array.isArray(g.cells)) continue;
+      const cells: Array<{ x: number; y: number; value: number }> = [];
+      for (const c of g.cells) {
+        if (!c || typeof c !== 'object') continue;
+        const cc = c as { x?: unknown; y?: unknown; value?: unknown };
+        if (typeof cc.x !== 'number' || typeof cc.y !== 'number') continue;
+        if (typeof cc.value !== 'number') continue;
+        cells.push({ x: cc.x, y: cc.y, value: cc.value });
+      }
+      if (!cells.length) continue;
+      geometryOverrides.push({
+        id: typeof g.id === 'string' ? g.id : undefined,
+        enabledInStates: Array.isArray(g.enabledInStates)
+          ? (g.enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        disabledInStates: Array.isArray(g.disabledInStates)
+          ? (g.disabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        enabledIfFlags:
+          g.enabledIfFlags && typeof g.enabledIfFlags === 'object'
+            ? (g.enabledIfFlags as Record<string, boolean>)
+            : undefined,
+        cells,
+      });
+    }
+  }
+
   const keyPickups: Array<{ x: number; y: number; id: KeyId }> = [];
   if (Array.isArray(data.keyPickups)) {
     for (const it of data.keyPickups) {
@@ -531,6 +578,7 @@ export async function loadLevel(levelUrl: string) {
     entities,
     triggers,
     lights,
+    geometryOverrides,
     keyPickups,
     doorLocks,
   };

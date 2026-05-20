@@ -35,6 +35,13 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   flesh_machine: 'assets/sprites/enemies/flesh_machine.png',
   doppelganger: 'assets/sprites/enemies/doppelganger.png',
 
+  // Bosses
+  boss_chief_doctor: 'assets/sprites/bosses/boss_cheif_doctor.png',
+  boss_choir: 'assets/sprites/bosses/boss_choir.png',
+  boss_dade_keeper: 'assets/sprites/bosses/boss_dade_keepeer.png',
+  boss_heart_hospital: 'assets/sprites/bosses/boss_heart_hospital.png',
+  boss_shepherd: 'assets/sprites/bosses/boss_shepherd.png',
+
   // Player portrait
   playerSprite: 'assets/sprites/npc/player.png',
 

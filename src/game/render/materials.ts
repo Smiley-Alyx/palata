@@ -1,4 +1,5 @@
 import { getImage } from '../assets/loader';
+import { getAnimatedFrame, hasAnimation } from './animations';
 
 const materialToDomId = new Map<string, string>([
   // --- Generic legend names used by the existing levels ---
@@ -45,6 +46,11 @@ const materialToDomId = new Map<string, string>([
   ['flesh_eye', 'flesh_eye'],
   ['flesh_machine', 'flesh_machine'],
   ['doppelganger', 'doppelganger'],
+  ['boss_chief_doctor', 'boss_chief_doctor'],
+  ['boss_choir', 'boss_choir'],
+  ['boss_dade_keeper', 'boss_dade_keeper'],
+  ['boss_heart_hospital', 'boss_heart_hospital'],
+  ['boss_shepherd', 'boss_shepherd'],
   ['health', 'health'],
   ['keyGold', 'goldKey'],
   ['keySilver', 'silverKey'],
@@ -85,6 +91,14 @@ function lookupAsset(assetId: string): CanvasImageSource | null {
 
 export function getTextureForMaterial(materialOrId: string | number): CanvasImageSource | null {
   if (typeof materialOrId !== 'string') return null;
+
+  // Animation runtime takes precedence: if a material has a multi-frame anim,
+  // serve the current frame. Single-frame anims and missing entries fall
+  // through to the static manifest lookup below.
+  if (hasAnimation(materialOrId)) {
+    const frame = getAnimatedFrame(materialOrId);
+    if (frame) return frame;
+  }
 
   const assetId = materialToDomId.get(materialOrId);
   if (!assetId) return null;

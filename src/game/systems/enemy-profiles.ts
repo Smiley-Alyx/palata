@@ -6,6 +6,8 @@ export type EnemyProfile = {
   hp: number;
   speedPatrol: number;
   speedChase: number;
+  // Render scale relative to a 1-tile-tall sprite. Bosses use >1 for presence.
+  scale?: number;
   sightLoop: string | null;
   attack: string;
   death: string | null;
@@ -117,6 +119,90 @@ const DOPPELGANGER: EnemyProfile = {
   },
 };
 
+const BOSS_CHIEF_DOCTOR: EnemyProfile = {
+  material: 'boss_chief_doctor',
+  hp: 18,
+  scale: 1.5,
+  speedPatrol: 0.6,
+  speedChase: 1.0,
+  sightLoop: SFX.bosses.chiefDoctor.intro,
+  attack: SFX.bosses.chiefDoctor.attack,
+  death: SFX.bosses.chiefDoctor.death,
+  damage: {
+    lost: { min: 22, max: 30 },
+    trapped: { min: 26, max: 38 },
+    consumed: { min: 32, max: 48 },
+  },
+};
+
+const BOSS_CHOIR: EnemyProfile = {
+  // Cluster-of-mouths choir. Slow but devastating in melee.
+  material: 'boss_choir',
+  hp: 22,
+  scale: 1.6,
+  speedPatrol: 0.35,
+  speedChase: 0.6,
+  sightLoop: SFX.hallucinations.whisperLoop,
+  attack: SFX.hallucinations.burst,
+  death: SFX.hallucinations.insanityRing,
+  damage: {
+    lost: { min: 24, max: 32 },
+    trapped: { min: 30, max: 42 },
+    consumed: { min: 36, max: 54 },
+  },
+};
+
+const BOSS_DADE_KEEPER: EnemyProfile = {
+  // The keeper of the dead. Carries a key-thematic role.
+  material: 'boss_dade_keeper',
+  hp: 24,
+  scale: 1.5,
+  speedPatrol: 0.5,
+  speedChase: 0.9,
+  sightLoop: SFX.enemies.orderly.idle,
+  attack: SFX.enemies.orderly.attack,
+  death: SFX.enemies.orderly.death,
+  damage: {
+    lost: { min: 26, max: 36 },
+    trapped: { min: 32, max: 44 },
+    consumed: { min: 38, max: 56 },
+  },
+};
+
+const BOSS_HEART_HOSPITAL: EnemyProfile = {
+  // Hospital-as-organism core. Stationary in lore; uses ambient as sightLoop.
+  material: 'boss_heart_hospital',
+  hp: 32,
+  scale: 2.2,
+  speedPatrol: 0.15,
+  speedChase: 0.3,
+  sightLoop: SFX.bosses.heartHospital.ambient,
+  attack: SFX.bosses.heartHospital.attack,
+  death: SFX.bosses.heartHospital.death,
+  damage: {
+    lost: { min: 30, max: 42 },
+    trapped: { min: 38, max: 52 },
+    consumed: { min: 46, max: 64 },
+  },
+};
+
+const BOSS_SHEPHERD: EnemyProfile = {
+  // The predator-shepherd. Final-act mirror to the player.
+  material: 'boss_shepherd',
+  hp: 26,
+  scale: 1.5,
+  speedPatrol: 0.9,
+  speedChase: 1.3,
+  sightLoop: SFX.transitions.predatorGrowl,
+  attack: SFX.transitions.predatorHunt,
+  death: SFX.enemies.orderly.death,
+  damage: {
+    lost: { min: 26, max: 38 },
+    trapped: { min: 32, max: 46 },
+    consumed: { min: 40, max: 58 },
+  },
+};
+
 const PROFILES: Record<EnemyKind, EnemyProfile> = {
   skeleton_husk: HUSK,
   medical_orderly: ORDERLY,
@@ -125,6 +211,11 @@ const PROFILES: Record<EnemyKind, EnemyProfile> = {
   flesh_eye: FLESH_EYE,
   flesh_machine: FLESH_MACHINE,
   doppelganger: DOPPELGANGER,
+  boss_chief_doctor: BOSS_CHIEF_DOCTOR,
+  boss_choir: BOSS_CHOIR,
+  boss_dade_keeper: BOSS_DADE_KEEPER,
+  boss_heart_hospital: BOSS_HEART_HOSPITAL,
+  boss_shepherd: BOSS_SHEPHERD,
 };
 
 export function getEnemyProfile(kind: EnemyKind): EnemyProfile {

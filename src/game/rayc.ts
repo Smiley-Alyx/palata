@@ -17,6 +17,7 @@ import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
+import { loadAnimationRegistry, tickAnimations } from './render/animations';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
 import { createItemsSystem, type MedicationSpec, type ArtifactSpec, type AmmoSpec } from './systems/items';
@@ -30,6 +31,7 @@ import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
 import type { LevelTriggerJson } from './levels/level-loader';
 import type { LevelLightJson } from './levels/level-loader';
+import type { LevelGeometryOverrideJson } from './levels/level-loader';
 import type { LevelWorldStatesJson } from './levels/level-loader';
 import type { LevelEntityJson } from './levels/level-loader';
 import type { LevelTriggerActionJson } from './levels/level-loader';
@@ -63,10 +65,9 @@ const weaponsSystem = createWeaponsSystem({ inventory });
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
+let baseGrid: number[][] | null = null;
+let rawGeometryOverrides: LevelGeometryOverrideJson[] = [];
 let entityIdSeq = 1;
-// Sticky flag: once a level declares any `enemy_spawn` entity we treat enemies
-// as entity-driven. From then on `reapplyEntities` is authoritative for the
-// enemy list (so perception-gated enemies vanish when their state turns off).
 let entityDrivenEnemies = false;
 
 let activeInteractables: Array<{
@@ -221,6 +222,11 @@ function reapplyEntities() {
         'skeleton_husk',
         'medical_orderly',
         'deformed_patient',
+        'boss_chief_doctor',
+        'boss_choir',
+        'boss_dade_keeper',
+        'boss_heart_hospital',
+        'boss_shepherd',
         'flesh_watcher',
         'flesh_eye',
         'flesh_machine',
@@ -440,6 +446,32 @@ export function setTriggers(next: LevelTriggerJson[]) {
   triggersSystem?.setTriggers(enabled);
 }
 
+function applyGeometryOverrides() {
+  if (!baseGrid) return;
+  const ws = worldStateSystem;
+  // Clone base grid (per-row arrays).
+  const next: number[][] = baseGrid.map((row) => row.slice());
+  if (rawGeometryOverrides.length) {
+    for (const ov of rawGeometryOverrides) {
+      const enabled = ws ? ws.isEnabled(ov) : true;
+      if (!enabled) continue;
+      for (const c of ov.cells) {
+        if (c.y < 0 || c.y >= next.length) continue;
+        const row = next[c.y];
+        if (c.x < 0 || c.x >= row.length) continue;
+        row[c.x] = c.value;
+      }
+    }
+  }
+  setMapState(next);
+}
+
+export function setGeometryOverrides(next: LevelGeometryOverrideJson[]) {
+  ensureEngine();
+  rawGeometryOverrides = Array.isArray(next) ? next : [];
+  applyGeometryOverrides();
+}
+
 export function setLights(next: LevelLightJson[]) {
   ensureEngine();
   rawLights = Array.isArray(next) ? next : [];
@@ -581,6 +613,7 @@ function ensureEngine() {
     triggersSystem?.setTriggers(enabledTriggers);
     const enabledLights = rawLights.filter((l) => worldStateSystem?.isEnabled(l) ?? true);
     lightsSystem?.setLights(enabledLights);
+    applyGeometryOverrides();
     reapplyEntities();
   });
 
@@ -797,6 +830,7 @@ function ensureEngine() {
         }
       },
       onTick: (dt: number) => {
+        tickAnimations(dt);
         lightsSystem?.tick(dt);
         hallucinationsSystem?.tick(dt);
         itemsSystem?.tick();
@@ -841,6 +875,10 @@ export function triggerDeathOverlay() {
 
 export function setMap(grid: number[][]) {
   ensureEngine();
+  // Snapshot the incoming grid as the authoritative base. Subsequent
+  // `geometryOverrides` mutations are recomputed from this snapshot every
+  // time world state changes.
+  baseGrid = grid.map((row) => row.slice());
   setMapState(grid);
   setMaterialsWallState(null);
   doorsSystem?.onMapChanged();
@@ -858,6 +896,7 @@ export function setMap(grid: number[][]) {
   rawTriggers = [];
   rawLights = [];
   rawEntities = [];
+  rawGeometryOverrides = [];
   entityIdSeq = 1;
   entityDrivenEnemies = false;
   activeInteractables = [];

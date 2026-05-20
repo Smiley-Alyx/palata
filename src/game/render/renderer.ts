@@ -280,8 +280,10 @@ export function createRenderer({
     const enemiesRaw = typeof getEnemies === 'function' ? getEnemies() : [];
     const enemies = enemiesRaw.map((e) => {
       const kind = (e as { kind?: EnemyKind }).kind;
-      const mat = kind ? getEnemyProfile(kind).material : 'enemy';
-      return { x: e.x, y: e.y, alive: e.alive, material: mat, attackFlashMs: e.attackFlashMs, scale: 1 };
+      const profile = kind ? getEnemyProfile(kind) : null;
+      const mat = profile ? profile.material : 'enemy';
+      const scale = profile && typeof profile.scale === 'number' ? profile.scale : 1;
+      return { x: e.x, y: e.y, alive: e.alive, material: mat, attackFlashMs: e.attackFlashMs, scale };
     });
     drawSpriteList(zBuffer, enemies);
 
