@@ -1,0 +1,15 @@
+{
+  "fps": 6,
+  "loop": true,
+  "_comment": "1536x1024 multi-row sheet, IDLE row 5-6 frames.",
+  "sheet": {
+    "src": "sprites/enemies/hallucination_entity.png",
+    "frames": [
+      { "x": 130, "y": 0, "w": 220, "h": 205 },
+      { "x": 350, "y": 0, "w": 220, "h": 205 },
+      { "x": 570, "y": 0, "w": 220, "h": 205 },
+      { "x": 790, "y": 0, "w": 220, "h": 205 },
+      { "x": 1010, "y": 0, "w": 220, "h": 205 }
+    ]
+  }
+}

@@ -1,7 +1,15 @@
 {
-  "fps": 8,
+  "fps": 5,
   "loop": true,
-  "frames": [
-    "sprites/enemies/skeleton_husk.png"
-  ]
+  "_comment": "1402x1122 sheet, 6 rows (IDLE/RUN/LEAP/HURT/DEATH/CORPSE), 5 frames per IDLE row. Slicing first 5 frames of IDLE row for an animated idle.",
+  "sheet": {
+    "src": "sprites/enemies/skeleton_husk.png",
+    "frames": [
+      { "x": 110, "y": 5,  "w": 175, "h": 155 },
+      { "x": 290, "y": 5,  "w": 175, "h": 155 },
+      { "x": 470, "y": 5,  "w": 175, "h": 155 },
+      { "x": 650, "y": 5,  "w": 175, "h": 155 },
+      { "x": 830, "y": 5,  "w": 175, "h": 155 }
+    ]
+  }
 }

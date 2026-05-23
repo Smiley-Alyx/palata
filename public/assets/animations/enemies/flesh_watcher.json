@@ -1,7 +1,15 @@
 {
-  "fps": 8,
+  "fps": 4,
   "loop": true,
-  "frames": [
-    "sprites/enemies/flesh_watcher.png"
-  ]
+  "_comment": "1402x1122 multi-row sheet, IDLE row first.",
+  "sheet": {
+    "src": "sprites/enemies/flesh_watcher.png",
+    "frames": [
+      { "x": 110, "y": 5, "w": 175, "h": 155 },
+      { "x": 290, "y": 5, "w": 175, "h": 155 },
+      { "x": 470, "y": 5, "w": 175, "h": 155 },
+      { "x": 650, "y": 5, "w": 175, "h": 155 },
+      { "x": 830, "y": 5, "w": 175, "h": 155 }
+    ]
+  }
 }
