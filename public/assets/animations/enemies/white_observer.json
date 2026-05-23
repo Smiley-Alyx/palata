@@ -4,6 +4,7 @@
   "_comment": "1402x1122 sheet, five observer states across the first row.",
   "sheet": {
     "src": "sprites/enemies/white_observer.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x":  30, "y":  86, "w": 205, "h": 820 },
       { "x": 232, "y": 224, "w": 190, "h": 640 },

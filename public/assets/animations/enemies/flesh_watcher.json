@@ -4,6 +4,7 @@
   "_comment": "1402x1122 sheet, four tall watcher states across the first row.",
   "sheet": {
     "src": "sprites/enemies/flesh_watcher.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x":  28, "y": 136, "w": 295, "h": 840 },
       { "x": 360, "y": 136, "w": 295, "h": 840 },

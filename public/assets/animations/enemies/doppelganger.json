@@ -4,6 +4,7 @@
   "_comment": "1536x1024 multi-row sheet (IDLE STARE / MIRRORED / GLITCH / FLICKERING / DEATH). 6 frames in IDLE row.",
   "sheet": {
     "src": "sprites/enemies/doppelganger.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 205, "y": 20, "w":  90, "h": 204 },
       { "x": 360, "y": 20, "w":  95, "h": 204 },

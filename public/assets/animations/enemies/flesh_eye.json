@@ -3,6 +3,7 @@
   "loop": true,
   "sheet": {
     "src": "sprites/enemies/flesh_eye.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x":  70, "y": 52, "w": 430, "h": 705 },
       { "x": 540, "y": 48, "w": 490, "h": 760 },

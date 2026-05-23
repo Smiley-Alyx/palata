@@ -4,6 +4,7 @@
   "_comment": "1402x1122 multi-row sheet, IDLE row first.",
   "sheet": {
     "src": "sprites/enemies/medical_orderly.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 121, "y": 14, "w": 107, "h": 156 },
       { "x": 280, "y": 14, "w": 115, "h": 156 },

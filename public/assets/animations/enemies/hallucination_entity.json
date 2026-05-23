@@ -4,6 +4,7 @@
   "_comment": "1536x1024 multi-row sheet, first row distortion states.",
   "sheet": {
     "src": "sprites/enemies/hallucination_entity.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 158,  "y": 10, "w": 195, "h": 200 },
       { "x": 414,  "y": 10, "w": 215, "h": 200 },

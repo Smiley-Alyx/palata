@@ -4,6 +4,7 @@
   "_comment": "1536x1024 multi-row boss sheet. Slicing the full IDLE row.",
   "sheet": {
     "src": "sprites/bosses/boss_cheif_doctor.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 118,  "y": 2, "w": 124, "h": 112 },
       { "x": 268,  "y": 2, "w": 132, "h": 112 },

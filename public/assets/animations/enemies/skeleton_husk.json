@@ -4,6 +4,7 @@
   "_comment": "1402x1122 sheet, 6 rows (IDLE/RUN/LEAP/HURT/DEATH/CORPSE), 5 frames per IDLE row. Slicing first 5 frames of IDLE row for an animated idle.",
   "sheet": {
     "src": "sprites/enemies/skeleton_husk.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 75,  "y": 25, "w": 105, "h": 148 },
       { "x": 263, "y": 25, "w": 102, "h": 148 },

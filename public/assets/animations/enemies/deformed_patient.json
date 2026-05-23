@@ -4,6 +4,7 @@
   "_comment": "1402x1122 multi-row sheet, IDLE row first.",
   "sheet": {
     "src": "sprites/enemies/deformed_patient.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 122, "y": 18, "w":  63, "h": 156 },
       { "x": 263, "y": 18, "w":  70, "h": 156 },
