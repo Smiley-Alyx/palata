@@ -7,6 +7,8 @@ export type AnimationDescriptor = {
 };
 
 const animations = new Map<string, AnimationDescriptor>();
+const slicedCanvases = new WeakSet<HTMLCanvasElement>();
+const readySlicedCanvases = new WeakSet<HTMLCanvasElement>();
 let timeSec = 0;
 
 function resolveFrameUrl(src: string): string {
@@ -41,6 +43,7 @@ function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.floor(r.w));
     c.height = Math.max(1, Math.floor(r.h));
+    slicedCanvases.add(c);
     return c;
   });
 
@@ -53,6 +56,7 @@ function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, c.width, c.height);
       ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
+      readySlicedCanvases.add(c);
     }
   };
 
@@ -170,8 +174,7 @@ export function tickAnimations(dt: number) {
 
 function isReady(frame: HTMLImageElement | HTMLCanvasElement): boolean {
   if (frame instanceof HTMLImageElement) return frame.naturalWidth > 0;
-  // Canvas frames are valid as soon as they have non-zero size; the lazy
-  // paint inside `sliceSheet` keeps them blank until the source image loads.
+  if (slicedCanvases.has(frame)) return readySlicedCanvases.has(frame);
   return frame.width > 0 && frame.height > 0;
 }
 

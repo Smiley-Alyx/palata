@@ -31,7 +31,7 @@ export function createRenderer({
   let damagePulse = 0;
   let killFill = 0;
   let killFillTarget = 0;
-  let shadedWallColumn: HTMLCanvasElement | null = null;
+  const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
     if (src instanceof HTMLImageElement) {
@@ -46,24 +46,35 @@ export function createRenderer({
     return { w: 1, h: 1 };
   }
 
-  function getShadedWallColumn(texture: CanvasImageSource, texX: number, texH: number, shade: number): HTMLCanvasElement | null {
-    if (!shadedWallColumn) shadedWallColumn = document.createElement('canvas');
-    if (shadedWallColumn.width !== 1) shadedWallColumn.width = 1;
-    if (shadedWallColumn.height !== texH) shadedWallColumn.height = texH;
+  function getShadedTexture(texture: CanvasImageSource, shade: number): CanvasImageSource {
+    const key = Math.max(1, Math.min(64, Math.round(shade * 64)));
+    const cachedByShade = shadedTextureCache.get(texture as object);
+    const cached = cachedByShade?.get(key);
+    if (cached) return cached;
 
-    const cctx = shadedWallColumn.getContext('2d');
-    if (!cctx) return null;
+    const { w, h } = getSourceSize(texture);
+    const shaded = document.createElement('canvas');
+    shaded.width = w;
+    shaded.height = h;
 
+    const cctx = shaded.getContext('2d');
+    if (!cctx) return texture;
+
+    const quantizedShade = key / 64;
     cctx.imageSmoothingEnabled = false;
-    cctx.globalCompositeOperation = 'source-over';
-    cctx.clearRect(0, 0, 1, texH);
-    cctx.drawImage(texture, texX, 0, 1, texH, 0, 0, 1, texH);
+    cctx.drawImage(texture, 0, 0, w, h);
     cctx.globalCompositeOperation = 'source-atop';
-    cctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, shade)})`;
-    cctx.fillRect(0, 0, 1, texH);
+    cctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, quantizedShade)})`;
+    cctx.fillRect(0, 0, w, h);
     cctx.globalCompositeOperation = 'source-over';
 
-    return shadedWallColumn;
+    let byShade = cachedByShade;
+    if (!byShade) {
+      byShade = new Map();
+      shadedTextureCache.set(texture as object, byShade);
+    }
+    byShade.set(key, shaded);
+    return shaded;
   }
 
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
@@ -214,12 +225,8 @@ export function createRenderer({
     const l = Math.max(0, Math.min(1, light01));
     const shade = 1 - l;
     if (shade > 0.001) {
-      const shaded = getShadedWallColumn(texture, texX, texH, shade);
-      if (shaded) {
-        ctx.drawImage(shaded, 0, 0, 1, texH, x, y0, 1, sliceHeight);
-      } else {
-        ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
-      }
+      const shaded = getShadedTexture(texture, shade);
+      ctx.drawImage(shaded, texX, 0, 1, texH, x, y0, 1, sliceHeight);
     } else {
       ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
     }
