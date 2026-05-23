@@ -68,6 +68,30 @@
     "10000000000000000000000000000000000000000000000000000001",
     "11111111111111111111111111111111111111111111111111111111"
   ],
+  "materialsWall": [
+    { "x": 27, "y": 0, "material": "blast_door" },
+    { "x": 28, "y": 0, "material": "blast_door" },
+
+    { "x": 24, "y": 6, "material": "archive_door" },
+    { "x": 29, "y": 6, "material": "medical_door" },
+    { "x": 24, "y": 14, "material": "medical_door" },
+    { "x": 29, "y": 14, "material": "shower_door" },
+    { "x": 24, "y": 22, "material": "ward_door" },
+    { "x": 29, "y": 22, "material": "ward_door" },
+    { "x": 24, "y": 30, "material": "ward_door" },
+    { "x": 29, "y": 30, "material": "archive_door" },
+
+    { "x": 0, "y": 5, "material": "ward_window" },
+    { "x": 55, "y": 5, "material": "ward_window" },
+    { "x": 0, "y": 13, "material": "ward_window" },
+    { "x": 55, "y": 13, "material": "false_window" },
+    { "x": 0, "y": 21, "material": "false_window" },
+    { "x": 55, "y": 21, "material": "ward_window" },
+    { "x": 0, "y": 29, "material": "ward_window" },
+    { "x": 55, "y": 29, "material": "false_window" },
+    { "x": 0, "y": 39, "material": "false_window" },
+    { "x": 55, "y": 39, "material": "ward_window" }
+  ],
   "worldStates": {
     "initialStates": [],
     "flags": {
@@ -217,7 +241,7 @@
       "id": "archive_lock",
       "type": "door_lock",
       "keyId": "gold",
-      "x": 25,
+      "x": 24,
       "y": 6
     },
 

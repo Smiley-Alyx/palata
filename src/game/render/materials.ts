@@ -28,8 +28,13 @@ const materialToDomId = new Map<string, string>([
   ['flesh_wall', 'flesh_wall'],
   ['industrial_flesh', 'industrial_flesh'],
   ['medical_door', 'medical_door'],
+  ['archive_door', 'archive_door'],
+  ['ward_door', 'ward_door'],
+  ['shower_door', 'shower_door'],
   ['blast_door', 'blast_door'],
   ['reinforced_window', 'reinforced_window'],
+  ['ward_window', 'ward_window'],
+  ['false_window', 'false_window'],
   ['exit', 'exit'],
   ['key_door', 'keyDoor'],
 

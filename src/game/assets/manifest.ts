@@ -16,8 +16,13 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
 
   // Doors / windows
   medical_door: 'assets/textures/doors/medical_door.png',
+  archive_door: 'assets/textures/doors/archive_door.png',
+  ward_door: 'assets/textures/doors/ward_door.png',
+  shower_door: 'assets/textures/doors/shower_door.png',
   blast_door: 'assets/textures/doors/blast_door.png',
   reinforced_window: 'assets/textures/walls/reinforced_window.svg',
+  ward_window: 'assets/textures/windows/ward_window.png',
+  false_window: 'assets/textures/windows/false_window.png',
   exit: 'assets/textures/doors/blast_door.png',
   keyDoor: 'assets/textures/doors/medical_door.png',
 

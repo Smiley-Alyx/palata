@@ -195,17 +195,38 @@ export async function loadLevel(levelUrl: string) {
   });
 
   let materialsWall: string[][] | null = null;
-  if (Array.isArray(data.materialsWall) && data.materialsWall.every((r) => typeof r === 'string')) {
-    const mRows = data.materialsWall as string[];
-    materialsWall = new Array(grid.length);
-    for (let y = 0; y < grid.length; y++) {
-      const src = mRows[y] ?? '';
-      const padded = src.padEnd(grid[0]?.length ?? 0, '');
-      const outRow: string[] = new Array(grid[0]?.length ?? 0);
-      for (let x = 0; x < outRow.length; x++) {
-        outRow[x] = padded[x] ?? '';
+  if (Array.isArray(data.materialsWall)) {
+    const width = grid[0]?.length ?? 0;
+    if (data.materialsWall.every((r) => typeof r === 'string')) {
+      const mRows = data.materialsWall as string[];
+      materialsWall = new Array(grid.length);
+      for (let y = 0; y < grid.length; y++) {
+        const src = mRows[y] ?? '';
+        const outRow: string[] = new Array(width);
+        for (let x = 0; x < outRow.length; x++) {
+          outRow[x] = src[x] ?? '';
+        }
+        materialsWall[y] = outRow;
       }
-      materialsWall[y] = outRow;
+    } else {
+      const overrides = data.materialsWall as Array<{
+        x?: unknown;
+        y?: unknown;
+        material?: unknown;
+      }>;
+      materialsWall = Array.from({ length: grid.length }, () =>
+        Array.from({ length: width }, () => ''),
+      );
+      for (const entry of overrides) {
+        if (!entry || typeof entry !== 'object') continue;
+        if (typeof entry.x !== 'number' || typeof entry.y !== 'number') continue;
+        if (typeof entry.material !== 'string') continue;
+        const x = Math.floor(entry.x);
+        const y = Math.floor(entry.y);
+        if (y < 0 || y >= materialsWall.length) continue;
+        if (x < 0 || x >= (materialsWall[0]?.length ?? 0)) continue;
+        materialsWall[y][x] = entry.material;
+      }
     }
   }
 
