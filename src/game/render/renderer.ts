@@ -31,6 +31,7 @@ export function createRenderer({
   let damagePulse = 0;
   let killFill = 0;
   let killFillTarget = 0;
+  let shadedWallColumn: HTMLCanvasElement | null = null;
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
     if (src instanceof HTMLImageElement) {
@@ -43,6 +44,26 @@ export function createRenderer({
       return { w: src.width || 1, h: src.height || 1 };
     }
     return { w: 1, h: 1 };
+  }
+
+  function getShadedWallColumn(texture: CanvasImageSource, texX: number, texH: number, shade: number): HTMLCanvasElement | null {
+    if (!shadedWallColumn) shadedWallColumn = document.createElement('canvas');
+    if (shadedWallColumn.width !== 1) shadedWallColumn.width = 1;
+    if (shadedWallColumn.height !== texH) shadedWallColumn.height = texH;
+
+    const cctx = shadedWallColumn.getContext('2d');
+    if (!cctx) return null;
+
+    cctx.imageSmoothingEnabled = false;
+    cctx.globalCompositeOperation = 'source-over';
+    cctx.clearRect(0, 0, 1, texH);
+    cctx.drawImage(texture, texX, 0, 1, texH, 0, 0, 1, texH);
+    cctx.globalCompositeOperation = 'source-atop';
+    cctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, shade)})`;
+    cctx.fillRect(0, 0, 1, texH);
+    cctx.globalCompositeOperation = 'source-over';
+
+    return shadedWallColumn;
   }
 
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
@@ -188,14 +209,19 @@ export function createRenderer({
     if (texX > texW - 1) texX = texW - 1;
 
     const y0 = viewHeight / 2 - sliceHeight / 2;
-    ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
 
     // Apply lighting as a dark overlay (cheap and stable for retro look).
     const l = Math.max(0, Math.min(1, light01));
     const shade = 1 - l;
     if (shade > 0.001) {
-      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, shade)})`;
-      ctx.fillRect(x, y0, 1, sliceHeight);
+      const shaded = getShadedWallColumn(texture, texX, texH, shade);
+      if (shaded) {
+        ctx.drawImage(shaded, 0, 0, 1, texH, x, y0, 1, sliceHeight);
+      } else {
+        ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
+      }
+    } else {
+      ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
     }
   }
 
