@@ -5,7 +5,7 @@
   "sheet": {
     "src": "sprites/pickups/medication/haloperidol.png",
     "frames": [
-      { "x": 0, "y": 0, "w": 512, "h": 870 }
+      { "x": 78, "y": 52, "w": 382, "h": 660 }
     ]
   }
 }

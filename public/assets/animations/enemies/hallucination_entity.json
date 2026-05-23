@@ -1,15 +1,15 @@
 {
   "fps": 6,
   "loop": true,
-  "_comment": "1536x1024 multi-row sheet, IDLE row 5-6 frames.",
+  "_comment": "1536x1024 multi-row sheet, first row distortion states.",
   "sheet": {
     "src": "sprites/enemies/hallucination_entity.png",
     "frames": [
-      { "x": 130, "y": 0, "w": 220, "h": 205 },
-      { "x": 350, "y": 0, "w": 220, "h": 205 },
-      { "x": 570, "y": 0, "w": 220, "h": 205 },
-      { "x": 790, "y": 0, "w": 220, "h": 205 },
-      { "x": 1010, "y": 0, "w": 220, "h": 205 }
+      { "x": 158,  "y": 10, "w": 195, "h": 200 },
+      { "x": 414,  "y": 10, "w": 215, "h": 200 },
+      { "x": 672,  "y":  8, "w": 222, "h": 202 },
+      { "x": 954,  "y": 10, "w": 225, "h": 200 },
+      { "x": 1228, "y": 18, "w": 205, "h": 192 }
     ]
   }
 }

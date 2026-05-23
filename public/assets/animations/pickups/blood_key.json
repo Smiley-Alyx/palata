@@ -5,7 +5,7 @@
   "sheet": {
     "src": "sprites/pickups/keys/blood_key.png",
     "frames": [
-      { "x": 0, "y": 0, "w": 512, "h": 870 }
+      { "x": 70, "y": 40, "w": 356, "h": 724 }
     ]
   }
 }

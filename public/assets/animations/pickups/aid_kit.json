@@ -5,7 +5,7 @@
   "sheet": {
     "src": "sprites/pickups/health/aid_kit.png",
     "frames": [
-      { "x": 0, "y": 0, "w": 512, "h": 870 }
+      { "x": 50, "y": 220, "w": 410, "h": 525 }
     ]
   }
 }

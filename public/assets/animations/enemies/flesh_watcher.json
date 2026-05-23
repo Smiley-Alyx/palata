@@ -1,15 +1,14 @@
 {
   "fps": 4,
   "loop": true,
-  "_comment": "1402x1122 multi-row sheet, IDLE row first.",
+  "_comment": "1402x1122 sheet, four tall watcher states across the first row.",
   "sheet": {
     "src": "sprites/enemies/flesh_watcher.png",
     "frames": [
-      { "x": 110, "y": 5, "w": 175, "h": 155 },
-      { "x": 290, "y": 5, "w": 175, "h": 155 },
-      { "x": 470, "y": 5, "w": 175, "h": 155 },
-      { "x": 650, "y": 5, "w": 175, "h": 155 },
-      { "x": 830, "y": 5, "w": 175, "h": 155 }
+      { "x":  28, "y": 136, "w": 295, "h": 840 },
+      { "x": 360, "y": 136, "w": 295, "h": 840 },
+      { "x": 645, "y": 132, "w": 360, "h": 845 },
+      { "x": 995, "y": 128, "w": 375, "h": 850 }
     ]
   }
 }

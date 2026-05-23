@@ -5,7 +5,7 @@
   "sheet": {
     "src": "sprites/pickups/medication/injector.png",
     "frames": [
-      { "x": 0, "y": 0, "w": 512, "h": 870 }
+      { "x": 162, "y": 58, "w": 288, "h": 658 }
     ]
   }
 }

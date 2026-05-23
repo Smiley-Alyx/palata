@@ -1,15 +1,16 @@
 {
   "fps": 6,
   "loop": true,
-  "_comment": "1536x1024 multi-row boss sheet. Slicing first 5 IDLE frames.",
+  "_comment": "1536x1024 multi-row boss sheet. Slicing the full IDLE row.",
   "sheet": {
     "src": "sprites/bosses/boss_heart_hospital.png",
     "frames": [
-      { "x": 130, "y": 0, "w": 140, "h": 125 },
-      { "x": 270, "y": 0, "w": 140, "h": 125 },
-      { "x": 410, "y": 0, "w": 140, "h": 125 },
-      { "x": 550, "y": 0, "w": 140, "h": 125 },
-      { "x": 690, "y": 0, "w": 140, "h": 125 }
+      { "x": 100,  "y": 2, "w": 245, "h": 148 },
+      { "x": 326,  "y": 2, "w": 225, "h": 148 },
+      { "x": 560,  "y": 2, "w": 250, "h": 148 },
+      { "x": 774,  "y": 2, "w": 255, "h": 148 },
+      { "x": 998,  "y": 2, "w": 248, "h": 148 },
+      { "x": 1218, "y": 2, "w": 240, "h": 148 }
     ]
   }
 }

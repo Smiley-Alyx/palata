@@ -5,7 +5,7 @@
   "sheet": {
     "src": "sprites/pickups/keys/silver_key_hd.png",
     "frames": [
-      { "x": 0, "y": 0, "w": 512, "h": 870 }
+      { "x": 164, "y": 96, "w": 276, "h": 668 }
     ]
   }
 }
