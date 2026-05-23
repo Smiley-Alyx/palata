@@ -185,6 +185,11 @@ function initDeathUi() {
     const stage = (e as CustomEvent<{ stage?: string }>).detail?.stage;
     showEndingScreen(stage);
   });
+
+  window.addEventListener('rayc:next-level', (e) => {
+    const detail = (e as CustomEvent<{ levelId?: string; message?: string }>).detail;
+    void transitionToNextLevel(detail?.levelId, detail?.message);
+  });
 }
 
 function computeInitialVisibleCells({
@@ -565,6 +570,9 @@ function showMenu() {
 let running = false;
 let dead = false;
 let deathTimer: number | null = null;
+let transitioningLevel = false;
+let currentLevelId: string | null = null;
+let currentDifficulty: Difficulty = 'lost';
 
 function showBloodOverlay() {
   const el = document.getElementById('bloodOverlay');
@@ -717,6 +725,27 @@ function hideEndingScreen() {
   el.style.display = 'none';
 }
 
+function showLevelTransitionMessage(message?: string) {
+  return new Promise<void>((resolve) => {
+    const root = document.getElementById('levelTransitionRoot');
+    if (!(root instanceof HTMLElement)) {
+      resolve();
+      return;
+    }
+
+    const bodyEl = document.getElementById('levelTransitionBody');
+    if (bodyEl instanceof HTMLElement) {
+      bodyEl.textContent = message || 'The lock gives way. The next ward opens.';
+    }
+
+    root.style.display = '';
+    window.setTimeout(() => {
+      root.style.display = 'none';
+      resolve();
+    }, 1500);
+  });
+}
+
 const LOADING_SUBTITLES = [
   'Lights dim along the corridor',
   'The orderlies take their positions',
@@ -776,13 +805,50 @@ function enterDeathState() {
   }, 2000);
 }
 
-async function startLevelById(levelId: string, difficulty: Difficulty) {
+async function findNextLevelId(levelId: string) {
+  const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
+  const currentIndex = levelsIndex.levels.findIndex((l) => l.id === levelId);
+  if (currentIndex < 0) return null;
+
+  for (let i = currentIndex + 1; i < levelsIndex.levels.length; i++) {
+    const level = levelsIndex.levels[i];
+    if (!level.hidden) return level.id;
+  }
+
+  return null;
+}
+
+async function transitionToNextLevel(levelId?: string, message?: string) {
+  if (transitioningLevel) return;
+  transitioningLevel = true;
+
+  stopRayc();
+  running = false;
+
+  const nextLevelId = levelId ?? (currentLevelId ? await findNextLevelId(currentLevelId) : null);
+  if (!nextLevelId) {
+    transitioningLevel = false;
+    showEndingScreen();
+    return;
+  }
+
+  await showLevelTransitionMessage(message);
+  await startLevelById(nextLevelId, currentDifficulty, { resetPlayer: false });
+  transitioningLevel = false;
+}
+
+async function startLevelById(
+  levelId: string,
+  difficulty: Difficulty,
+  opts: { resetPlayer?: boolean } = {},
+) {
   unlockAudio();
 
   dead = false;
   if (deathTimer !== null) window.clearTimeout(deathTimer);
   hideDeathScreen();
   hideBloodOverlay();
+  transitioningLevel = false;
 
   const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
   const levelEntry = levelsIndex.levels.find((l: { id: string; file: string }) => l.id === levelId);
@@ -833,9 +899,11 @@ async function startLevelById(levelId: string, difficulty: Difficulty) {
   });
   playMusic();
 
+  await loadingDone;
   hideMenu();
   startRayc();
   running = true;
+  currentLevelId = levelEntry.id;
 }
 
 function initMenu() {
@@ -845,7 +913,6 @@ function initMenu() {
 
   const levelsRoot = document.getElementById('menuLevels');
   const difficultyRoot = document.getElementById('menuDifficulty');
-  let currentDifficulty: Difficulty = 'lost';
 
   if (difficultyRoot instanceof HTMLElement) {
     const opts: Array<{ id: Difficulty; label: string }> = [

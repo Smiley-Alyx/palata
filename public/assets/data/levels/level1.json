@@ -765,8 +765,8 @@
       },
       "actions": [
         {
-          "type": "show_ending",
-          "stage": "clean"
+          "type": "next_level",
+          "message": "The final door unlocks. Something waits beyond the ward."
         }
       ]
     }

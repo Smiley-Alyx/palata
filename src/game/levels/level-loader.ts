@@ -120,6 +120,11 @@ export type LevelTriggerActionJson =
   | {
       type: 'show_ending';
       stage?: string;
+    }
+  | {
+      type: 'next_level';
+      levelId?: string;
+      message?: string;
     };
 
 export type LevelTriggerJson = {
@@ -451,6 +456,13 @@ export async function loadLevel(levelUrl: string) {
             actions.push({
               type: 'show_ending',
               stage: typeof aa.stage === 'string' ? aa.stage : undefined,
+            });
+          }
+          if (aa.type === 'next_level') {
+            actions.push({
+              type: 'next_level',
+              levelId: typeof aa.levelId === 'string' ? aa.levelId : undefined,
+              message: typeof aa.message === 'string' ? aa.message : undefined,
             });
           }
         }

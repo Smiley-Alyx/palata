@@ -647,6 +647,11 @@ function ensureEngine() {
     onEnding: (stage) => {
       window.dispatchEvent(new CustomEvent('rayc:ending', { detail: { stage } }));
     },
+    onNextLevel: (levelId, message) => {
+      window.dispatchEvent(
+        new CustomEvent('rayc:next-level', { detail: { levelId, message } }),
+      );
+    },
   });
 
   enemiesSystem = createEnemiesSystem({

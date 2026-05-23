@@ -15,6 +15,7 @@ export function createTriggersSystem({
   spawnEntity,
   despawnEntity,
   onEnding,
+  onNextLevel,
 }: {
   audio: AudioManager;
   getPlayerPos: () => { x: number; y: number };
@@ -33,6 +34,7 @@ export function createTriggersSystem({
   spawnEntity: (entity: unknown) => void;
   despawnEntity: (id: string) => void;
   onEnding?: (stage?: string) => void;
+  onNextLevel?: (levelId?: string, message?: string) => void;
 }) {
   type TriggerRuntime = {
     id: string;
@@ -136,6 +138,11 @@ export function createTriggersSystem({
 
     if (a.type === 'show_ending') {
       onEnding?.(a.stage);
+      return;
+    }
+
+    if (a.type === 'next_level') {
+      onNextLevel?.(a.levelId, a.message);
       return;
     }
   }

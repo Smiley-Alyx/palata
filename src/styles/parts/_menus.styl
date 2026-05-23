@@ -74,6 +74,19 @@
   color rgba(200, 180, 220, 0.65)
   font-style italic
 
+.menu--level-transition
+  background radial-gradient(circle at center, rgba(30, 18, 6, 0.62) 0%, rgba(0, 0, 0, 0.92) 70%)
+  z-index 20
+  animation ending-fade 0.8s ease-in 0s 1 both
+
+.menu--level-transition .menu-title
+  color $accent
+  font-size 30px
+  letter-spacing 4px
+
+.menu--level-transition .menu-epitaph
+  color rgba(236, 236, 236, 0.82)
+
 @keyframes ending-fade
   from
     opacity 0
