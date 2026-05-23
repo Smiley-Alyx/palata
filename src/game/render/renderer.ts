@@ -423,16 +423,16 @@ export function createRenderer({
     const h = getVisibleViewHeight();
     const { w: texW, h: texH } = getSourceSize(frame);
     const aspect = texW / Math.max(1, texH);
-    let drawH = h * 0.76;
+    let drawH = h * 0.88;
     let drawW = drawH * aspect;
-    const maxW = w * 0.58;
+    const maxW = w * 0.72;
     if (drawW > maxW) {
       drawW = maxW;
       drawH = drawW / Math.max(0.01, aspect);
     }
 
     const x = Math.floor((w - drawW) / 2);
-    const y = Math.floor(h * 0.96 - drawH);
+    const y = Math.floor(h * 1.04 - drawH);
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
