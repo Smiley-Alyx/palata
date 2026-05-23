@@ -4,6 +4,7 @@
   "_comment": "1536x1024 horizontal weapon sheet (idle / slash / heavy stab / mutation growth).",
   "sheet": {
     "src": "sprites/weapons/bone_blade.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 0, "y": 0, "w": 384, "h": 900 },
       { "x": 384, "y": 0, "w": 384, "h": 900 },

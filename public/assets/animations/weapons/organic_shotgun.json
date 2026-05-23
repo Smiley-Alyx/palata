@@ -4,6 +4,7 @@
   "_comment": "1535x1025 horizontal weapon sheet (breathing / firing / flesh recoil / reload growth / mutation).",
   "sheet": {
     "src": "sprites/weapons/organic_shotgun.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 0, "y": 0, "w": 307, "h": 900 },
       { "x": 307, "y": 0, "w": 307, "h": 900 },

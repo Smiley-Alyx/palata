@@ -1,8 +1,10 @@
 import type { Player } from '../../types/game';
 import type { EnemyKind } from '../game-types';
+import type { WeaponId } from '../systems/weapons';
 import { getMap } from '../../state/map-state';
 import { getTextureForMaterial } from './materials';
 import { getEnemyProfile } from '../systems/enemy-profiles';
+import { getAnimatedFrameAt } from './animations';
 
 export function createRenderer({
   ctx,
@@ -11,6 +13,7 @@ export function createRenderer({
   player,
   getEnemies,
   getSprites,
+  getWeapon,
 }: {
   ctx: CanvasRenderingContext2D;
   getViewWidth: () => number;
@@ -18,6 +21,7 @@ export function createRenderer({
   player: Player;
   getEnemies?: () => Array<{ x: number; y: number; alive: boolean; attackFlashMs?: number }>;
   getSprites?: () => Array<{ x: number; y: number; material: string; alive: boolean; scale?: number }>;
+  getWeapon?: () => WeaponId;
 }) {
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
@@ -31,6 +35,7 @@ export function createRenderer({
   let damagePulse = 0;
   let killFill = 0;
   let killFillTarget = 0;
+  let weaponActionStartedAtMs = -Infinity;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
@@ -44,6 +49,16 @@ export function createRenderer({
       return { w: src.width || 1, h: src.height || 1 };
     }
     return { w: 1, h: 1 };
+  }
+
+  function getVisibleViewHeight(): number {
+    const h = getViewHeight();
+    const canvasRect = ctx.canvas.getBoundingClientRect();
+    const frameRect = ctx.canvas.closest('.frame')?.getBoundingClientRect();
+    if (!frameRect) return h;
+    const clipped = frameRect.bottom - canvasRect.top;
+    if (!Number.isFinite(clipped) || clipped <= 0) return h;
+    return Math.min(h, clipped);
   }
 
   function getShadedTexture(texture: CanvasImageSource, shade: number): CanvasImageSource {
@@ -204,6 +219,10 @@ export function createRenderer({
     killFillTarget = Math.min(0.55, killFillTarget + 0.35);
   }
 
+  function triggerWeaponAction() {
+    weaponActionStartedAtMs = performance.now();
+  }
+
   function drawRay(dist: number, x: number, offset: number, img: string | number, light01: number = 1) {
     const viewWidth = getViewWidth();
     const viewHeight = getViewHeight();
@@ -325,6 +344,38 @@ export function createRenderer({
     drawSpriteList(zBuffer, sprites);
   }
 
+  function drawWeapon() {
+    const weapon = typeof getWeapon === 'function' ? getWeapon() : null;
+    if (!weapon) return;
+
+    const actionElapsedSec = (performance.now() - weaponActionStartedAtMs) / 1000;
+    const actionActive = actionElapsedSec >= 0 && actionElapsedSec < 0.34;
+    const frame = actionActive
+      ? getAnimatedFrameAt(weapon, actionElapsedSec, 1)
+      : getAnimatedFrameAt(weapon, 0, 0);
+    if (!frame) return;
+
+    const w = getViewWidth();
+    const h = getVisibleViewHeight();
+    const { w: texW, h: texH } = getSourceSize(frame);
+    const aspect = texW / Math.max(1, texH);
+    let drawH = h * 0.76;
+    let drawW = drawH * aspect;
+    const maxW = w * 0.58;
+    if (drawW > maxW) {
+      drawW = maxW;
+      drawH = drawW / Math.max(0.01, aspect);
+    }
+
+    const x = Math.floor((w - drawW) / 2);
+    const y = Math.floor(h * 0.96 - drawH);
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(frame, x, y, drawW, drawH);
+    ctx.restore();
+  }
+
   function drawMap() {
     const map = getMap();
     if (!map) return;
@@ -364,5 +415,7 @@ export function createRenderer({
     triggerFlash,
     triggerDamagePulse,
     triggerKillFill,
+    triggerWeaponAction,
+    drawWeapon,
   };
 }

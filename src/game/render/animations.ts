@@ -153,6 +153,11 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   goldKey: 'animations/pickups/gold_key.json',
   silverKey: 'animations/pickups/silver_key.json',
   bloodKey: 'animations/pickups/blood_key.json',
+
+  // First-person weapons.
+  pipe: 'animations/weapons/pipe.json',
+  pistol: 'animations/weapons/pistol.json',
+  shotgun: 'animations/weapons/shotgun.json',
 });
 
 export async function loadAnimationRegistry(
@@ -244,25 +249,32 @@ function isReady(frame: HTMLImageElement | HTMLCanvasElement): boolean {
   return frame.width > 0 && frame.height > 0;
 }
 
-export function getAnimatedFrame(material: string): CanvasImageSource | null {
+export function getAnimatedFrameAt(material: string, elapsedSec: number, startFrame: number = 0): CanvasImageSource | null {
   const desc = animations.get(material);
   if (!desc || desc.frames.length === 0) return null;
-  if (desc.frames.length === 1) {
-    return isReady(desc.frames[0]) ? desc.frames[0] : null;
+  const firstFrame = Math.max(0, Math.min(desc.frames.length - 1, Math.floor(startFrame)));
+  if (desc.frames.length === 1 || firstFrame >= desc.frames.length - 1) {
+    const frame = desc.frames[firstFrame];
+    return isReady(frame) ? frame : null;
   }
   const frameDur = 1 / desc.fps;
-  const totalDur = frameDur * desc.frames.length;
-  let t = timeSec;
+  const frameCount = desc.frames.length - firstFrame;
+  const totalDur = frameDur * frameCount;
+  let t = Math.max(0, elapsedSec);
   if (desc.loop) {
     t = t % totalDur;
   } else if (t > totalDur) {
     t = totalDur - 0.0001;
   }
-  let idx = Math.floor(t / frameDur);
+  let idx = firstFrame + Math.floor(t / frameDur);
   if (idx < 0) idx = 0;
   if (idx >= desc.frames.length) idx = desc.frames.length - 1;
   const frame = desc.frames[idx];
   return isReady(frame) ? frame : null;
+}
+
+export function getAnimatedFrame(material: string): CanvasImageSource | null {
+  return getAnimatedFrameAt(material, timeSec);
 }
 
 export function hasAnimation(material: string): boolean {

@@ -18,6 +18,7 @@ type Renderer = {
   ) => void;
   drawMap: () => void;
   drawSprites: (zBuffer: Float64Array) => void;
+  drawWeapon?: () => void;
 };
 
 type EngineEvents = {
@@ -195,6 +196,7 @@ export function createEngine({
       drawRay: renderer.drawRay,
     });
     renderer.drawSprites(zBuffer);
+    renderer.drawWeapon?.();
     if (player.flatmap) renderer.drawMap();
   }
 

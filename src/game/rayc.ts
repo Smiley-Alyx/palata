@@ -752,6 +752,7 @@ function ensureEngine() {
       ...(itemsSystem?.getSprites() ?? []),
       ...(hallucinationsSystem?.getSprites() ?? []),
     ],
+    getWeapon: () => weaponsSystem.getCurrent(),
   });
 
   lightsSystem = createLightsSystem();
@@ -824,6 +825,7 @@ function ensureEngine() {
           return;
         }
         audio.playSfx(def.fireSfx);
+        renderer?.triggerWeaponAction();
         if (def.flash) renderer?.triggerFlash();
         const noiseMul = predatorSystem?.getNoiseMultiplier() ?? 1;
         enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius * noiseMul);
