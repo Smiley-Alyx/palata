@@ -335,6 +335,60 @@
       "y": 7.5
     },
     {
+      "id": "amb_spawn_lights",
+      "type": "ambient_loop",
+      "subtype": "fluorescent_buzz",
+      "x": 31.5,
+      "y": 54.5,
+      "radius": 8,
+      "volume": 0.38
+    },
+    {
+      "id": "amb_lower_ward_whisper",
+      "type": "ambient_loop",
+      "subtype": "whisper_loop",
+      "x": 7.5,
+      "y": 55.5,
+      "radius": 7,
+      "volume": 0.32
+    },
+    {
+      "id": "amb_archive_machinery",
+      "type": "ambient_loop",
+      "subtype": "machine_hum",
+      "x": 12.5,
+      "y": 35.5,
+      "radius": 8,
+      "volume": 0.42
+    },
+    {
+      "id": "amb_procedure_lights",
+      "type": "ambient_loop",
+      "subtype": "fluorescent_buzz",
+      "x": 45.5,
+      "y": 16.5,
+      "radius": 8,
+      "volume": 0.34
+    },
+    {
+      "id": "amb_shower_pipes",
+      "type": "ambient_loop",
+      "subtype": "pipe_steam",
+      "x": 55.5,
+      "y": 7.5,
+      "radius": 7,
+      "volume": 0.44
+    },
+    {
+      "id": "amb_blood_door_heart",
+      "type": "ambient_loop",
+      "subtype": "heartbeat_wall",
+      "x": 31.5,
+      "y": 8.5,
+      "radius": 7,
+      "volume": 0.42
+    },
+    {
       "id": "gold_lock_a",
       "type": "door_lock",
       "keyId": "gold",
@@ -567,6 +621,60 @@
       ]
     },
     {
+      "id": "lower_ward_whisper",
+      "trigger": {
+        "type": "enter_zone",
+        "x": 3,
+        "y": 52,
+        "w": 15,
+        "h": 7,
+        "once": true
+      },
+      "actions": [
+        {
+          "type": "play_sound",
+          "sound": "hallucination.whisper.loop",
+          "volume": 0.36
+        }
+      ]
+    },
+    {
+      "id": "archive_static",
+      "trigger": {
+        "type": "enter_zone",
+        "x": 3,
+        "y": 29,
+        "w": 16,
+        "h": 8,
+        "once": true
+      },
+      "actions": [
+        {
+          "type": "play_sound",
+          "sound": "hallucination.vhs.glitch",
+          "volume": 0.46
+        }
+      ]
+    },
+    {
+      "id": "procedure_far_scream",
+      "trigger": {
+        "type": "enter_zone",
+        "x": 37,
+        "y": 12,
+        "w": 14,
+        "h": 10,
+        "once": true
+      },
+      "actions": [
+        {
+          "type": "play_sound",
+          "sound": "ambient.distant.scream",
+          "volume": 0.42
+        }
+      ]
+    },
+    {
       "id": "shower_silence",
       "trigger": {
         "type": "enter_zone",
@@ -587,6 +695,27 @@
           "value": true
         }
       ]
+    },
+    {
+      "id": "shower_manifest",
+      "trigger": {
+        "type": "enter_zone",
+        "x": 51,
+        "y": 13,
+        "w": 11,
+        "h": 2,
+        "once": true
+      },
+      "actions": [
+        {
+          "type": "play_sound",
+          "sound": "hallucination.white_figure.manifest",
+          "volume": 0.56
+        }
+      ],
+      "enabledIfFlags": {
+        "shower_visited": true
+      }
     },
     {
       "id": "central_breath_lower",
