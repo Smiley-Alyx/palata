@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9db7c5"/>
+      <stop offset="0.35" stop-color="#35505a"/>
+      <stop offset="0.7" stop-color="#14272f"/>
+      <stop offset="1" stop-color="#071014"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d5d1c3"/>
+      <stop offset="0.5" stop-color="#77756d"/>
+      <stop offset="1" stop-color="#2a2b2a"/>
+    </linearGradient>
+    <pattern id="noise" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#000" opacity="0"/>
+      <rect x="2" y="7" width="4" height="3" fill="#fff" opacity="0.06"/>
+      <rect x="19" y="4" width="2" height="8" fill="#fff" opacity="0.04"/>
+      <rect x="11" y="21" width="7" height="2" fill="#000" opacity="0.12"/>
+      <rect x="26" y="25" width="3" height="4" fill="#000" opacity="0.16"/>
+    </pattern>
+  </defs>
+
+  <rect width="512" height="512" fill="#514f48"/>
+  <rect x="0" y="0" width="512" height="512" fill="url(#noise)"/>
+
+  <rect x="44" y="36" width="424" height="440" rx="6" fill="#171918"/>
+  <rect x="60" y="52" width="392" height="408" fill="url(#frame)"/>
+  <rect x="82" y="76" width="348" height="360" fill="#101618"/>
+
+  <rect x="106" y="96" width="300" height="320" fill="url(#glass)"/>
+  <rect x="106" y="96" width="300" height="320" fill="#081014" opacity="0.38"/>
+  <path d="M114 104 L398 104 L114 340 Z" fill="#d7f2ff" opacity="0.13"/>
+  <path d="M160 96 L406 96 L236 416 L106 416 Z" fill="#ffffff" opacity="0.06"/>
+
+  <rect x="122" y="96" width="22" height="320" fill="url(#frame)"/>
+  <rect x="196" y="96" width="20" height="320" fill="url(#frame)"/>
+  <rect x="270" y="96" width="20" height="320" fill="url(#frame)"/>
+  <rect x="344" y="96" width="22" height="320" fill="url(#frame)"/>
+  <rect x="106" y="186" width="300" height="20" fill="url(#frame)"/>
+  <rect x="106" y="306" width="300" height="22" fill="url(#frame)"/>
+
+  <rect x="60" y="52" width="392" height="26" fill="#ebe5d4" opacity="0.28"/>
+  <rect x="60" y="434" width="392" height="26" fill="#000" opacity="0.38"/>
+  <rect x="44" y="36" width="424" height="440" rx="6" fill="none" stroke="#080909" stroke-width="18"/>
+  <rect x="76" y="70" width="360" height="372" fill="none" stroke="#d8d2bd" stroke-width="8" opacity="0.22"/>
+</svg>
