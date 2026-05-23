@@ -30,14 +30,60 @@ function loadFrame(src: string): HTMLImageElement {
 }
 
 type SheetRect = { x: number; y: number; w: number; h: number };
+type TransparentEdgeKey = { r: number; g: number; b: number; tolerance: number };
 
 function loadSheetImage(src: string): HTMLImageElement {
   return loadFrame(src);
 }
 
+function clearTransparentEdges(ctx: CanvasRenderingContext2D, w: number, h: number, key: TransparentEdgeKey) {
+  const image = ctx.getImageData(0, 0, w, h);
+  const { data } = image;
+  const seen = new Uint8Array(w * h);
+  const queue: number[] = [];
+
+  const matches = (idx: number) => {
+    const off = idx * 4;
+    return (
+      Math.abs(data[off] - key.r) <= key.tolerance &&
+      Math.abs(data[off + 1] - key.g) <= key.tolerance &&
+      Math.abs(data[off + 2] - key.b) <= key.tolerance
+    );
+  };
+
+  const enqueue = (idx: number) => {
+    if (seen[idx] || !matches(idx)) return;
+    seen[idx] = 1;
+    queue.push(idx);
+  };
+
+  for (let x = 0; x < w; x++) {
+    enqueue(x);
+    enqueue((h - 1) * w + x);
+  }
+  for (let y = 1; y < h - 1; y++) {
+    enqueue(y * w);
+    enqueue(y * w + w - 1);
+  }
+
+  for (let head = 0; head < queue.length; head++) {
+    const idx = queue[head];
+    const x = idx % w;
+    const y = Math.floor(idx / w);
+    data[idx * 4 + 3] = 0;
+
+    if (x > 0) enqueue(idx - 1);
+    if (x < w - 1) enqueue(idx + 1);
+    if (y > 0) enqueue(idx - w);
+    if (y < h - 1) enqueue(idx + w);
+  }
+
+  ctx.putImageData(image, 0, 0);
+}
+
 // Carve a sheet into per-frame off-screen canvases. The canvas list is built
 // up-front but each canvas is painted lazily once the source image decodes.
-function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
+function sliceSheet(src: string, rects: SheetRect[], transparentEdges?: TransparentEdgeKey): HTMLCanvasElement[] {
   const img = loadSheetImage(src);
   const canvases: HTMLCanvasElement[] = rects.map((r) => {
     const c = document.createElement('canvas');
@@ -56,6 +102,7 @@ function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, c.width, c.height);
       ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
+      if (transparentEdges) clearTransparentEdges(ctx, c.width, c.height, transparentEdges);
       readySlicedCanvases.add(c);
     }
   };
@@ -141,7 +188,7 @@ function parseDescriptor(data: unknown): AnimationDescriptor | null {
   // into per-frame canvases. Preferred for tightly packed sprite sheets where
   // frame regions are not uniform across rows.
   if (d.sheet && typeof d.sheet === 'object') {
-    const s = d.sheet as { src?: unknown; frames?: unknown };
+    const s = d.sheet as { src?: unknown; frames?: unknown; transparentEdges?: unknown };
     if (typeof s.src === 'string' && Array.isArray(s.frames)) {
       const rects: SheetRect[] = [];
       for (const f of s.frames) {
@@ -157,7 +204,26 @@ function parseDescriptor(data: unknown): AnimationDescriptor | null {
         rects.push({ x: fr.x, y: fr.y, w: fr.w, h: fr.h });
       }
       if (rects.length === 0) return null;
-      return { fps, loop, frames: sliceSheet(s.src, rects) };
+
+      let transparentEdges: TransparentEdgeKey | undefined;
+      if (s.transparentEdges && typeof s.transparentEdges === 'object') {
+        const te = s.transparentEdges as { r?: unknown; g?: unknown; b?: unknown; tolerance?: unknown };
+        if (
+          typeof te.r === 'number' &&
+          typeof te.g === 'number' &&
+          typeof te.b === 'number' &&
+          typeof te.tolerance === 'number'
+        ) {
+          transparentEdges = {
+            r: Math.max(0, Math.min(255, te.r)),
+            g: Math.max(0, Math.min(255, te.g)),
+            b: Math.max(0, Math.min(255, te.b)),
+            tolerance: Math.max(0, Math.min(255, te.tolerance)),
+          };
+        }
+      }
+
+      return { fps, loop, frames: sliceSheet(s.src, rects, transparentEdges) };
     }
   }
 

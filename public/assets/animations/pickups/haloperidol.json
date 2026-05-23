@@ -4,6 +4,7 @@
   "_comment": "1536x1024 sheet, 3 horizontal frames. Idle-only.",
   "sheet": {
     "src": "sprites/pickups/medication/haloperidol.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 78, "y": 52, "w": 382, "h": 660 }
     ]

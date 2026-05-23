@@ -4,6 +4,7 @@
   "_comment": "1536x1024 sheet (3 horizontal frames). Use only the IDLE frame (cols 0..512), cropping label band at the bottom.",
   "sheet": {
     "src": "sprites/pickups/health/aid_kit.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
       { "x": 50, "y": 220, "w": 410, "h": 525 }
     ]
