@@ -1,7 +1,14 @@
 {
   "fps": 12,
   "loop": false,
-  "frames": [
-    "sprites/weapons/pistol.png"
-  ]
+  "_comment": "1536x1024 horizontal weapon sheet (idle / firing / reload / empty).",
+  "sheet": {
+    "src": "sprites/weapons/pistol.png",
+    "frames": [
+      { "x": 0, "y": 0, "w": 384, "h": 900 },
+      { "x": 384, "y": 0, "w": 384, "h": 900 },
+      { "x": 768, "y": 0, "w": 384, "h": 900 },
+      { "x": 1152, "y": 0, "w": 384, "h": 900 }
+    ]
+  }
 }

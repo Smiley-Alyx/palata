@@ -1,7 +1,15 @@
 {
   "fps": 6,
   "loop": true,
-  "frames": [
-    "sprites/bosses/boss_shepherd.png"
-  ]
+  "_comment": "1536x1024 multi-row boss sheet. Slicing first 5 IDLE frames.",
+  "sheet": {
+    "src": "sprites/bosses/boss_shepherd.png",
+    "frames": [
+      { "x": 130, "y": 0, "w": 140, "h": 125 },
+      { "x": 270, "y": 0, "w": 140, "h": 125 },
+      { "x": 410, "y": 0, "w": 140, "h": 125 },
+      { "x": 550, "y": 0, "w": 140, "h": 125 },
+      { "x": 690, "y": 0, "w": 140, "h": 125 }
+    ]
+  }
 }

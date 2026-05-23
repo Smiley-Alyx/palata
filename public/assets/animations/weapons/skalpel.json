@@ -1,7 +1,14 @@
 {
   "fps": 12,
   "loop": false,
-  "frames": [
-    "sprites/weapons/skalpel.png"
-  ]
+  "_comment": "1536x1024 horizontal weapon sheet (idle / quick slash / heavy stab / bloodied).",
+  "sheet": {
+    "src": "sprites/weapons/skalpel.png",
+    "frames": [
+      { "x": 0, "y": 0, "w": 384, "h": 900 },
+      { "x": 384, "y": 0, "w": 384, "h": 900 },
+      { "x": 768, "y": 0, "w": 384, "h": 900 },
+      { "x": 1152, "y": 0, "w": 384, "h": 900 }
+    ]
+  }
 }

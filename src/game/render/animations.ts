@@ -71,8 +71,21 @@ function sliceSheet(src: string, rects: SheetRect[]): HTMLCanvasElement[] {
 // are kept on the static-texture path.
 const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   // Material id -> path under `public/assets/animations/`.
+  skeleton_husk: 'animations/enemies/skeleton_husk.json',
+  medical_orderly: 'animations/enemies/medical_orderly.json',
+  deformed_patient: 'animations/enemies/deformed_patient.json',
+  flesh_watcher: 'animations/enemies/flesh_watcher.json',
   flesh_eye: 'animations/enemies/flesh_eye.json',
   flesh_machine: 'animations/enemies/flesh_machine.json',
+  doppelganger: 'animations/enemies/doppelganger.json',
+  hallucination_entity: 'animations/enemies/hallucination_entity.json',
+  hallucination_white_observer: 'animations/enemies/white_observer.json',
+
+  boss_chief_doctor: 'animations/bosses/boss_cheif_doctor.json',
+  boss_choir: 'animations/bosses/boss_choir.json',
+  boss_dade_keeper: 'animations/bosses/boss_dade_keepeer.json',
+  boss_heart_hospital: 'animations/bosses/boss_heart_hospital.json',
+  boss_shepherd: 'animations/bosses/boss_shepherd.json',
 
   // Door textures are 724x2172 sprite-sheets (3 stacked frames).
   // The runtime slices out only the top "closed" frame so the wall slice
