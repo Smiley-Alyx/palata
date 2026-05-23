@@ -377,7 +377,7 @@ function initAudioUi() {
 }
 
 function initHpUi() {
-  const hpEl = document.getElementById('hpText');
+  const fpsEl = document.getElementById('fpsText');
   const hudHpEl = document.getElementById('hudHealthValue');
   const hudAmmoEl = document.getElementById('hudAmmoValue');
   const hudWeaponEl = document.getElementById('hudWeaponValue');
@@ -399,8 +399,8 @@ function initHpUi() {
 
   const spriteImg = getImage('playerSprite');
 
-  if (!(hpEl instanceof HTMLElement) && !(hudHpEl instanceof HTMLElement)) return;
-  const sidebarEl = hpEl instanceof HTMLElement ? hpEl : null;
+  if (!(fpsEl instanceof HTMLElement) && !(hudHpEl instanceof HTMLElement)) return;
+  const sidebarEl = fpsEl instanceof HTMLElement ? fpsEl : null;
   const hudEl = hudHpEl instanceof HTMLElement ? hudHpEl : null;
   const ammoEl = hudAmmoEl instanceof HTMLElement ? hudAmmoEl : null;
   const weaponEl = hudWeaponEl instanceof HTMLElement ? hudWeaponEl : null;
@@ -463,14 +463,25 @@ function initHpUi() {
     hudCtx.drawImage(spriteImg, sx, sy, frameW, frameH, dx, dy, drawW, drawH);
   }
 
-  function update() {
+  let fpsFrames = 0;
+  let fpsLastAt = performance.now();
+  let fpsValue = 0;
+
+  function update(now = performance.now()) {
     const p = getPlayer();
     const hp = Math.max(0, Math.floor(p.hp));
     const maxHp = Math.max(1, Math.floor(p.maxHp));
-    const text = `HP: ${hp}/${maxHp}`;
     const pct = Math.max(0, Math.min(999, Math.round((hp / maxHp) * 100)));
 
-    if (sidebarEl) sidebarEl.textContent = text;
+    fpsFrames += 1;
+    const fpsElapsed = now - fpsLastAt;
+    if (fpsElapsed >= 500) {
+      fpsValue = Math.round((fpsFrames * 1000) / fpsElapsed);
+      fpsFrames = 0;
+      fpsLastAt = now;
+    }
+
+    if (sidebarEl) sidebarEl.textContent = `FPS: ${fpsValue}`;
     if (hudEl) hudEl.textContent = `${pct}%`;
 
     if (weaponEl) weaponEl.textContent = getCurrentWeaponDef().label;
