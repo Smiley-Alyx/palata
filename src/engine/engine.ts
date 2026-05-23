@@ -18,6 +18,7 @@ type Renderer = {
   ) => void;
   drawMap: () => void;
   drawSprites: (zBuffer: Float64Array) => void;
+  drawSenseRings?: () => void;
   drawWeapon?: () => void;
 };
 
@@ -196,6 +197,7 @@ export function createEngine({
       drawRay: renderer.drawRay,
     });
     renderer.drawSprites(zBuffer);
+    renderer.drawSenseRings?.();
     renderer.drawWeapon?.();
     if (player.flatmap) renderer.drawMap();
   }

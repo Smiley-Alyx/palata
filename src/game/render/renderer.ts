@@ -1,6 +1,7 @@
 import type { Player } from '../../types/game';
 import type { EnemyKind } from '../game-types';
 import type { WeaponId } from '../systems/weapons';
+import type { PerceptionState } from '../systems/world-state';
 import { getMap } from '../../state/map-state';
 import { getTextureForMaterial } from './materials';
 import { getEnemyProfile } from '../systems/enemy-profiles';
@@ -14,6 +15,8 @@ export function createRenderer({
   getEnemies,
   getSprites,
   getWeapon,
+  getPerceptionStages,
+  getNearestEnemyDistance,
 }: {
   ctx: CanvasRenderingContext2D;
   getViewWidth: () => number;
@@ -22,6 +25,8 @@ export function createRenderer({
   getEnemies?: () => Array<{ x: number; y: number; alive: boolean; attackFlashMs?: number }>;
   getSprites?: () => Array<{ x: number; y: number; material: string; alive: boolean; scale?: number }>;
   getWeapon?: () => WeaponId;
+  getPerceptionStages?: () => ReadonlyArray<PerceptionState>;
+  getNearestEnemyDistance?: () => number | null;
 }) {
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
@@ -275,14 +280,15 @@ export function createRenderer({
       Math.max(w, h) * 0.75,
     );
     vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,0.35)');
+    vignette.addColorStop(0.68, 'rgba(0,0,0,0.22)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.48)');
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, w, h);
 
     // Screen-space darkness driven by world lighting.
-    const darkness = (1 - ambientLight01) * 0.55;
+    const darkness = 0.08 + (1 - ambientLight01) * 0.66;
     if (darkness > 0.001) {
-      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.8, darkness)})`;
+      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.86, darkness)})`;
       ctx.fillRect(0, 0, w, h);
     }
 
@@ -451,6 +457,56 @@ export function createRenderer({
     drawSpriteList(zBuffer, sprites);
   }
 
+  function drawSenseRings() {
+    const stages = typeof getPerceptionStages === 'function' ? getPerceptionStages() : [];
+    const active =
+      stages.includes('predator') || stages.includes('nightmare') || stages.includes('infected');
+    if (!active) return;
+
+    const enemyDistance =
+      typeof getNearestEnemyDistance === 'function' ? getNearestEnemyDistance() : null;
+    const range = stages.includes('predator') ? 10 : stages.includes('nightmare') ? 7 : 5;
+    const distanceRatio =
+      enemyDistance === null ? 0.12 : Math.max(0, Math.min(1, 1 - enemyDistance / range));
+    const stateBoost = stages.includes('predator') ? 1 : stages.includes('nightmare') ? 0.74 : 0.48;
+    const strength = distanceRatio * stateBoost;
+    if (strength <= 0.02) return;
+
+    const w = getViewWidth();
+    const h = getVisibleViewHeight();
+    const cx = w * 0.5;
+    const cy = h * 0.43;
+    const t = performance.now() / 1000;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 4.8);
+    const wobble = Math.sin(t * 2.7) * 4 * strength;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.lineCap = 'round';
+    ctx.shadowColor = `rgba(180, 20, 20, ${0.18 + strength * 0.26})`;
+    ctx.shadowBlur = 14 + strength * 18;
+
+    for (let i = 0; i < 4; i++) {
+      const phase = (i + pulse) / 4;
+      const rx = (w * (0.06 + phase * 0.14) + wobble) * (1 + strength * 0.2);
+      const ry = rx * (0.28 + i * 0.035);
+      const alpha = Math.max(0, (1 - phase) * strength * 0.34);
+      ctx.strokeStyle = `rgba(210, 40, 36, ${alpha})`;
+      ctx.lineWidth = Math.max(1, Math.floor(1 + strength * 3 - i * 0.35));
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + i * 2, rx, ry, 0, Math.PI * 1.04, Math.PI * 1.96);
+      ctx.stroke();
+    }
+
+    const veil = ctx.createRadialGradient(cx, cy, w * 0.02, cx, cy, w * 0.24);
+    veil.addColorStop(0, `rgba(240, 40, 35, ${strength * 0.09})`);
+    veil.addColorStop(0.55, `rgba(120, 0, 0, ${strength * 0.045})`);
+    veil.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = veil;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
   function drawWeapon() {
     const weapon = typeof getWeapon === 'function' ? getWeapon() : null;
     if (!weapon) return;
@@ -516,6 +572,7 @@ export function createRenderer({
     drawRay,
     drawMap,
     drawSprites,
+    drawSenseRings,
     setBackgroundColors,
     setBackgroundMaterials,
     setAmbientLight01,

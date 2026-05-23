@@ -753,6 +753,8 @@ function ensureEngine() {
       ...(hallucinationsSystem?.getSprites() ?? []),
     ],
     getWeapon: () => weaponsSystem.getCurrent(),
+    getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
+    getNearestEnemyDistance,
   });
 
   lightsSystem = createLightsSystem();

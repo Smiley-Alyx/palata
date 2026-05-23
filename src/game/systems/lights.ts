@@ -124,7 +124,7 @@ export function createLightsSystem() {
     }
 
     // Base ambient to avoid fully black walls.
-    const ambient = 0.22;
+    const ambient = 0.16;
     const out = ambient + acc;
     return Math.max(0, Math.min(1, out));
   }
