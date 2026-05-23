@@ -9,7 +9,13 @@ type Input = {
 
 type Renderer = {
   drawBackground: () => void;
-  drawRay: (dist: number, x: number, offset: number, img: string | number, light01?: number) => void;
+  drawRay: (
+    dist: number,
+    x: number,
+    offset: number,
+    img: string | number,
+    light01?: number,
+  ) => void;
   drawMap: () => void;
   drawSprites: (zBuffer: Float64Array) => void;
 };
@@ -26,9 +32,11 @@ type EngineEvents = {
 export type World<MaterialId = string | number> = {
   isSolid: (x: number, y: number) => boolean;
   isRaySolid: (x: number, y: number) => boolean;
+  isRaySolidAt?: (xMap: number, yMap: number, offset: number) => boolean;
   getMaterial: (x: number, y: number) => MaterialId;
   interact?: (x: number, y: number) => void;
   getWallTextureId?: (hit: RayHit<MaterialId>) => MaterialId;
+  getWallTextureOffset?: (hit: RayHit<MaterialId>) => number;
   getLightAt?: (x: number, y: number) => number;
 };
 
@@ -179,7 +187,13 @@ export function createEngine({
 
   function render() {
     renderer.drawBackground();
-    const { zBuffer } = castRays({ player, world, getViewWidth, addRotToAngle, drawRay: renderer.drawRay });
+    const { zBuffer } = castRays({
+      player,
+      world,
+      getViewWidth,
+      addRotToAngle,
+      drawRay: renderer.drawRay,
+    });
     renderer.drawSprites(zBuffer);
     if (player.flatmap) renderer.drawMap();
   }

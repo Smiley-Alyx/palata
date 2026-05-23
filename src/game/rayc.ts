@@ -20,7 +20,12 @@ import { createLightsSystem } from './systems/lights';
 import { loadAnimationRegistry, tickAnimations } from './render/animations';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
-import { createItemsSystem, type MedicationSpec, type ArtifactSpec, type AmmoSpec } from './systems/items';
+import {
+  createItemsSystem,
+  type MedicationSpec,
+  type ArtifactSpec,
+  type AmmoSpec,
+} from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
 import { createWorldStateSystem, type PerceptionState } from './systems/world-state';
@@ -619,6 +624,7 @@ function ensureEngine() {
 
   doorsSystem = createDoorsSystem({
     playDoorOpenSfx: () => audio.playSfx(SFX.transitions.hospitalDoorOpen),
+    playDoorCloseSfx: () => audio.playSfx(SFX.transitions.hospitalDoorClose),
     playDoorDeniedSfx: () => audio.playSfx(SFX.ui.menuError),
     onDoorOpened: (xMap, yMap) => {
       handleDoorOpened(xMap, yMap);
@@ -771,8 +777,7 @@ function ensureEngine() {
   ambienceSystem = createAmbienceSystem({
     player,
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
-    playLoopingSfx: (key, volume, srcOverride) =>
-      audio.playLoopingSfx(key, volume, srcOverride),
+    playLoopingSfx: (key, volume, srcOverride) => audio.playLoopingSfx(key, volume, srcOverride),
     stopLoopingSfx: (key) => audio.stopLoopingSfx(key),
     resolveSfxSrc: (key) => audio.getSfxSrc(key),
   });
@@ -796,9 +801,15 @@ function ensureEngine() {
         doorsSystem?.interactWorld(x, y, ownedKeys);
       },
       getWallTextureId,
+      getWallTextureOffset: (hit) => {
+        return doorsSystem?.getDoorTextureOffset(hit.xMap, hit.yMap, hit.offset) ?? hit.offset;
+      },
       getLightAt: (x: number, y: number) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
       isDoorBlocking: (x: number, y: number) => {
         return !!doorsSystem && doorsSystem.isDoorBlocking(x, y);
+      },
+      isDoorRayBlockingAt: (xMap: number, yMap: number, offset: number) => {
+        return !doorsSystem || doorsSystem.isDoorRayBlockingAt(xMap, yMap, offset);
       },
     }),
     events: {

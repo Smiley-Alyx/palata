@@ -17,10 +17,12 @@ type DoorState = {
 
 export function createDoorsSystem({
   playDoorOpenSfx,
+  playDoorCloseSfx,
   playDoorDeniedSfx,
   onDoorOpened,
 }: {
   playDoorOpenSfx: () => void;
+  playDoorCloseSfx?: () => void;
   playDoorDeniedSfx?: () => void;
   onDoorOpened?: (xMap: number, yMap: number) => void;
 }) {
@@ -89,6 +91,7 @@ export function createDoorsSystem({
 
     d.action = 'opening';
     d.openHoldMs = 0;
+    playDoorOpenSfx();
   }
 
   function interactWorld(x: number, y: number, keys: Partial<Record<KeyId, boolean>> = {}) {
@@ -106,13 +109,30 @@ export function createDoorsSystem({
     return d.open01 < 0.98;
   }
 
+  function isDoorRayBlockingAt(xMap: number, yMap: number, offset: number): boolean {
+    if (!isDoorCell(xMap, yMap)) return false;
+    const d = getDoor(xMap, yMap);
+    if (!d) return true;
+    if (d.open01 >= 0.98) return false;
+
+    const panelStart = Math.max(0, Math.min(1, d.open01));
+    const u = Math.max(0, Math.min(1, offset));
+    return u >= panelStart;
+  }
+
+  function getDoorTextureOffset(xMap: number, yMap: number, offset: number): number {
+    const d = getDoor(xMap, yMap);
+    if (!d) return offset;
+    return Math.max(0, Math.min(1, offset - d.open01));
+  }
+
   function tick(dt: number, isBlocked?: (xMap: number, yMap: number) => boolean) {
     if (!doors.length) return;
 
     const stepMs = dt * 1000;
     const openSpeedPerMs = 1 / 320;
     const closeSpeedPerMs = 1 / 320;
-    const autoCloseMs = 2200;
+    const autoCloseMs = 3200;
 
     for (let i = doors.length - 1; i >= 0; i--) {
       const d = doors[i];
@@ -126,7 +146,6 @@ export function createDoorsSystem({
         const prev = d.open01;
         d.open01 = Math.min(1, d.open01 + stepMs * openSpeedPerMs);
         if (prev < 0.98 && d.open01 >= 0.98) {
-          playDoorOpenSfx();
           onDoorOpened?.(d.x, d.y);
         }
         if (d.open01 >= 1) {
@@ -140,6 +159,7 @@ export function createDoorsSystem({
         d.openHoldMs += stepMs;
         if (d.openHoldMs >= autoCloseMs) {
           d.action = 'closing';
+          playDoorCloseSfx?.();
         }
         continue;
       }
@@ -166,6 +186,8 @@ export function createDoorsSystem({
     requestOpenDoor,
     interactWorld,
     isDoorBlocking,
+    isDoorRayBlockingAt,
+    getDoorTextureOffset,
     setDoorLocks,
     onMapChanged,
     tick,

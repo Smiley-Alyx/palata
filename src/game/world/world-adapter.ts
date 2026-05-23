@@ -6,13 +6,17 @@ export function createWorldAdapter({
   isSolid,
   interact,
   getWallTextureId,
+  getWallTextureOffset,
   isDoorBlocking,
+  isDoorRayBlockingAt,
   getLightAt,
 }: {
   isSolid: (x: number, y: number) => boolean;
   interact: (x: number, y: number) => void;
   getWallTextureId: (hit: RayHit<string | number>) => string | number;
+  getWallTextureOffset?: (hit: RayHit<string | number>) => number;
   isDoorBlocking?: (x: number, y: number) => boolean;
+  isDoorRayBlockingAt?: (xMap: number, yMap: number, offset: number) => boolean;
   getLightAt?: (x: number, y: number) => number;
 }): World<string | number> {
   return {
@@ -28,11 +32,20 @@ export function createWorldAdapter({
       }
       return hitWall(x, y);
     },
+    isRaySolidAt: (xMap: number, yMap: number, offset: number) => {
+      if (isDoorCell(xMap, yMap)) {
+        return typeof isDoorRayBlockingAt === 'function'
+          ? isDoorRayBlockingAt(xMap, yMap, offset)
+          : true;
+      }
+      return hitWall(xMap + 0.5, yMap + 0.5);
+    },
     getMaterial: (x: number, y: number) => {
       return getCellMaterial(Math.floor(x), Math.floor(y));
     },
     interact,
     getWallTextureId,
+    getWallTextureOffset,
     getLightAt,
   };
 }

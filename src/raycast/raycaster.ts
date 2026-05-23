@@ -1,7 +1,13 @@
 import type { Player } from '../types/game';
 
 type AddRotToAngle = (rot: number, angle: number) => number;
-type DrawRay = (dist: number, x: number, offset: number, img: string | number, light01?: number) => void;
+type DrawRay = (
+  dist: number,
+  x: number,
+  offset: number,
+  img: string | number,
+  light01?: number,
+) => void;
 
 type WallFace = 'N' | 'S' | 'E' | 'W';
 
@@ -17,8 +23,10 @@ export type RayHit<MaterialId = string | number> = {
 
 type World<MaterialId = string | number> = {
   isRaySolid: (x: number, y: number) => boolean;
+  isRaySolidAt?: (xMap: number, yMap: number, offset: number) => boolean;
   getMaterial: (x: number, y: number) => MaterialId;
   getWallTextureId?: (hit: RayHit<MaterialId>) => MaterialId;
+  getWallTextureOffset?: (hit: RayHit<MaterialId>) => number;
   getLightAt?: (x: number, y: number) => number;
 };
 
@@ -96,7 +104,11 @@ function castSingleRay({
 
     const probeX = xMap + 0.5;
     const probeY = yMap + 0.5;
-    if (world.isRaySolid(probeX, probeY)) {
+    const solid =
+      typeof world.isRaySolidAt === 'function'
+        ? world.isRaySolidAt(xMap, yMap, ((x % 1) + 1) % 1)
+        : world.isRaySolid(probeX, probeY);
+    if (solid) {
       distH = Math.abs((player.x - x) / Math.cos(angle));
       xHitH = x;
       yHitH = y;
@@ -139,7 +151,11 @@ function castSingleRay({
 
     const probeX = xMap + 0.5;
     const probeY = yMap + 0.5;
-    if (world.isRaySolid(probeX, probeY)) {
+    const solid =
+      typeof world.isRaySolidAt === 'function'
+        ? world.isRaySolidAt(xMap, yMap, ((y % 1) + 1) % 1)
+        : world.isRaySolid(probeX, probeY);
+    if (solid) {
       distV = Math.abs((player.y - y) / Math.sin(angle));
       xHitV = x;
       yHitV = y;
@@ -182,12 +198,20 @@ function castSingleRay({
   }
 
   const rawMaterial = hit ? hit.material : 0;
-  const imgOut = hit && typeof world.getWallTextureId === 'function' ? world.getWallTextureId(hit) : rawMaterial;
+  const imgOut =
+    hit && typeof world.getWallTextureId === 'function' ? world.getWallTextureId(hit) : rawMaterial;
 
-  const light01 = hit && typeof world.getLightAt === 'function' ? world.getLightAt(hit.xMap + 0.5, hit.yMap + 0.5) : 1;
+  const light01 =
+    hit && typeof world.getLightAt === 'function'
+      ? world.getLightAt(hit.xMap + 0.5, hit.yMap + 0.5)
+      : 1;
 
   dist = dist * Math.cos(player.rot - angle);
-  drawRay(dist, row, offset, imgOut, light01);
+  const textureOffset =
+    hit && typeof world.getWallTextureOffset === 'function'
+      ? world.getWallTextureOffset(hit)
+      : offset;
+  drawRay(dist, row, textureOffset, imgOut, light01);
 
   return dist;
 }
