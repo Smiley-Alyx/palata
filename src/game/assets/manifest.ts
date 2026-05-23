@@ -12,14 +12,14 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   organic_wall: 'assets/textures/walls/organic_wall.png',
   ventilation_shaft: 'assets/textures/walls/ventilation_shaft.png',
   flesh_wall: 'assets/textures/flesh/flesh_wall.png',
-  industrial_flesh: 'assets/textures/flesh/industrial_flesh.png',
+  industrial_flesh: 'assets/textures/flesh/flesh_wall.png',
 
   // Doors / windows
   medical_door: 'assets/textures/doors/medical_door.png',
   blast_door: 'assets/textures/doors/blast_door.png',
-  reinforced_window: 'assets/textures/windows/reinforced_window.png',
-  exit: 'assets/textures/doors/exit.png',
-  keyDoor: 'assets/textures/doors/key_door.png',
+  reinforced_window: 'assets/textures/walls/ventilation_shaft.png',
+  exit: 'assets/textures/doors/blast_door.png',
+  keyDoor: 'assets/textures/doors/medical_door.png',
 
   // Floors / ceilings
   seamless_floor: 'assets/textures/floors/seamless_floor.png',
@@ -43,7 +43,7 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   boss_shepherd: 'assets/sprites/bosses/boss_shepherd.png',
 
   // Player portrait
-  playerSprite: 'assets/sprites/npc/player.png',
+  playerSprite: 'assets/sprites/hud/portrait_sheet.png',
 
   // Pickups
   goldKey: 'assets/sprites/pickups/keys/gold_key_hd.png',
