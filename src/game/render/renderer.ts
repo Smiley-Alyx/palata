@@ -37,6 +37,7 @@ export function createRenderer({
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
+  const textureDataCache = new WeakMap<object, ImageData>();
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
     if (src instanceof HTMLImageElement) {
@@ -92,6 +93,30 @@ export function createRenderer({
     return shaded;
   }
 
+  function getTextureData(texture: CanvasImageSource): ImageData | null {
+    const cached = textureDataCache.get(texture as object);
+    if (cached) return cached;
+
+    const { w, h } = getSourceSize(texture);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+
+    const cctx = canvas.getContext('2d');
+    if (!cctx) return null;
+
+    cctx.imageSmoothingEnabled = false;
+    cctx.drawImage(texture, 0, 0, w, h);
+
+    try {
+      const data = cctx.getImageData(0, 0, w, h);
+      textureDataCache.set(texture as object, data);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
     if (typeof colors.ceiling === 'string') ceilingColor = colors.ceiling;
     if (typeof colors.floor === 'string') floorColor = colors.floor;
@@ -106,6 +131,50 @@ export function createRenderer({
     ambientLight01 = Math.max(0, Math.min(1, light01));
   }
 
+  function drawTexturedPlane(
+    output: ImageData,
+    texture: ImageData,
+    row: number,
+    isCeiling: boolean,
+  ) {
+    const w = output.width;
+    const h = output.height;
+    const horizon = h / 2;
+    const rowDelta = isCeiling ? horizon - row : row - horizon;
+    if (rowDelta <= 0) return;
+
+    const rowDistance = (h * 0.5) / rowDelta;
+    const leftAngle = player.rot + player.fov / 2;
+    const rightAngle = player.rot - player.fov / 2;
+    const leftX = Math.cos(leftAngle);
+    const leftY = -Math.sin(leftAngle);
+    const rightX = Math.cos(rightAngle);
+    const rightY = -Math.sin(rightAngle);
+    const stepX = (rowDistance * (rightX - leftX)) / w;
+    const stepY = (rowDistance * (rightY - leftY)) / w;
+
+    let worldX = player.x + rowDistance * leftX;
+    let worldY = player.y + rowDistance * leftY;
+    const outData = output.data;
+    const texData = texture.data;
+    const texW = texture.width;
+    const texH = texture.height;
+    let out = row * w * 4;
+
+    for (let x = 0; x < w; x++) {
+      const tx = Math.floor((worldX - Math.floor(worldX)) * texW) % texW;
+      const ty = Math.floor((worldY - Math.floor(worldY)) * texH) % texH;
+      const src = (ty * texW + tx) * 4;
+      outData[out] = texData[src];
+      outData[out + 1] = texData[src + 1];
+      outData[out + 2] = texData[src + 2];
+      outData[out + 3] = 255;
+      out += 4;
+      worldX += stepX;
+      worldY += stepY;
+    }
+  }
+
   function drawBackground() {
     const w = getViewWidth();
     const h = getViewHeight();
@@ -113,34 +182,29 @@ export function createRenderer({
     ctx.clearRect(0, 0, w, h);
     const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
     const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
+    const ceilingData = ceilingTexture ? getTextureData(ceilingTexture) : null;
+    const floorData = floorTexture ? getTextureData(floorTexture) : null;
 
-    if (ceilingTexture) {
-      const pat = ctx.createPattern(ceilingTexture, 'repeat');
-      if (pat) {
-        ctx.fillStyle = pat;
-      } else {
-        ctx.fillStyle = ceilingColor;
-      }
-    } else {
-      ctx.fillStyle = ceilingColor;
-    }
+    ctx.fillStyle = ceilingColor;
     ctx.fillRect(0, 0, w, h / 2);
 
-    if (floorTexture) {
-      const pat = ctx.createPattern(floorTexture, 'repeat');
-      if (pat) {
-        ctx.fillStyle = pat;
-      } else {
-        ctx.fillStyle = floorColor;
-      }
-    } else {
-      ctx.fillStyle = floorColor;
-    }
+    ctx.fillStyle = floorColor;
     ctx.fillRect(0, h / 2, w, h / 2);
 
+    if (ceilingData || floorData) {
+      const planes = ctx.getImageData(0, 0, w, h);
+      for (let y = 0; y < h; y++) {
+        if (y < h / 2 && ceilingData) {
+          drawTexturedPlane(planes, ceilingData, y, true);
+        } else if (y > h / 2 && floorData) {
+          drawTexturedPlane(planes, floorData, y, false);
+        }
+      }
+      ctx.putImageData(planes, 0, 0);
+    }
+
     // Distance shading for ceiling/floor: darker at the horizon (far),
-    // brighter near the camera. This is a cheap stand-in for proper
-    // floor/ceiling raycasting and reads as proper depth at retro res.
+    // brighter near the camera.
     ctx.save();
     const ceilingShade = ctx.createLinearGradient(0, 0, 0, h / 2);
     // Near top of screen = horizon (far away) → fully black.

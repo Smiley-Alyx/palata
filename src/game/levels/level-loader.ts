@@ -304,7 +304,10 @@ export async function loadLevel(levelUrl: string) {
     worldStates = { initialStates, flags };
   }
 
-  let backgroundMaterials: LevelBackgroundMaterialsConfig | undefined;
+  let backgroundMaterials: LevelBackgroundMaterialsConfig | undefined = {
+    ceiling: 'seamless_ceiling',
+    floor: 'seamless_floor',
+  };
   if (data.backgroundMaterials && typeof data.backgroundMaterials === 'object') {
     const bm = data.backgroundMaterials as { ceiling?: unknown; floor?: unknown };
     const ceiling =
@@ -320,7 +323,10 @@ export async function loadLevel(levelUrl: string) {
           ? null
           : undefined;
     if ('ceiling' in bm || 'floor' in bm) {
-      backgroundMaterials = { ceiling, floor };
+      backgroundMaterials = {
+        ceiling: ceiling === undefined ? backgroundMaterials.ceiling : ceiling,
+        floor: floor === undefined ? backgroundMaterials.floor : floor,
+      };
     }
   }
 
