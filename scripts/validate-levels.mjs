@@ -7,9 +7,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const LEVELS_DIR = join(__dirname, '..', 'public', 'levels');
-
-const FILES = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
+const PUBLIC_DIR = join(__dirname, '..', 'public');
+const LEVEL_INDEX_PATH = join(PUBLIC_DIR, 'assets', 'data', 'levels', 'index.json');
+const LEVEL_INDEX = JSON.parse(readFileSync(LEVEL_INDEX_PATH, 'utf8'));
+const FILES = LEVEL_INDEX.levels
+  .filter((level) => !level.hidden && typeof level.file === 'string')
+  .map((level) => ({
+    id: level.id,
+    path: join(PUBLIC_DIR, level.file.replace(/^\//, '')),
+  }));
 
 // Game treats anything != 0 as a wall (see src/state/map-state.ts hitWall).
 // Doors (6) are technically walls until opened by the door-opening mechanic,
@@ -65,8 +71,7 @@ function bfsReachable(g, W, H, sx, sy) {
 
 let totalIssues = 0;
 
-for (const id of FILES) {
-  const path = join(LEVELS_DIR, id + '.json');
+for (const { id, path } of FILES) {
   const json = JSON.parse(readFileSync(path, 'utf8'));
   const issues = [];
   const warnings = [];
