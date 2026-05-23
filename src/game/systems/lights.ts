@@ -30,6 +30,7 @@ function normalizeMode(raw: unknown, flicker: boolean | undefined): LightMode {
 export function createLightsSystem() {
   let timeSec = 0;
   let lights: Light[] = [];
+  const tileLightCache = new Map<string, number>();
 
   function setLights(
     next: Array<{
@@ -42,6 +43,7 @@ export function createLightsSystem() {
       color?: string;
     }>,
   ) {
+    tileLightCache.clear();
     lights = Array.isArray(next)
       ? next
           .filter(
@@ -63,10 +65,14 @@ export function createLightsSystem() {
   function onMapChanged() {
     lights = [];
     timeSec = 0;
+    tileLightCache.clear();
   }
 
   function tick(dt: number) {
-    timeSec += Math.max(0, dt);
+    const clamped = Math.max(0, dt);
+    if (clamped <= 0) return;
+    timeSec += clamped;
+    tileLightCache.clear();
   }
 
   function modulate(mode: LightMode, phase: number): number {
@@ -100,7 +106,7 @@ export function createLightsSystem() {
     }
   }
 
-  function getLightAt(x: number, y: number): number {
+  function computeLightAt(x: number, y: number): number {
     if (!lights.length) return 1;
 
     let acc = 0;
@@ -108,10 +114,11 @@ export function createLightsSystem() {
       const l = lights[i];
       const dx = x - l.x;
       const dy = y - l.y;
-      const d = Math.hypot(dx, dy);
-      if (d > l.radius) continue;
+      const distSq = dx * dx + dy * dy;
+      const radiusSq = l.radius * l.radius;
+      if (distSq > radiusSq) continue;
 
-      const falloff = 1 - d / l.radius;
+      const falloff = 1 - Math.sqrt(distSq) / l.radius;
       const inten = l.intensity * modulate(l.mode, l.phase);
       acc += inten * falloff * falloff;
     }
@@ -120,6 +127,25 @@ export function createLightsSystem() {
     const ambient = 0.22;
     const out = ambient + acc;
     return Math.max(0, Math.min(1, out));
+  }
+
+  function getTileLightCacheKey(x: number, y: number): string | null {
+    const xMap = x - 0.5;
+    const yMap = y - 0.5;
+    if (!Number.isInteger(xMap) || !Number.isInteger(yMap)) return null;
+    return `${xMap},${yMap}`;
+  }
+
+  function getLightAt(x: number, y: number): number {
+    const key = getTileLightCacheKey(x, y);
+    if (!key) return computeLightAt(x, y);
+
+    const cached = tileLightCache.get(key);
+    if (cached !== undefined) return cached;
+
+    const light = computeLightAt(x, y);
+    tileLightCache.set(key, light);
+    return light;
   }
 
   return {
