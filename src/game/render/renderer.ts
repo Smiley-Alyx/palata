@@ -36,6 +36,15 @@ export function createRenderer({
   let killFill = 0;
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
+  let ceilingCache:
+    | {
+        w: number;
+        h: number;
+        color: string;
+        texture: CanvasImageSource | null;
+        canvas: HTMLCanvasElement;
+      }
+    | null = null;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
 
@@ -118,12 +127,18 @@ export function createRenderer({
   }
 
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
-    if (typeof colors.ceiling === 'string') ceilingColor = colors.ceiling;
+    if (typeof colors.ceiling === 'string') {
+      ceilingColor = colors.ceiling;
+      ceilingCache = null;
+    }
     if (typeof colors.floor === 'string') floorColor = colors.floor;
   }
 
   function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
-    if ('ceiling' in materials) ceilingMaterial = materials.ceiling ?? null;
+    if ('ceiling' in materials) {
+      ceilingMaterial = materials.ceiling ?? null;
+      ceilingCache = null;
+    }
     if ('floor' in materials) floorMaterial = materials.floor ?? null;
   }
 
@@ -131,16 +146,15 @@ export function createRenderer({
     ambientLight01 = Math.max(0, Math.min(1, light01));
   }
 
-  function drawTexturedPlane(
+  function drawTexturedFloor(
     output: ImageData,
     texture: ImageData,
     row: number,
-    isCeiling: boolean,
   ) {
     const w = output.width;
     const h = output.height;
     const horizon = h / 2;
-    const rowDelta = isCeiling ? horizon - row : row - horizon;
+    const rowDelta = row - horizon;
     if (rowDelta <= 0) return;
 
     const rowDistance = (h * 0.5) / rowDelta;
@@ -175,6 +189,39 @@ export function createRenderer({
     }
   }
 
+  function getCeilingCanvas(w: number, h: number, texture: CanvasImageSource | null): HTMLCanvasElement {
+    if (
+      ceilingCache &&
+      ceilingCache.w === w &&
+      ceilingCache.h === h &&
+      ceilingCache.color === ceilingColor &&
+      ceilingCache.texture === texture
+    ) {
+      return ceilingCache.canvas;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const cctx = canvas.getContext('2d');
+    if (!cctx) return canvas;
+
+    cctx.imageSmoothingEnabled = false;
+    cctx.fillStyle = ceilingColor;
+    cctx.fillRect(0, 0, w, h);
+
+    if (texture) {
+      const pattern = cctx.createPattern(texture, 'repeat');
+      if (pattern) {
+        cctx.fillStyle = pattern;
+        cctx.fillRect(0, 0, w, h);
+      }
+    }
+
+    ceilingCache = { w, h, color: ceilingColor, texture, canvas };
+    return canvas;
+  }
+
   function drawBackground() {
     const w = getViewWidth();
     const h = getViewHeight();
@@ -182,22 +229,18 @@ export function createRenderer({
     ctx.clearRect(0, 0, w, h);
     const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
     const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
-    const ceilingData = ceilingTexture ? getTextureData(ceilingTexture) : null;
     const floorData = floorTexture ? getTextureData(floorTexture) : null;
 
-    ctx.fillStyle = ceilingColor;
-    ctx.fillRect(0, 0, w, h / 2);
+    ctx.drawImage(getCeilingCanvas(w, Math.ceil(h / 2), ceilingTexture), 0, 0);
 
     ctx.fillStyle = floorColor;
     ctx.fillRect(0, h / 2, w, h / 2);
 
-    if (ceilingData || floorData) {
+    if (floorData) {
       const planes = ctx.getImageData(0, 0, w, h);
       for (let y = 0; y < h; y++) {
-        if (y < h / 2 && ceilingData) {
-          drawTexturedPlane(planes, ceilingData, y, true);
-        } else if (y > h / 2 && floorData) {
-          drawTexturedPlane(planes, floorData, y, false);
+        if (y > h / 2) {
+          drawTexturedFloor(planes, floorData, y);
         }
       }
       ctx.putImageData(planes, 0, 0);
