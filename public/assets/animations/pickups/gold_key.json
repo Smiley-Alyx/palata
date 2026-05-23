@@ -4,8 +4,9 @@
   "_comment": "1536x1024 sheet (NORMAL / EMERGENCY LIGHT / CORRUPTED). Idle (NORMAL) only.",
   "sheet": {
     "src": "sprites/pickups/keys/gold_key_hd.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
-      { "x": 164, "y": 72, "w": 292, "h": 692 }
+      { "x": 164, "y": 71, "w": 292, "h": 789 }
     ]
   }
 }

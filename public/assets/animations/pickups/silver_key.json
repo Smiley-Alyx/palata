@@ -4,8 +4,9 @@
   "_comment": "1536x1024 sheet. Idle frame only.",
   "sheet": {
     "src": "sprites/pickups/keys/silver_key_hd.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
-      { "x": 164, "y": 96, "w": 276, "h": 668 }
+      { "x": 164, "y": 96, "w": 276, "h": 725 }
     ]
   }
 }
