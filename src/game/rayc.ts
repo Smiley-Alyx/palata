@@ -989,6 +989,14 @@ export function stopRayc() {
   engine.stop();
 }
 
+export function resetPlayerState() {
+  player.mov = 0;
+  player.dir = 0;
+  player.sprint = 0;
+  player.flatmap = 0;
+  player.hp = player.maxHp;
+}
+
 export function disposeRayc() {
   if (!engine) return;
   engine.dispose();

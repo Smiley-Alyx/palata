@@ -15,6 +15,7 @@ import {
   getNearestEnemyDistance,
   playMusic,
   resetKeys,
+  resetPlayerState,
   setDifficulty,
   setAudioConfig,
   setBackgroundColors,
@@ -863,6 +864,7 @@ async function startLevelById(
   stripEnemyCellsFromGrid(level.grid, level.legend);
   setLegend(level.legend);
   setMap(level.grid);
+  if (opts.resetPlayer !== false) resetPlayerState();
   setMaterialsWall(level.materialsWall ?? null);
   setSpawn(level.spawn);
   setBackgroundColors(level.colors);
