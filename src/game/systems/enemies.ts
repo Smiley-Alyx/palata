@@ -219,6 +219,18 @@ export function createEnemiesSystem({
     return false;
   }
 
+  function isEnemyOverlappingCell(xMap: number, yMap: number, padding = 0): boolean {
+    const minX = xMap - enemyRadius - padding;
+    const maxX = xMap + 1 + enemyRadius + padding;
+    const minY = yMap - enemyRadius - padding;
+    const maxY = yMap + 1 + enemyRadius + padding;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (e.x >= minX && e.x <= maxX && e.y >= minY && e.y <= maxY) return true;
+    }
+    return false;
+  }
+
   function isPlayerBlockingEnemyCell(xMap: number, yMap: number): boolean {
     const cx = xMap + 0.5;
     const cy = yMap + 0.5;
@@ -236,7 +248,7 @@ export function createEnemiesSystem({
     for (let d = 0.25; d < dist; d += step) {
       const x = xFrom + nx * d;
       const y = yFrom + ny * d;
-      if (hitWall(x, y)) return false;
+      if (hitSolid(x, y)) return false;
     }
     return true;
   }
@@ -710,6 +722,7 @@ export function createEnemiesSystem({
     tryShootEnemies,
     tryMeleeHitNearest,
     hitEnemyCircle,
+    isEnemyOverlappingCell,
     hitWallCircle,
     createEnemyAtWorld,
     spawnEnemyAtWorld,

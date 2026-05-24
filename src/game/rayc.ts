@@ -7,6 +7,7 @@ import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX, SFX } from './audio/sfx-config';
 import {
   getMap,
+  isDoorCell,
   setLegend as setLegendState,
   setMap as setMapState,
   setMaterialsWall as setMaterialsWallState,
@@ -734,7 +735,8 @@ function ensureEngine() {
 
     for (const c of candidates) {
       if (c.x < 0 || c.x >= w || c.y < 0 || c.y >= h) continue;
-      if (map[c.y][c.x] !== 0) continue;
+      const isOpenDoor = isDoorCell(c.x, c.y) && !doorsSystem?.isDoorBlocking(c.x + 0.5, c.y + 0.5);
+      if (map[c.y][c.x] !== 0 && !isOpenDoor) continue;
 
       const ex = c.x + 0.5;
       const ey = c.y + 0.5;
@@ -876,8 +878,7 @@ function ensureEngine() {
           const cx = xMap + 0.5;
           const cy = yMap + 0.5;
           if (Math.hypot(player.x - cx, player.y - cy) < 0.75) return true;
-          const enemyR = 0.35;
-          return !!enemiesSystem && enemiesSystem.hitEnemyCircle(cx, cy, enemyR);
+          return !!enemiesSystem && enemiesSystem.isEnemyOverlappingCell(xMap, yMap);
         });
         enemiesSystem?.tick(dt);
         pickupsSystem?.tick(dt);
