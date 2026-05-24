@@ -397,6 +397,7 @@ export function createRenderer({
       material: string;
       attackFlashMs?: number;
       scale?: number;
+      anchor?: 'center' | 'floor';
     }>,
   ) {
     if (!listIn.length) return;
@@ -445,8 +446,11 @@ export function createRenderer({
       const screenX = (0.5 - item.rel / player.fov) * w;
       const x0 = Math.floor(screenX - spriteWidth / 2);
       const x1 = Math.floor(screenX + spriteWidth / 2);
-      // Anchor sprite to the floor (bottom of the wall slice at same depth).
-      const y0 = Math.floor(h / 2 + wallHeight / 2 - spriteHeight);
+      const anchor = item.s.anchor ?? 'floor';
+      const y0 =
+        anchor === 'center'
+          ? Math.floor(h / 2 - spriteHeight / 2)
+          : Math.floor(h / 2 + wallHeight / 2 - spriteHeight);
 
       for (let x = x0; x <= x1; x++) {
         if (x < 0 || x >= w) continue;
@@ -456,18 +460,6 @@ export function createRenderer({
         const u = (x - x0) / Math.max(1, x1 - x0);
         const sx = Math.floor(u * texW);
         ctx.drawImage(item.texture, sx, 0, 1, texH, x, y0, 1, spriteHeight);
-      }
-
-      const flashMs = item.s.attackFlashMs ?? 0;
-      if (flashMs > 0) {
-        const t = Math.max(0, Math.min(1, flashMs / 220));
-        ctx.save();
-        ctx.strokeStyle = `rgba(255, 50, 50, ${0.25 + 0.6 * t})`;
-        ctx.lineWidth = Math.max(1, Math.floor(spriteWidth * 0.02));
-        ctx.shadowColor = `rgba(255, 0, 0, ${0.35 + 0.5 * t})`;
-        ctx.shadowBlur = Math.max(2, Math.floor(spriteWidth * 0.18));
-        ctx.strokeRect(x0 + 0.5, y0 + 0.5, Math.max(1, x1 - x0), Math.max(1, spriteHeight));
-        ctx.restore();
       }
     }
   }
@@ -486,6 +478,7 @@ export function createRenderer({
         material: mat,
         attackFlashMs: e.attackFlashMs,
         scale,
+        anchor: 'center' as const,
       };
     });
     drawSpriteList(zBuffer, enemies);
