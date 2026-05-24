@@ -217,6 +217,8 @@ export async function loadLevel(levelUrl: string) {
       const overrides = data.materialsWall as Array<{
         x?: unknown;
         y?: unknown;
+        w?: unknown;
+        h?: unknown;
         material?: unknown;
       }>;
       materialsWall = Array.from({ length: grid.length }, () =>
@@ -228,6 +230,21 @@ export async function loadLevel(levelUrl: string) {
         if (typeof entry.material !== 'string') continue;
         const x = Math.floor(entry.x);
         const y = Math.floor(entry.y);
+
+        if (typeof entry.w === 'number' || typeof entry.h === 'number') {
+          const w = typeof entry.w === 'number' ? Math.floor(entry.w) : 1;
+          const h = typeof entry.h === 'number' ? Math.floor(entry.h) : 1;
+          if (w <= 0 || h <= 0) continue;
+
+          for (let yy = Math.max(0, y); yy < Math.min(materialsWall.length, y + h); yy++) {
+            for (let xx = Math.max(0, x); xx < Math.min(width, x + w); xx++) {
+              if (grid[yy]?.[xx] !== 1) continue;
+              materialsWall[yy][xx] = entry.material;
+            }
+          }
+          continue;
+        }
+
         if (y < 0 || y >= materialsWall.length) continue;
         if (x < 0 || x >= (materialsWall[0]?.length ?? 0)) continue;
         materialsWall[y][x] = entry.material;

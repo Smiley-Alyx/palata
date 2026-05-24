@@ -92,6 +92,76 @@
   ],
   "materialsWall": [
     {
+      "x": 2,
+      "y": 11,
+      "w": 18,
+      "h": 13,
+      "material": "medical_tiles"
+    },
+    {
+      "x": 2,
+      "y": 28,
+      "w": 18,
+      "h": 14,
+      "material": "concrete_tunnel"
+    },
+    {
+      "x": 2,
+      "y": 46,
+      "w": 18,
+      "h": 14,
+      "material": "hospital_wall_stripe"
+    },
+    {
+      "x": 50,
+      "y": 9,
+      "w": 13,
+      "h": 15,
+      "material": "medical_tiles"
+    },
+    {
+      "x": 51,
+      "y": 26,
+      "w": 12,
+      "h": 16,
+      "material": "metal_panels"
+    },
+    {
+      "x": 35,
+      "y": 46,
+      "w": 28,
+      "h": 14,
+      "material": "hospital_wall_stripe"
+    },
+    {
+      "x": 35,
+      "y": 11,
+      "w": 17,
+      "h": 13,
+      "material": "metal_emergency"
+    },
+    {
+      "x": 28,
+      "y": 0,
+      "w": 8,
+      "h": 25,
+      "material": "ventilation_shaft"
+    },
+    {
+      "x": 28,
+      "y": 24,
+      "w": 8,
+      "h": 20,
+      "material": "metal_emergency"
+    },
+    {
+      "x": 24,
+      "y": 42,
+      "w": 18,
+      "h": 21,
+      "material": "organic_wall"
+    },
+    {
       "x": 31,
       "y": 0,
       "material": "blast_door"
