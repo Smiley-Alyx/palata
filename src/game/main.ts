@@ -613,6 +613,7 @@ function showMenu() {
   const el = document.getElementById('menuRoot');
   if (!(el instanceof HTMLElement)) return;
   menuMode = 'main';
+  setHudVisible(false);
   el.style.display = '';
   showMenuPanel('menuMainPanel');
   applyMenuAudio();
@@ -622,6 +623,7 @@ function showPauseMenu() {
   const el = document.getElementById('menuRoot');
   if (!(el instanceof HTMLElement)) return;
   menuMode = 'pause';
+  setHudVisible(true);
   el.style.display = '';
   showMenuPanel('menuPausePanel');
 }
@@ -639,6 +641,7 @@ let currentLevelId: string | null = null;
 const gameConfig: GameConfig = loadGameConfig();
 let currentDifficulty: Difficulty = gameConfig.difficulty;
 let menuMode: 'main' | 'pause' = 'main';
+let hudVisible = false;
 
 function persistGameConfig() {
   gameConfig.difficulty = currentDifficulty;
@@ -648,7 +651,16 @@ function persistGameConfig() {
 function syncFpsVisibility() {
   const fpsEl = document.getElementById('fpsText');
   if (!(fpsEl instanceof HTMLElement)) return;
-  fpsEl.style.display = gameConfig.ui.showFps ? '' : 'none';
+  fpsEl.style.display = gameConfig.ui.showFps && hudVisible ? '' : 'none';
+}
+
+function setHudVisible(visible: boolean) {
+  hudVisible = visible;
+  const hudEl = document.getElementById('hudRoot');
+  const frameEl = document.getElementById('frame');
+  if (hudEl instanceof HTMLElement) hudEl.style.display = visible ? '' : 'none';
+  if (frameEl instanceof HTMLElement) frameEl.classList.toggle('has-hud', visible);
+  syncFpsVisibility();
 }
 
 function applyStoredConfig() {
@@ -723,6 +735,7 @@ function currentPerceptionStage(): string {
 function showDeathScreen() {
   const el = document.getElementById('deathRoot');
   if (!(el instanceof HTMLElement)) return;
+  setHudVisible(false);
   const epitaphEl = document.getElementById('deathEpitaph');
   if (epitaphEl instanceof HTMLElement) {
     epitaphEl.textContent = pickEpitaph(currentPerceptionStage());
@@ -794,6 +807,7 @@ function showEndingScreen(stage?: string) {
   if (!(root instanceof HTMLElement)) return;
   const key = stage && stage in ENDINGS ? stage : currentPerceptionStage();
   const ending = ENDINGS[key] ?? ENDINGS.clean;
+  setHudVisible(false);
 
   const titleEl = document.getElementById('endingTitle');
   const bodyEl = document.getElementById('endingBody');
@@ -889,6 +903,7 @@ function enterDeathState() {
   stopRayc();
   running = false;
   paused = false;
+  setHudVisible(false);
 
   applyMenuAudio();
 
@@ -921,6 +936,7 @@ async function transitionToNextLevel(levelId?: string, message?: string) {
   stopRayc();
   running = false;
   paused = false;
+  setHudVisible(false);
 
   const nextLevelId = levelId ?? (currentLevelId ? await findNextLevelId(currentLevelId) : null);
   if (!nextLevelId) {
@@ -943,6 +959,7 @@ async function startLevelById(
 
   dead = false;
   paused = false;
+  setHudVisible(false);
   if (deathTimer !== null) window.clearTimeout(deathTimer);
   hideDeathScreen();
   hideBloodOverlay();
@@ -1000,6 +1017,7 @@ async function startLevelById(
 
   await loadingDone;
   hideMenu();
+  setHudVisible(true);
   startRayc();
   running = true;
   currentLevelId = levelEntry.id;
@@ -1072,6 +1090,7 @@ function installConsoleCommands() {
 }
 
 function initMenu() {
+  setHudVisible(false);
   hideMenu();
   hideDeathScreen();
   hideEndingScreen();
