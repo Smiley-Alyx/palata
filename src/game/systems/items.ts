@@ -89,6 +89,11 @@ const AMMO_INVENTORY_ID: Record<AmmoSubtype, InventoryItemId> = {
   shotgun: 'shotgun_ammo',
 };
 
+const AMMO_PICKUP_AMOUNT: Record<AmmoSubtype, number> = {
+  pistol: 12,
+  shotgun: 4,
+};
+
 export type ArmorSubtype = 'blue' | 'green' | 'red';
 
 export type ArmorSpec = {
@@ -174,7 +179,10 @@ export function createItemsSystem({
           .filter((a) => a && typeof a.x === 'number' && typeof a.y === 'number')
           .map((a) => {
             const subtype: AmmoSubtype = a.subtype === 'shotgun' ? 'shotgun' : 'pistol';
-            const amount = typeof a.amount === 'number' && a.amount > 0 ? Math.floor(a.amount) : 6;
+            const amount =
+              typeof a.amount === 'number' && a.amount > 0
+                ? Math.floor(a.amount)
+                : AMMO_PICKUP_AMOUNT[subtype];
             return {
               id: a.id,
               x: a.x,
@@ -260,7 +268,7 @@ export function createItemsSystem({
       a.alive = false;
       if (a.id) onPickup?.(a.id);
       inventory.add(AMMO_INVENTORY_ID[a.subtype], a.amount);
-      playSfx(SFX.ui.pickupMedkit);
+      playSfx(SFX.ui.pickupAmmo);
     }
 
     for (const a of armor) {

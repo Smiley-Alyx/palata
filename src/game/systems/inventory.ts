@@ -17,6 +17,11 @@ const ITEM_IDS: readonly InventoryItemId[] = [
   'shotgun_ammo',
 ];
 
+export const AMMO_CAPACITY = {
+  pistol_ammo: 48,
+  shotgun_ammo: 16,
+} as const satisfies Partial<Record<InventoryItemId, number>>;
+
 export function createInventory() {
   const counts: Record<InventoryItemId, number> = {
     haloperidol: 0,
@@ -39,7 +44,8 @@ export function createInventory() {
 
   function add(id: InventoryItemId, amount = 1): number {
     if (amount === 0) return counts[id];
-    counts[id] = Math.max(0, (counts[id] ?? 0) + amount);
+    const capacity = id in AMMO_CAPACITY ? AMMO_CAPACITY[id as keyof typeof AMMO_CAPACITY] : null;
+    counts[id] = Math.max(0, Math.min(capacity ?? Infinity, (counts[id] ?? 0) + amount));
     onChanged?.();
     return counts[id];
   }

@@ -1,4 +1,4 @@
-import type { Inventory, InventoryItemId } from './inventory';
+import { AMMO_CAPACITY, type Inventory, type InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 
 export type WeaponId = 'pipe' | 'pistol' | 'shotgun';
@@ -9,6 +9,7 @@ export type WeaponDef = {
   id: WeaponId;
   label: string;
   ammoId: InventoryItemId | null;
+  maxAmmo: number | null;
   range: number;
   fireSfx: string;
   emptySfx: string | null;
@@ -29,6 +30,7 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'pipe',
     label: 'PIPE',
     ammoId: null,
+    maxAmmo: null,
     range: 1.4,
     fireSfx: SFX.weapons.pipe.swing,
     emptySfx: null,
@@ -45,6 +47,7 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'pistol',
     label: 'PISTOL',
     ammoId: 'pistol_ammo',
+    maxAmmo: AMMO_CAPACITY.pistol_ammo,
     range: 10,
     fireSfx: SFX.weapons.pistol.fire,
     emptySfx: SFX.weapons.pistol.empty,
@@ -61,6 +64,7 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'shotgun',
     label: 'SHOTGUN',
     ammoId: 'shotgun_ammo',
+    maxAmmo: AMMO_CAPACITY.shotgun_ammo,
     range: 8,
     fireSfx: SFX.weapons.shotgun.fire,
     emptySfx: SFX.weapons.pistol.empty,
