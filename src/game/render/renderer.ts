@@ -460,23 +460,19 @@ export function createRenderer({
     const texture = getTextureForMaterial(img);
     if (!texture) return;
 
-    const { w: texW, h: texH } = getSourceSize(texture);
-
-    let texX = Math.floor(offset * texW);
-    if (texX < 0) texX = 0;
-    if (texX > texW - 1) texX = texW - 1;
-
     const y0 = viewHeight / 2 - sliceHeight / 2;
 
     // Apply lighting as a dark overlay (cheap and stable for retro look).
     const l = Math.max(0, Math.min(1, light01 * lightingMultiplier * getDistanceLight01(dist)));
     const shade = 1 - l;
-    if (shade > 0.001) {
-      const shaded = getShadedTexture(texture, shade);
-      ctx.drawImage(shaded, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
-    } else {
-      ctx.drawImage(texture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
-    }
+    const drawTexture = shade > 0.001 ? getShadedTexture(texture, shade) : texture;
+    const { w: texW, h: texH } = getSourceSize(drawTexture);
+
+    let texX = Math.floor(offset * texW);
+    if (texX < 0) texX = 0;
+    if (texX > texW - 1) texX = texW - 1;
+
+    ctx.drawImage(drawTexture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
   }
 
   function drawSpriteList(
