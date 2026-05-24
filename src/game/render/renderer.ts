@@ -646,7 +646,8 @@ export function createRenderer({
     const h = getVisibleViewHeight();
     const { w: texW, h: texH } = getSourceSize(frame);
     const aspect = texW / Math.max(1, texH);
-    let drawH = h * 0.88;
+    const isScalpel = weapon === 'skalpel';
+    let drawH = h * (isScalpel ? 0.6 : 0.88);
     let drawW = drawH * aspect;
     const maxW = w * 0.72;
     if (drawW > maxW) {
@@ -654,12 +655,17 @@ export function createRenderer({
       drawH = drawW / Math.max(0.01, aspect);
     }
 
-    const x = Math.floor((w - drawW) / 2);
-    const y = Math.floor(h * 1.04 - drawH);
-
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(frame, x, y, drawW, drawH);
+    if (isScalpel) {
+      ctx.translate(Math.floor(w * 0.8), Math.floor(h * 1.13));
+      ctx.rotate(-Math.PI * 0.075);
+      ctx.drawImage(frame, -drawW * 0.5, -drawH, drawW, drawH);
+    } else {
+      const x = Math.floor((w - drawW) / 2);
+      const y = Math.floor(h * 1.04 - drawH);
+      ctx.drawImage(frame, x, y, drawW, drawH);
+    }
     ctx.restore();
   }
 
