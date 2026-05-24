@@ -253,6 +253,52 @@ export function createEnemiesSystem({
     return true;
   }
 
+  function isPlayerPullBlockedAt(x: number, y: number, selfIndex: number): boolean {
+    if (hitWallCircle(x, y, playerRadius)) return true;
+    for (let i = 0; i < enemies.length; i++) {
+      if (i === selfIndex) continue;
+      const e = enemies[i];
+      if (!e.alive) continue;
+      if (Math.hypot(x - e.x, y - e.y) <= enemyRadius + playerRadius) return true;
+    }
+    return false;
+  }
+
+  function tryPullPlayerToward(selfIndex: number, dt: number, dist: number) {
+    const e = enemies[selfIndex];
+    const pull = getEnemyProfile(e.kind).pull;
+    if (!pull) return;
+    if (e.mode !== 'chase') return;
+    if (dist > pull.range || dist <= pull.minDistance) return;
+    if (!hasLineOfSight(e.x, e.y, player.x, player.y)) return;
+
+    const dx = e.x - player.x;
+    const dy = e.y - player.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const move = Math.min(dist - pull.minDistance, pull.strength * dt);
+    const stepX = (dx / len) * move;
+    const stepY = (dy / len) * move;
+    const moveSteps = Math.max(1, Math.ceil(Math.max(Math.abs(stepX), Math.abs(stepY)) / 0.04));
+    const subStepX = stepX / moveSteps;
+    const subStepY = stepY / moveSteps;
+
+    for (let i = 0; i < moveSteps; i++) {
+      const txFull = player.x + subStepX;
+      const tyFull = player.y + subStepY;
+      if (!isPlayerPullBlockedAt(txFull, tyFull, selfIndex)) {
+        player.x = txFull;
+        player.y = tyFull;
+        continue;
+      }
+
+      const tx = player.x + subStepX;
+      if (!isPlayerPullBlockedAt(tx, player.y, selfIndex)) player.x = tx;
+
+      const ty = player.y + subStepY;
+      if (!isPlayerPullBlockedAt(player.x, ty, selfIndex)) player.y = ty;
+    }
+  }
+
   function alertFromNoise(x: number, y: number, radius: number) {
     const r2 = radius * radius;
     for (const e of enemies) {
@@ -501,6 +547,8 @@ export function createEnemiesSystem({
         e.x = tileCenterX;
         e.y = tileCenterY;
       }
+
+      tryPullPlayerToward(selfIndex, dt, dist);
 
       updateDoorsWaitState(selfIndex, atCenter);
 

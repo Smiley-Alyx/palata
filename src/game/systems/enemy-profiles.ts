@@ -8,6 +8,11 @@ export type EnemyProfile = {
   speedChase: number;
   // Render scale relative to a 1-tile-tall sprite. Bosses use >1 for presence.
   scale?: number;
+  pull?: {
+    range: number;
+    strength: number;
+    minDistance: number;
+  };
   sightLoop: string | null;
   attack: string;
   hurt: string | null;
@@ -131,6 +136,11 @@ const BOSS_CHIEF_DOCTOR: EnemyProfile = {
   material: 'boss_chief_doctor',
   hp: 18,
   scale: 1.5,
+  pull: {
+    range: 5.5,
+    strength: 0.7,
+    minDistance: 1.1,
+  },
   speedPatrol: 0.6,
   speedChase: 1.0,
   sightLoop: SFX.bosses.chiefDoctor.intro,
