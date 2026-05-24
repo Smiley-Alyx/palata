@@ -56,8 +56,10 @@ export function createRenderer({
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
   } | null = null;
+  const renderTextureCache = new WeakMap<object, HTMLCanvasElement>();
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
+  const MAX_RENDER_TEXTURE_SIZE = 256;
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
     if (src instanceof HTMLImageElement) {
@@ -72,6 +74,28 @@ export function createRenderer({
     return { w: 1, h: 1 };
   }
 
+  function getRenderTexture(texture: CanvasImageSource): CanvasImageSource {
+    const { w, h } = getSourceSize(texture);
+    const largest = Math.max(w, h);
+    if (largest <= MAX_RENDER_TEXTURE_SIZE) return texture;
+
+    const cached = renderTextureCache.get(texture as object);
+    if (cached) return cached;
+
+    const scale = MAX_RENDER_TEXTURE_SIZE / largest;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+
+    const cctx = canvas.getContext('2d');
+    if (!cctx) return texture;
+
+    cctx.imageSmoothingEnabled = false;
+    cctx.drawImage(texture, 0, 0, canvas.width, canvas.height);
+    renderTextureCache.set(texture as object, canvas);
+    return canvas;
+  }
+
   function getVisibleViewHeight(): number {
     const h = getViewHeight();
     const canvasRect = ctx.canvas.getBoundingClientRect();
@@ -84,9 +108,12 @@ export function createRenderer({
 
   function getShadedTexture(texture: CanvasImageSource, shade: number): CanvasImageSource {
     const key = Math.max(1, Math.min(64, Math.round(shade * 64)));
-    const cachedByShade = shadedTextureCache.get(texture as object);
+    const cacheKey = texture as object;
+    const cachedByShade = shadedTextureCache.get(cacheKey);
     const cached = cachedByShade?.get(key);
     if (cached) return cached;
+
+    texture = getRenderTexture(texture);
 
     const { w, h } = getSourceSize(texture);
     const shaded = document.createElement('canvas');
@@ -107,7 +134,7 @@ export function createRenderer({
     let byShade = cachedByShade;
     if (!byShade) {
       byShade = new Map();
-      shadedTextureCache.set(texture as object, byShade);
+      shadedTextureCache.set(cacheKey, byShade);
     }
     byShade.set(key, shaded);
     return shaded;
@@ -129,7 +156,8 @@ export function createRenderer({
     const cached = textureDataCache.get(texture as object);
     if (cached) return cached;
 
-    const { w, h } = getSourceSize(texture);
+    const renderTexture = getRenderTexture(texture);
+    const { w, h } = getSourceSize(renderTexture);
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
@@ -138,7 +166,7 @@ export function createRenderer({
     if (!cctx) return null;
 
     cctx.imageSmoothingEnabled = false;
-    cctx.drawImage(texture, 0, 0, w, h);
+    cctx.drawImage(renderTexture, 0, 0, w, h);
 
     try {
       const data = cctx.getImageData(0, 0, w, h);
