@@ -25,6 +25,10 @@ const EMITTER_SFX: Record<AmbientEmitterSubtype, string> = {
   heartbeat_wall: SFX.ambient.heartbeatWall,
 };
 
+const HORROR_STINGERS = Object.values(SFX.ambient.stingers);
+const STINGER_MIN_DELAY_SEC = 45;
+const STINGER_MAX_DELAY_SEC = 105;
+
 type Emitter = {
   id?: string;
   x: number;
@@ -50,15 +54,21 @@ function pickAmbientBed(stages: ReadonlyArray<PerceptionState>): string | null {
   return null;
 }
 
+function randomStingerDelaySec() {
+  return STINGER_MIN_DELAY_SEC + Math.random() * (STINGER_MAX_DELAY_SEC - STINGER_MIN_DELAY_SEC);
+}
+
 export function createAmbienceSystem({
   player,
   getPerceptionStages,
+  playSfx,
   playLoopingSfx,
   stopLoopingSfx,
   resolveSfxSrc,
 }: {
   player: { x: number; y: number };
   getPerceptionStages: () => ReadonlyArray<PerceptionState>;
+  playSfx: (key: string, volume?: number) => void;
   playLoopingSfx: (key: string, volume?: number, srcOverride?: string) => void;
   stopLoopingSfx: (key: string) => void;
   resolveSfxSrc: (key: string) => string | undefined;
@@ -68,6 +78,8 @@ export function createAmbienceSystem({
 
   let emitters: Emitter[] = [];
   let activeEmitterKeys: string[] = [];
+  let stingerDelaySec = randomStingerDelaySec();
+  let previousStinger: string | null = null;
 
   function setEmitters(next: AmbientEmitterSpec[]) {
     for (const k of activeEmitterKeys) stopLoopingSfx(k);
@@ -106,9 +118,11 @@ export function createAmbienceSystem({
     activeBed = null;
     activeEmitterKeys = [];
     emitters = [];
+    stingerDelaySec = randomStingerDelaySec();
+    previousStinger = null;
   }
 
-  function tick(_dt: number) {
+  function tick(dt: number) {
     const stages = getPerceptionStages();
 
     const wantBreath = pickBreathLoop(stages);
@@ -139,6 +153,15 @@ export function createAmbienceSystem({
       stillActive.add(e.loopKey);
     }
     activeEmitterKeys = Array.from(stillActive);
+
+    stingerDelaySec -= Math.max(0, dt);
+    if (stingerDelaySec <= 0) {
+      const available = HORROR_STINGERS.filter((stinger) => stinger !== previousStinger);
+      const stinger = available[Math.floor(Math.random() * available.length)];
+      playSfx(stinger, 0.55);
+      previousStinger = stinger;
+      stingerDelaySec = randomStingerDelaySec();
+    }
   }
 
   return {

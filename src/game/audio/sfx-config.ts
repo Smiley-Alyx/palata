@@ -137,6 +137,18 @@ export const SFX = {
   ambient: {
     distantScream: 'ambient.distant.scream',
     heartbeatWall: 'ambient.heartbeat.wall',
+    stingers: {
+      horror01: 'ambient.stinger.horror.01',
+      horror02: 'ambient.stinger.horror.02',
+      horror03: 'ambient.stinger.horror.03',
+      horror04: 'ambient.stinger.horror.04',
+      horror05: 'ambient.stinger.horror.05',
+      horror06: 'ambient.stinger.horror.06',
+      horror07: 'ambient.stinger.horror.07',
+      horror08: 'ambient.stinger.horror.08',
+      horror09: 'ambient.stinger.horror.09',
+      horror10: 'ambient.stinger.horror.10',
+    },
   },
 } as const;
 
@@ -267,4 +279,14 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   // --- Ambient ---
   [SFX.ambient.distantScream]: url('/assets/sounds/ambient/distant_scream.wav'),
   [SFX.ambient.heartbeatWall]: url('/assets/sounds/ambient/heartbeat_wall.wav'),
+  [SFX.ambient.stingers.horror01]: url('/assets/sounds/ambient/horror_stinger_01.wav'),
+  [SFX.ambient.stingers.horror02]: url('/assets/sounds/ambient/horror_stinger_02.wav'),
+  [SFX.ambient.stingers.horror03]: url('/assets/sounds/ambient/horror_stinger_03.wav'),
+  [SFX.ambient.stingers.horror04]: url('/assets/sounds/ambient/horror_stinger_04.wav'),
+  [SFX.ambient.stingers.horror05]: url('/assets/sounds/ambient/horror_stinger_05.wav'),
+  [SFX.ambient.stingers.horror06]: url('/assets/sounds/ambient/horror_stinger_06.wav'),
+  [SFX.ambient.stingers.horror07]: url('/assets/sounds/ambient/horror_stinger_07.wav'),
+  [SFX.ambient.stingers.horror08]: url('/assets/sounds/ambient/horror_stinger_08.wav'),
+  [SFX.ambient.stingers.horror09]: url('/assets/sounds/ambient/horror_stinger_09.wav'),
+  [SFX.ambient.stingers.horror10]: url('/assets/sounds/ambient/horror_stinger_10.wav'),
 };

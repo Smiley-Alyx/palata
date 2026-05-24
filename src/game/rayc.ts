@@ -862,6 +862,7 @@ function ensureEngine() {
   ambienceSystem = createAmbienceSystem({
     player,
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
+    playSfx: (key, volume) => audio.playSfx(key, volume),
     playLoopingSfx: (key, volume, srcOverride) => audio.playLoopingSfx(key, volume, srcOverride),
     stopLoopingSfx: (key) => audio.stopLoopingSfx(key),
     resolveSfxSrc: (key) => audio.getSfxSrc(key),
