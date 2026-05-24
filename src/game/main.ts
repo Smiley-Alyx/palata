@@ -1275,11 +1275,11 @@ function bootstrap() {
   // Missing descriptors fail soft and the static material fallback keeps the
   // game playable.
   void loadAnimationRegistry();
-  applyStoredConfig();
   installConsoleCommands();
   initCanvas({
     getFullscreenBindings: () => gameConfig.controls.fullscreen,
   });
+  applyStoredConfig();
 
   initAudioUi();
   initHpUi();
