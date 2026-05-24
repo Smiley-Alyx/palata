@@ -964,6 +964,55 @@ async function startLevelById(
   currentLevelId = levelEntry.id;
 }
 
+function normalizeConsoleLevelId(level: string | number) {
+  if (typeof level === 'number' && Number.isFinite(level)) return `level${Math.floor(level)}`;
+  const value = String(level).trim();
+  if (/^\d+$/.test(value)) return `level${value}`;
+  return value;
+}
+
+async function listConsoleLevels() {
+  const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
+  return levelsIndex.levels.map((level) => ({
+    id: level.id,
+    name: level.name ?? level.id,
+    hidden: Boolean(level.hidden),
+  }));
+}
+
+async function switchLevelFromConsole(level: string | number) {
+  const levelId = normalizeConsoleLevelId(level);
+  const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
+  const levelEntry = levelsIndex.levels.find((entry) => entry.id === levelId);
+  if (!levelEntry) {
+    throw new Error(`Unknown level: ${levelId}`);
+  }
+  setDifficulty(currentDifficulty);
+  await startLevelById(levelEntry.id, currentDifficulty);
+  return {
+    id: levelEntry.id,
+    name: levelEntry.name ?? levelEntry.id,
+  };
+}
+
+function installConsoleCommands() {
+  const api = {
+    help() {
+      return [
+        'palata.level("level3") - load level by id',
+        'palata.level(3) - load level by number',
+        'palata.loadLevel("level3") - alias for palata.level',
+        'palata.levels() - list available levels',
+      ];
+    },
+    levels: listConsoleLevels,
+    level: switchLevelFromConsole,
+    loadLevel: switchLevelFromConsole,
+  };
+
+  (window as Window & { palata?: typeof api }).palata = api;
+}
+
 function initMenu() {
   showMenu();
   hideDeathScreen();
@@ -1087,6 +1136,7 @@ function bootstrap() {
   // game playable.
   void loadAnimationRegistry();
   applyStoredConfig();
+  installConsoleCommands();
   initCanvas();
 
   initAudioUi();
