@@ -648,9 +648,7 @@ function ensureEngine() {
       window.dispatchEvent(new CustomEvent('rayc:ending', { detail: { stage } }));
     },
     onNextLevel: (levelId, message) => {
-      window.dispatchEvent(
-        new CustomEvent('rayc:next-level', { detail: { levelId, message } }),
-      );
+      window.dispatchEvent(new CustomEvent('rayc:next-level', { detail: { levelId, message } }));
     },
   });
 
@@ -758,6 +756,7 @@ function ensureEngine() {
       ...(hallucinationsSystem?.getSprites() ?? []),
     ],
     getWeapon: () => weaponsSystem.getCurrent(),
+    getWeaponDef: () => weaponsSystem.getCurrentDef(),
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
     getNearestEnemyDistance,
   });
@@ -846,7 +845,12 @@ function ensureEngine() {
           if (hit && def.hitFleshSfx) audio.playSfx(def.hitFleshSfx);
           else if (!hit && def.hitWallSfx) audio.playSfx(def.hitWallSfx);
         } else {
-          enemiesSystem?.tryShootEnemies({ range: def.range, damage: scaledDamage });
+          enemiesSystem?.tryShootEnemies({
+            range: def.range,
+            damage: scaledDamage,
+            spreadRad: def.spreadRad,
+            hitHalfAngleRad: def.hitHalfAngleRad,
+          });
         }
       },
       onTick: (dt: number) => {

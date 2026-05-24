@@ -1,6 +1,6 @@
 import type { Player } from '../../types/game';
 import type { EnemyKind } from '../game-types';
-import type { WeaponId } from '../systems/weapons';
+import type { WeaponDef, WeaponId } from '../systems/weapons';
 import type { PerceptionState } from '../systems/world-state';
 import { getMap } from '../../state/map-state';
 import { getTextureForMaterial } from './materials';
@@ -15,6 +15,7 @@ export function createRenderer({
   getEnemies,
   getSprites,
   getWeapon,
+  getWeaponDef,
   getPerceptionStages,
   getNearestEnemyDistance,
 }: {
@@ -31,6 +32,7 @@ export function createRenderer({
     scale?: number;
   }>;
   getWeapon?: () => WeaponId;
+  getWeaponDef?: () => WeaponDef;
   getPerceptionStages?: () => ReadonlyArray<PerceptionState>;
   getNearestEnemyDistance?: () => number | null;
 }) {
@@ -353,6 +355,49 @@ export function createRenderer({
     weaponActionStartedAtMs = performance.now();
   }
 
+  function drawCrosshair() {
+    const def = typeof getWeaponDef === 'function' ? getWeaponDef() : null;
+    if (!def) return;
+
+    const w = getViewWidth();
+    const h = getVisibleViewHeight();
+    const cx = Math.floor(w * 0.5);
+    const cy = Math.floor(h * 0.48);
+    const angularRatio = Math.tan(def.spreadRad) / Math.tan(player.fov / 2);
+    const actionElapsedSec = (performance.now() - weaponActionStartedAtMs) / 1000;
+    const recoil =
+      actionElapsedSec >= 0 && actionElapsedSec < 0.18 ? 1 - actionElapsedSec / 0.18 : 0;
+    const radius = Math.max(6, Math.min(w * 0.18, angularRatio * (w / 2) + 5 + recoil * 10));
+    const arm = Math.max(5, Math.min(14, radius * 0.42));
+    const gap = radius;
+    const alpha = def.ammoId ? 0.78 : 0.52;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'square';
+    ctx.strokeStyle = `rgba(235, 235, 220, ${alpha})`;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 3;
+
+    ctx.beginPath();
+    ctx.moveTo(cx - gap - arm, cy);
+    ctx.lineTo(cx - gap, cy);
+    ctx.moveTo(cx + gap, cy);
+    ctx.lineTo(cx + gap + arm, cy);
+    ctx.moveTo(cx, cy - gap - arm);
+    ctx.lineTo(cx, cy - gap);
+    ctx.moveTo(cx, cy + gap);
+    ctx.lineTo(cx, cy + gap + arm);
+    ctx.stroke();
+
+    ctx.globalAlpha = alpha * 0.78;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(1.5, Math.min(3, radius * 0.12)), 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(235, 235, 220, 0.86)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   function drawRay(
     dist: number,
     x: number,
@@ -610,6 +655,7 @@ export function createRenderer({
     drawMap,
     drawSprites,
     drawSenseRings,
+    drawCrosshair,
     setBackgroundColors,
     setBackgroundMaterials,
     setAmbientLight01,

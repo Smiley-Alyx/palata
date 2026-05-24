@@ -18,7 +18,11 @@ export type WeaponDef = {
   damage: number;
   flash: boolean;
   noiseRadius: number;
+  spreadRad: number;
+  hitHalfAngleRad: number;
 };
+
+const degToRad = (deg: number) => (deg * Math.PI) / 180;
 
 const DEFS: Record<WeaponId, WeaponDef> = {
   pipe: {
@@ -34,6 +38,8 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     damage: 1,
     flash: false,
     noiseRadius: 4,
+    spreadRad: degToRad(12),
+    hitHalfAngleRad: degToRad(35),
   },
   pistol: {
     id: 'pistol',
@@ -48,6 +54,8 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     damage: 1,
     flash: true,
     noiseRadius: 9,
+    spreadRad: degToRad(2.6),
+    hitHalfAngleRad: degToRad(0.25),
   },
   shotgun: {
     id: 'shotgun',
@@ -62,6 +70,8 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     damage: 2,
     flash: true,
     noiseRadius: 12,
+    spreadRad: degToRad(8),
+    hitHalfAngleRad: degToRad(0.35),
   },
 };
 

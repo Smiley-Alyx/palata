@@ -619,7 +619,11 @@ export function createEnemiesSystem({
     return false;
   }
 
-  function pickEnemyInCone(maxDist: number, halfAngle: number): Enemy | null {
+  function pickEnemyInConeFromAngle(
+    maxDist: number,
+    halfAngle: number,
+    aimRot: number,
+  ): Enemy | null {
     let best: { e: Enemy; dist: number } | null = null;
     for (const e of enemies) {
       if (!e.alive) continue;
@@ -629,7 +633,7 @@ export function createEnemiesSystem({
       if (dist > maxDist) continue;
 
       const angle = Math.atan2(player.y - e.y, e.x - player.x);
-      let rel = angle - player.rot;
+      let rel = angle - aimRot;
       rel = Math.atan2(Math.sin(rel), Math.cos(rel));
       if (Math.abs(rel) > halfAngle) continue;
       if (!hasLineOfSight(player.x, player.y, e.x, e.y)) continue;
@@ -639,11 +643,51 @@ export function createEnemiesSystem({
     return best ? best.e : null;
   }
 
+  function pickEnemyInCone(maxDist: number, halfAngle: number): Enemy | null {
+    return pickEnemyInConeFromAngle(maxDist, halfAngle, player.rot);
+  }
+
+  function pickEnemyOnShotLine(
+    maxDist: number,
+    shotRot: number,
+    baseHalfAngle: number,
+  ): Enemy | null {
+    let best: { e: Enemy; dist: number } | null = null;
+    const enemyAimRadius = 0.26;
+
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const dx = e.x - player.x;
+      const dy = e.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxDist) continue;
+
+      const angle = Math.atan2(player.y - e.y, e.x - player.x);
+      let rel = angle - shotRot;
+      rel = Math.atan2(Math.sin(rel), Math.cos(rel));
+      const distanceHalfAngle = Math.atan(enemyAimRadius / Math.max(0.001, dist));
+      if (Math.abs(rel) > Math.max(baseHalfAngle, distanceHalfAngle)) continue;
+      if (!hasLineOfSight(player.x, player.y, e.x, e.y)) continue;
+
+      if (!best || dist < best.dist) best = { e, dist };
+    }
+
+    return best ? best.e : null;
+  }
+
   /** Bullet-style hit (pistol). Returns true if an enemy was hit. */
-  function tryShootEnemies(opts?: { range?: number; damage?: number }): boolean {
+  function tryShootEnemies(opts?: {
+    range?: number;
+    damage?: number;
+    spreadRad?: number;
+    hitHalfAngleRad?: number;
+  }): boolean {
     const range = opts?.range ?? 10;
     const damage = opts?.damage ?? 1;
-    const target = pickEnemyInCone(range, (3 * Math.PI) / 180);
+    const spreadRad = opts?.spreadRad ?? 0;
+    const hitHalfAngleRad = opts?.hitHalfAngleRad ?? (0.25 * Math.PI) / 180;
+    const shotRot = player.rot + (Math.random() * 2 - 1) * spreadRad;
+    const target = pickEnemyOnShotLine(range, shotRot, hitHalfAngleRad);
     if (!target) return false;
     damageEnemy(target, damage);
     return true;
