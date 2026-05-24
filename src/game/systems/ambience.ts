@@ -21,7 +21,7 @@ const EMITTER_SFX: Record<AmbientEmitterSubtype, string> = {
   fluorescent_buzz: SFX.machinery.fluorescentBuzz,
   machine_hum: SFX.machinery.machineHum,
   pipe_steam: SFX.machinery.pipeSteam,
-  whisper_loop: SFX.hallucinations.whisperLoop,
+  whisper_loop: SFX.hallucinations.nearby,
   heartbeat_wall: SFX.ambient.heartbeatWall,
 };
 
@@ -46,7 +46,7 @@ function pickAmbientBed(stages: ReadonlyArray<PerceptionState>): string | null {
   if (stages.includes('predator')) return SFX.transitions.predatorHunt;
   if (stages.includes('nightmare')) return SFX.ambient.heartbeatWall;
   if (stages.includes('infected')) return SFX.ambient.distantScream;
-  if (stages.includes('withdrawal')) return SFX.hallucinations.whisperLoop;
+  if (stages.includes('withdrawal')) return SFX.hallucinations.nearby;
   return null;
 }
 

@@ -12,8 +12,8 @@ import { SFX } from '../audio/sfx-config';
  * Behavior implemented here:
  *  - Each hallucination has an "appear" and "vanish" distance with hysteresis.
  *    When the player gets closer than `vanishDistance` it disappears and a
- *    short burst SFX plays. It re-appears once the player moves back beyond
- *    `appearDistance`.
+ *    random reality-distortion attack SFX plays. It re-appears with a
+ *    manifestation SFX once the player moves back beyond `appearDistance`.
  *  - `getSprites()` returns a renderer-compatible sprite list so the renderer
  *    can draw them alongside regular pickups/enemies.
  */
@@ -45,6 +45,14 @@ const SPRITE_MATERIAL: Record<HallucinationSubtype, string> = {
   entity: 'hallucination_entity',
   white_observer: 'hallucination_white_observer',
 };
+
+const ATTACK_SFX = [
+  SFX.hallucinations.attack01,
+  SFX.hallucinations.attack02,
+  SFX.hallucinations.attack03,
+  SFX.hallucinations.attack04,
+  SFX.hallucinations.attack05,
+] as const;
 
 export function createHallucinationsSystem({
   player,
@@ -88,10 +96,10 @@ export function createHallucinationsSystem({
       const d = Math.hypot(player.x - h.x, player.y - h.y);
       if (h.visible && d <= h.vanishDistance) {
         h.visible = false;
-        playSfx(SFX.hallucinations.burst);
+        playSfx(ATTACK_SFX[Math.floor(Math.random() * ATTACK_SFX.length)]);
       } else if (!h.visible && d >= h.appearDistance) {
         h.visible = true;
-        playSfx(SFX.hallucinations.insanityRing);
+        playSfx(SFX.hallucinations.manifest);
       }
     }
   }

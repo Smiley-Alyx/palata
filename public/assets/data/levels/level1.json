@@ -730,7 +730,7 @@
       "actions": [
         {
           "type": "play_sound",
-          "sound": "hallucination.whisper.loop",
+          "sound": "hallucination.nearby",
           "volume": 0.36
         }
       ]
