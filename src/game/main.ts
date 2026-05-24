@@ -61,8 +61,18 @@ import {
 
 function getDefaultMusicForLevelId(levelId: string) {
   const base = new URL(import.meta.env.BASE_URL, window.location.origin);
+  const musicOverrides: Readonly<Record<string, string>> = {
+    menu: '/assets/music/menu/main_chrevo.wav',
+    level0: '/assets/music/menu/main_chrevo.wav',
+    level1: '/assets/music/level_1/level_1_palata.wav',
+    level2: '/assets/music/level_2/level_2_legacy.wav',
+    level3: '/assets/music/level_3/level_3_legacy.wav',
+    level4: '/assets/music/level_4/level_4_legacy.wav',
+  };
   const m = /^level(\d+)$/.exec(levelId);
-  const src = m ? `/assets/music/level_${m[1]}/level_${m[1]}.wav` : '/assets/music/menu/main.wav';
+  const src =
+    musicOverrides[levelId] ??
+    (m ? `/assets/music/level_${m[1]}/level_${m[1]}.wav` : musicOverrides.menu);
   return {
     src: new URL(src.startsWith('/') ? src.slice(1) : src, base).toString(),
     loop: true,
