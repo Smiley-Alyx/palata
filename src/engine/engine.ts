@@ -5,6 +5,8 @@ type Input = {
   bind: () => void;
   unbind: () => void;
   isDown: (code: string) => boolean;
+  isMouseDown: (button: number) => boolean;
+  consumeMouseDeltaX: () => number;
 };
 
 type Renderer = {
@@ -75,6 +77,7 @@ export function createEngine({
 
   let footstepCooldownMs = 0;
   let shootCooldownMs = 0;
+  const mouseSensitivity = 0.0025;
 
   function setSpawn(spawn: Spawn | null) {
     if (!spawn || typeof spawn !== 'object') return;
@@ -90,39 +93,51 @@ export function createEngine({
     }
     prevUseDown = useDown;
 
-    const shootDown = input.isDown('Space');
+    const shootDown = input.isDown('Space') || input.isMouseDown(0);
     if (shootDown && !prevShootDown && shootCooldownMs <= 0) {
       events?.onShoot?.();
       shootCooldownMs = 220;
     }
     prevShootDown = shootDown;
 
-    player.mov =
+    const forward =
       input.isDown('KeyW') || input.isDown('ArrowUp')
         ? 1
         : input.isDown('KeyS') || input.isDown('ArrowDown')
           ? -1
           : 0;
-    player.dir =
-      input.isDown('KeyA') || input.isDown('ArrowLeft')
+    const strafe =
+      input.isDown('KeyD')
         ? 1
-        : input.isDown('KeyD') || input.isDown('ArrowRight')
+        : input.isDown('KeyA')
+          ? -1
+          : 0;
+    player.mov = forward;
+    player.dir =
+      input.isDown('ArrowLeft')
+        ? 1
+        : input.isDown('ArrowRight')
           ? -1
           : 0;
     player.sprint = input.isDown('ShiftLeft') || input.isDown('ShiftRight') ? 1 : 0;
 
     const timeScale = dt * 60;
 
-    const step = player.mov * player.speed * (player.sprint + 1) * player.sprintFactor * timeScale;
-    const rotStep = player.dir * player.rotSpeed * timeScale;
+    const speed = player.speed * (player.sprint + 1) * player.sprintFactor * timeScale;
+    const movementLength = Math.hypot(forward, strafe) || 1;
+    const forwardStep = (forward / movementLength) * speed;
+    const strafeStep = (strafe / movementLength) * speed;
+    const keyboardRotStep = player.dir * player.rotSpeed * timeScale;
+    const mouseRotStep = -input.consumeMouseDeltaX() * mouseSensitivity;
+    const rotStep = keyboardRotStep + mouseRotStep;
 
     player.rot = addRotToAngle(rotStep, player.rot);
 
     const oldX = player.x;
     const oldY = player.y;
 
-    const xNew = player.x + step * Math.cos(player.rot);
-    const yNew = player.y - step * Math.sin(player.rot);
+    const xNew = player.x + forwardStep * Math.cos(player.rot) + strafeStep * Math.sin(player.rot);
+    const yNew = player.y - forwardStep * Math.sin(player.rot) + strafeStep * Math.cos(player.rot);
     const dx = xNew - player.x;
     const dy = yNew - player.y;
 
@@ -166,7 +181,7 @@ export function createEngine({
       }
     }
 
-    const moving = player.mov !== 0;
+    const moving = forward !== 0 || strafe !== 0;
     const actuallyMoved = moved && (oldX !== player.x || oldY !== player.y);
 
     footstepCooldownMs = Math.max(0, footstepCooldownMs - dt * 1000);

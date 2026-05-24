@@ -586,6 +586,7 @@ const player: PlayerInstance = {
 };
 
 const input = createInput({
+  getPointerTarget: getCanvas,
   onToggleMap: function () {
     player.flatmap = player.flatmap ? 0 : 1;
   },
