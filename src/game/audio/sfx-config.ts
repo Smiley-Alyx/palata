@@ -25,6 +25,11 @@ export const SFX = {
     pickupMedkit: 'ui.pickup.medkit',
   },
   weapons: {
+    scalpel: {
+      swing: 'weapon.scalpel.swing',
+      hitFlesh: 'weapon.scalpel.hit.flesh',
+      hitBone: 'weapon.scalpel.hit.bone',
+    },
     pipe: {
       swing: 'weapon.pipe.swing',
       hitWall: 'weapon.pipe.hit.wall',
@@ -128,6 +133,9 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   [SFX.ui.pickupMedkit]: url('/assets/sounds/ui/pickup_medkit.wav'),
 
   // --- Weapons ---
+  [SFX.weapons.scalpel.swing]: url('/assets/sounds/weapons/scalpel/scalpel_swing.wav'),
+  [SFX.weapons.scalpel.hitFlesh]: url('/assets/sounds/weapons/scalpel/scalpel_hit_flesh.wav'),
+  [SFX.weapons.scalpel.hitBone]: url('/assets/sounds/weapons/scalpel/scalpel_hit_bone.wav'),
   [SFX.weapons.pipe.swing]: url('/assets/sounds/weapons/pipe/pipe_swing.wav'),
   [SFX.weapons.pipe.hitWall]: url('/assets/sounds/weapons/pipe/pipe_hit_wall.wav'),
   [SFX.weapons.pipe.hitFlesh]: url('/assets/sounds/weapons/pipe/pipe_hit_flesh.wav'),
