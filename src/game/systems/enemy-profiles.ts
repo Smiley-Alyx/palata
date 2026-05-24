@@ -10,6 +10,7 @@ export type EnemyProfile = {
   scale?: number;
   sightLoop: string | null;
   attack: string;
+  hurt: string | null;
   death: string | null;
   damage: Record<Difficulty, { min: number; max: number }>;
 };
@@ -21,6 +22,7 @@ const HUSK: EnemyProfile = {
   speedChase: 0.95,
   sightLoop: SFX.enemies.husk.idle,
   attack: SFX.enemies.husk.attack,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.husk.death,
   damage: {
     lost: { min: 4, max: 7 },
@@ -36,6 +38,7 @@ const ORDERLY: EnemyProfile = {
   speedChase: 1.0,
   sightLoop: SFX.enemies.orderly.idle,
   attack: SFX.enemies.orderly.attack,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
     lost: { min: 16, max: 24 },
@@ -51,6 +54,7 @@ const DEFORMED: EnemyProfile = {
   speedChase: 0.8,
   sightLoop: SFX.enemies.husk.idle,
   attack: SFX.enemies.husk.attack,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.husk.death,
   damage: {
     lost: { min: 10, max: 16 },
@@ -66,6 +70,7 @@ const FLESH_WATCHER: EnemyProfile = {
   speedChase: 0.85,
   sightLoop: SFX.hallucinations.whisperLoop,
   attack: SFX.hallucinations.burst,
+  hurt: SFX.hallucinations.burst,
   death: SFX.hallucinations.insanityRing,
   damage: {
     lost: { min: 8, max: 14 },
@@ -81,6 +86,7 @@ const FLESH_EYE: EnemyProfile = {
   speedChase: 0.0,
   sightLoop: SFX.hallucinations.whisperLoop,
   attack: SFX.hallucinations.burst,
+  hurt: SFX.hallucinations.burst,
   death: SFX.hallucinations.insanityRing,
   damage: {
     lost: { min: 6, max: 10 },
@@ -96,6 +102,7 @@ const FLESH_MACHINE: EnemyProfile = {
   speedChase: 0.7,
   sightLoop: SFX.transitions.predatorGrowl,
   attack: SFX.weapons.shotgun.fire,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
     lost: { min: 18, max: 28 },
@@ -111,6 +118,7 @@ const DOPPELGANGER: EnemyProfile = {
   speedChase: 1.1,
   sightLoop: SFX.transitions.predatorGrowl,
   attack: SFX.transitions.predatorHunt,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
     lost: { min: 20, max: 30 },
@@ -127,6 +135,7 @@ const BOSS_CHIEF_DOCTOR: EnemyProfile = {
   speedChase: 1.0,
   sightLoop: SFX.bosses.chiefDoctor.intro,
   attack: SFX.bosses.chiefDoctor.attack,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.bosses.chiefDoctor.death,
   damage: {
     lost: { min: 22, max: 30 },
@@ -144,6 +153,7 @@ const BOSS_CHOIR: EnemyProfile = {
   speedChase: 0.6,
   sightLoop: SFX.hallucinations.whisperLoop,
   attack: SFX.hallucinations.burst,
+  hurt: SFX.hallucinations.burst,
   death: SFX.hallucinations.insanityRing,
   damage: {
     lost: { min: 24, max: 32 },
@@ -161,6 +171,7 @@ const BOSS_DADE_KEEPER: EnemyProfile = {
   speedChase: 0.9,
   sightLoop: SFX.enemies.orderly.idle,
   attack: SFX.enemies.orderly.attack,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
     lost: { min: 26, max: 36 },
@@ -178,6 +189,7 @@ const BOSS_HEART_HOSPITAL: EnemyProfile = {
   speedChase: 0.3,
   sightLoop: SFX.bosses.heartHospital.ambient,
   attack: SFX.bosses.heartHospital.attack,
+  hurt: SFX.hallucinations.burst,
   death: SFX.bosses.heartHospital.death,
   damage: {
     lost: { min: 30, max: 42 },
@@ -195,6 +207,7 @@ const BOSS_SHEPHERD: EnemyProfile = {
   speedChase: 1.3,
   sightLoop: SFX.transitions.predatorGrowl,
   attack: SFX.transitions.predatorHunt,
+  hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
     lost: { min: 26, max: 38 },

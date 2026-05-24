@@ -125,22 +125,30 @@ export function createEngine({
     const dx = xNew - player.x;
     const dy = yNew - player.y;
 
-    // Sliding movement: try full move, then allow axis moves if diagonal is blocked.
     let moved = false;
-    if (!solidAt(xNew, yNew)) {
-      player.x = xNew;
-      player.y = yNew;
-      moved = true;
-    } else {
+    const moveSteps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 0.04));
+    const stepX = dx / moveSteps;
+    const stepY = dy / moveSteps;
+
+    for (let i = 0; i < moveSteps; i++) {
+      const txFull = player.x + stepX;
+      const tyFull = player.y + stepY;
+      if (!solidAt(txFull, tyFull)) {
+        player.x = txFull;
+        player.y = tyFull;
+        moved = true;
+        continue;
+      }
+
       const tryMoveX = () => {
-        const tx = player.x + dx;
+        const tx = player.x + stepX;
         if (!solidAt(tx, player.y)) {
           player.x = tx;
           moved = true;
         }
       };
       const tryMoveY = () => {
-        const ty = player.y + dy;
+        const ty = player.y + stepY;
         if (!solidAt(player.x, ty)) {
           player.y = ty;
           moved = true;
@@ -148,7 +156,7 @@ export function createEngine({
       };
 
       // Preserve the intended motion direction: try the dominant axis first.
-      if (Math.abs(dx) >= Math.abs(dy)) {
+      if (Math.abs(stepX) >= Math.abs(stepY)) {
         tryMoveX();
         tryMoveY();
       } else {

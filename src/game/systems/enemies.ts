@@ -60,6 +60,8 @@ export function createEnemiesSystem({
 
   let enemyDamageCooldownMs = 0;
   let enemySightLoopKey: string | null = null;
+  const enemyRadius = 0.24;
+  const playerRadius = 0.22;
 
   function ensureEnemyGridForCurrentMap() {
     const map = getMap();
@@ -212,9 +214,15 @@ export function createEnemiesSystem({
     for (const e of enemies) {
       if (!e.alive) continue;
       const d = Math.hypot(x - e.x, y - e.y);
-      if (d < r) return true;
+      if (d <= r) return true;
     }
     return false;
+  }
+
+  function isPlayerBlockingEnemyCell(xMap: number, yMap: number): boolean {
+    const cx = xMap + 0.5;
+    const cy = yMap + 0.5;
+    return Math.hypot(player.x - cx, player.y - cy) <= enemyRadius + playerRadius;
   }
 
   function hasLineOfSight(xFrom: number, yFrom: number, xTo: number, yTo: number): boolean {
@@ -262,6 +270,8 @@ export function createEnemiesSystem({
       return true;
     }
 
+    if (isPlayerBlockingEnemyCell(xMap, yMap)) return true;
+
     ensureEnemyGridForCurrentMap();
     if (!enemyAt) return false;
     const idx = enemyAt[enemyIndex(xMap, yMap)];
@@ -297,6 +307,16 @@ export function createEnemiesSystem({
       } else {
         return false;
       }
+    }
+
+    if (isPlayerBlockingEnemyCell(nextX, nextY)) {
+      e.mode = 'wait';
+      e.waitTileX = nextX;
+      e.waitTileY = nextY;
+      e.waitDirX = dirX;
+      e.waitDirY = dirY;
+      e.decisionCooldownMs = 140;
+      return false;
     }
 
     ensureEnemyGridForCurrentMap();
@@ -594,6 +614,8 @@ export function createEnemiesSystem({
       onEnemyKilled?.();
       return true;
     }
+    const hurtSfx = getEnemyProfile(e.kind).hurt;
+    if (hurtSfx) playSfx(hurtSfx);
     return false;
   }
 
