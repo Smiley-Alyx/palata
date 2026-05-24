@@ -25,6 +25,7 @@ import {
   createItemsSystem,
   type MedicationSpec,
   type ArtifactSpec,
+  type AmmoSpec,
   type WeaponSpec,
   type ArmorSpec,
 } from './systems/items';
@@ -69,7 +70,7 @@ let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
 let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
 const inventory = createInventory();
-const weaponsSystem = createWeaponsSystem();
+const weaponsSystem = createWeaponsSystem({ inventory });
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -210,6 +211,7 @@ function reapplyEntities() {
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
+  const ammoFromEntities: AmmoSpec[] = [];
   const weaponsFromEntities: WeaponSpec[] = [];
   const armorFromEntities: ArmorSpec[] = [];
   const portalsFromEntities: PortalSpec[] = [];
@@ -274,6 +276,23 @@ function reapplyEntities() {
         x: raw.x,
         y: raw.y,
         subtype: raw.subtype,
+      });
+    }
+
+    if (e.type === 'ammo') {
+      const raw = e as unknown as {
+        id?: string;
+        x: number;
+        y: number;
+        subtype?: string;
+        amount?: number;
+      };
+      ammoFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+        amount: raw.amount,
       });
     }
 
@@ -371,6 +390,7 @@ function reapplyEntities() {
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
+  itemsSystem?.setAmmoPickups(ammoFromEntities);
   itemsSystem?.setWeaponPickups(weaponsFromEntities);
   itemsSystem?.setArmorPickups(armorFromEntities);
   portalsSystem?.setPortals(portalsFromEntities);
@@ -557,6 +577,10 @@ export function getCurrentWeaponDef() {
 
 export function setCurrentWeapon(id: WeaponId) {
   weaponsSystem.setWeapon(id);
+}
+
+export function getCurrentWeaponAmmo(): number | null {
+  return weaponsSystem.getAmmo();
 }
 
 export function setWeaponOnChanged(cb: (() => void) | null) {
@@ -881,6 +905,10 @@ function ensureEngine() {
         const result = weaponsSystem.tryFire();
         if (!result) return;
         const def = result.weapon;
+        if (!result.fired) {
+          if (def.emptySfx) audio.playSfx(def.emptySfx);
+          return;
+        }
         audio.playSfx(def.fireSfx);
         renderer?.triggerWeaponAction();
         if (def.flash) renderer?.triggerFlash();

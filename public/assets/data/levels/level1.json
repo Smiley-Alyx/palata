@@ -547,6 +547,20 @@
       "y": 57.5
     },
     {
+      "id": "ammo_post",
+      "type": "ammo",
+      "subtype": "pistol",
+      "x": 22.5,
+      "y": 48.5
+    },
+    {
+      "id": "ammo_storage",
+      "type": "ammo",
+      "subtype": "shotgun",
+      "x": 57.5,
+      "y": 37.5
+    },
+    {
       "id": "haloperidol_procedure",
       "type": "medication",
       "subtype": "haloperidol",

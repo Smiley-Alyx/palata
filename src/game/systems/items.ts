@@ -4,7 +4,7 @@ import { SFX } from '../audio/sfx-config';
 import { addPlayerArmor } from './player-stats';
 
 /**
- * Discrete, hand-placed items (medication, documents, weapons).
+ * Discrete, hand-placed items (medication, documents, ammo, weapons).
  *
  * Distinct from `pickups.ts` because items are entity-driven, don't respawn,
  * and have side effects beyond a simple HP refill (medication flips world
@@ -58,6 +58,40 @@ type ArtifactPickup = {
 const ARTIFACT_SPRITE: Record<ArtifactSubtype, string> = {
   hallucination: 'artifact_hallucination',
   vhs: 'artifact_vhs',
+};
+
+export type AmmoSubtype = 'pistol' | 'shotgun';
+
+export type AmmoSpec = {
+  id?: string;
+  x: number;
+  y: number;
+  subtype?: AmmoSubtype | string;
+  amount?: number;
+};
+
+type AmmoPickup = {
+  id?: string;
+  x: number;
+  y: number;
+  subtype: AmmoSubtype;
+  amount: number;
+  alive: boolean;
+};
+
+const AMMO_SPRITE: Record<AmmoSubtype, string> = {
+  pistol: 'ammo_pistol',
+  shotgun: 'ammo_shotgun',
+};
+
+const AMMO_INVENTORY_ID: Record<AmmoSubtype, InventoryItemId> = {
+  pistol: 'pistol_ammo',
+  shotgun: 'shotgun_ammo',
+};
+
+const AMMO_PICKUP_AMOUNT: Record<AmmoSubtype, number> = {
+  pistol: 12,
+  shotgun: 4,
 };
 
 export type WeaponSubtype = 'pipe' | 'pistol' | 'shotgun';
@@ -133,6 +167,7 @@ export function createItemsSystem({
 }) {
   let medications: MedicationPickup[] = [];
   let artifacts: ArtifactPickup[] = [];
+  let ammo: AmmoPickup[] = [];
   let weapons: WeaponPickup[] = [];
   let armor: ArmorPickup[] = [];
 
@@ -161,6 +196,28 @@ export function createItemsSystem({
             subtype: a.subtype === 'vhs' ? 'vhs' : 'hallucination',
             alive: true,
           }))
+      : [];
+  }
+
+  function setAmmoPickups(next: AmmoSpec[]) {
+    ammo = Array.isArray(next)
+      ? next
+          .filter((a) => a && typeof a.x === 'number' && typeof a.y === 'number')
+          .map((a) => {
+            const subtype: AmmoSubtype = a.subtype === 'shotgun' ? 'shotgun' : 'pistol';
+            const amount =
+              typeof a.amount === 'number' && a.amount > 0
+                ? Math.floor(a.amount)
+                : AMMO_PICKUP_AMOUNT[subtype];
+            return {
+              id: a.id,
+              x: a.x,
+              y: a.y,
+              subtype,
+              amount,
+              alive: true,
+            };
+          })
       : [];
   }
 
@@ -203,12 +260,20 @@ export function createItemsSystem({
   function onMapChanged() {
     medications = [];
     artifacts = [];
+    ammo = [];
     weapons = [];
     armor = [];
   }
 
   function tick() {
-    if (!medications.length && !artifacts.length && !weapons.length && !armor.length) return;
+    if (
+      !medications.length &&
+      !artifacts.length &&
+      !ammo.length &&
+      !weapons.length &&
+      !armor.length
+    )
+      return;
     const pickupR = 0.42;
     for (const m of medications) {
       if (!m.alive) continue;
@@ -249,6 +314,15 @@ export function createItemsSystem({
       playSfx(SFX.ui.secretFound);
     }
 
+    for (const a of ammo) {
+      if (!a.alive) continue;
+      if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
+      a.alive = false;
+      if (a.id) onPickup?.(a.id);
+      inventory.add(AMMO_INVENTORY_ID[a.subtype], a.amount);
+      playSfx(SFX.ui.pickupAmmo);
+    }
+
     for (const w of weapons) {
       if (!w.alive) continue;
       if (Math.hypot(player.x - w.x, player.y - w.y) > pickupR) continue;
@@ -271,7 +345,14 @@ export function createItemsSystem({
   function getSprites() {
     const out: Array<{ x: number; y: number; material: string; alive: boolean; scale: number }> =
       [];
-    if (!medications.length && !artifacts.length && !weapons.length && !armor.length) return out;
+    if (
+      !medications.length &&
+      !artifacts.length &&
+      !ammo.length &&
+      !weapons.length &&
+      !armor.length
+    )
+      return out;
     for (const m of medications) {
       if (!m.alive) continue;
       out.push({
@@ -290,6 +371,16 @@ export function createItemsSystem({
         material: ARTIFACT_SPRITE[a.subtype],
         alive: true,
         scale: 0.45,
+      });
+    }
+    for (const a of ammo) {
+      if (!a.alive) continue;
+      out.push({
+        x: a.x,
+        y: a.y,
+        material: AMMO_SPRITE[a.subtype],
+        alive: true,
+        scale: 0.33,
       });
     }
     for (const w of weapons) {
@@ -318,6 +409,7 @@ export function createItemsSystem({
   return {
     setMedicationPickups,
     setArtifactPickups,
+    setAmmoPickups,
     setWeaponPickups,
     setArmorPickups,
     onMapChanged,

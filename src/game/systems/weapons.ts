@@ -1,3 +1,4 @@
+import type { Inventory, InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 
 export type WeaponId = 'pipe' | 'pistol' | 'shotgun';
@@ -10,8 +11,10 @@ export type WeaponDef = {
   id: WeaponId;
   label: string;
   kind: WeaponShotKind;
+  ammoId: InventoryItemId | null;
   range: number;
   fireSfx: string;
+  emptySfx: string | null;
   hitFleshSfx: string | null;
   hitWallSfx: string | null;
   cooldownMs: number;
@@ -29,8 +32,10 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'pipe',
     label: 'PIPE',
     kind: 'melee',
+    ammoId: null,
     range: 1.4,
     fireSfx: SFX.weapons.pipe.swing,
+    emptySfx: null,
     hitFleshSfx: SFX.weapons.pipe.hitFlesh,
     hitWallSfx: SFX.weapons.pipe.hitWall,
     cooldownMs: 380,
@@ -44,8 +49,10 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'pistol',
     label: 'PISTOL',
     kind: 'ranged',
+    ammoId: 'pistol_ammo',
     range: 10,
     fireSfx: SFX.weapons.pistol.fire,
+    emptySfx: SFX.weapons.pistol.empty,
     hitFleshSfx: null,
     hitWallSfx: null,
     cooldownMs: 280,
@@ -59,8 +66,10 @@ const DEFS: Record<WeaponId, WeaponDef> = {
     id: 'shotgun',
     label: 'SHOTGUN',
     kind: 'ranged',
+    ammoId: 'shotgun_ammo',
     range: 8,
     fireSfx: SFX.weapons.shotgun.fire,
+    emptySfx: SFX.weapons.pistol.empty,
     hitFleshSfx: null,
     hitWallSfx: null,
     cooldownMs: 720,
@@ -82,7 +91,7 @@ export type WeaponShotResult = {
   fired: boolean;
 };
 
-export function createWeaponsSystem() {
+export function createWeaponsSystem({ inventory }: { inventory: Inventory }) {
   let current: WeaponId | null = null;
   const owned = new Set<WeaponId>();
   let onChanged: (() => void) | null = null;
@@ -99,6 +108,12 @@ export function createWeaponsSystem() {
 
   function getCurrentDef(): WeaponDef | null {
     return current ? DEFS[current] : null;
+  }
+
+  function getAmmo(): number | null {
+    const weapon = getCurrentDef();
+    if (!weapon?.ammoId) return null;
+    return inventory.get(weapon.ammoId);
   }
 
   function setWeapon(id: WeaponId) {
@@ -124,6 +139,9 @@ export function createWeaponsSystem() {
   function tryFire(): WeaponShotResult | null {
     if (!current) return null;
     const weapon = DEFS[current];
+    if (weapon.ammoId && !inventory.consume(weapon.ammoId, 1)) {
+      return { weapon, kind: weapon.kind, fired: false };
+    }
     return { weapon, kind: weapon.kind, fired: true };
   }
 
@@ -135,6 +153,7 @@ export function createWeaponsSystem() {
     reset,
     getCurrent,
     getCurrentDef,
+    getAmmo,
     setWeapon,
     acquire,
     cycleWeapon,
