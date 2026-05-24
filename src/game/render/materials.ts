@@ -77,19 +77,6 @@ const materialToDomId = new Map<string, string>([
 ]);
 
 const cache = new Map<string, CanvasImageSource | null>();
-const lockedDoorCache = new Map<string, CanvasImageSource | null>();
-
-const keyMaterialById = new Map<string, string>([
-  ['gold', 'keyGold'],
-  ['silver', 'keySilver'],
-  ['blood', 'keyBlood'],
-]);
-
-const keyTintById = new Map<string, string>([
-  ['gold', 'rgba(226, 175, 64, 0.72)'],
-  ['silver', 'rgba(190, 206, 218, 0.72)'],
-  ['blood', 'rgba(145, 18, 18, 0.78)'],
-]);
 
 function lookupAsset(assetId: string): CanvasImageSource | null {
   const cached = cache.get(assetId);
@@ -107,81 +94,19 @@ function lookupAsset(assetId: string): CanvasImageSource | null {
   return img;
 }
 
-function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
-  if (src instanceof HTMLImageElement) {
-    return {
-      w: src.naturalWidth || src.width || 1,
-      h: src.naturalHeight || src.height || 1,
-    };
-  }
-
-  const sized = src as { width?: number; height?: number };
-  return { w: sized.width || 1, h: sized.height || 1 };
-}
-
-function getGeneratedLockedDoor(materialOrId: string): CanvasImageSource | null {
+function getLockedDoorTexture(materialOrId: string): CanvasImageSource | null {
   const parts = materialOrId.split(':');
   if (parts.length !== 3 || parts[0] !== 'locked_door') return null;
 
-  const [, baseMaterial, keyId] = parts;
-  const cacheKey = `${baseMaterial}:${keyId}`;
-  const cached = lockedDoorCache.get(cacheKey);
-  if (cached !== undefined) return cached;
-
-  const base = getTextureForMaterial(baseMaterial);
-  const keyMaterial = keyMaterialById.get(keyId);
-  const key = keyMaterial ? getTextureForMaterial(keyMaterial) : null;
-  if (!base || !key) return null;
-
-  const { w: baseW, h: baseH } = getSourceSize(base);
-  const { w: keyW, h: keyH } = getSourceSize(key);
-  if (baseW <= 0 || baseH <= 0 || keyW <= 0 || keyH <= 0) return null;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = baseW;
-  canvas.height = baseH;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(base, 0, 0, baseW, baseH);
-
-  ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = keyTintById.get(keyId) ?? 'rgba(230, 230, 210, 0.66)';
-  const stripeW = Math.max(3, Math.floor(baseW * 0.11));
-  ctx.fillRect(Math.floor(baseW * 0.08), 0, stripeW, baseH);
-  ctx.fillRect(Math.floor(baseW * 0.81), 0, stripeW, baseH);
-
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.54)';
-  const plateW = Math.floor(baseW * 0.42);
-  const plateH = Math.floor(baseH * 0.3);
-  const plateX = Math.floor((baseW - plateW) / 2);
-  const plateY = Math.floor(baseH * 0.35);
-  ctx.fillRect(plateX, plateY, plateW, plateH);
-  ctx.strokeStyle = keyTintById.get(keyId) ?? 'rgba(230, 230, 210, 0.66)';
-  ctx.lineWidth = Math.max(1, Math.floor(baseW * 0.018));
-  ctx.strokeRect(plateX + 1, plateY + 1, plateW - 2, plateH - 2);
-
-  const iconH = Math.floor(plateH * 0.68);
-  const iconW = Math.max(1, Math.floor(iconH * (keyW / keyH)));
-  ctx.drawImage(
-    key,
-    Math.floor((baseW - iconW) / 2),
-    Math.floor(plateY + (plateH - iconH) / 2),
-    iconW,
-    iconH,
-  );
-
-  lockedDoorCache.set(cacheKey, canvas);
-  return canvas;
+  const keyId = parts[2];
+  if (keyId !== 'gold' && keyId !== 'silver' && keyId !== 'blood') return null;
+  return getAnimatedFrame(`locked_door_${keyId}`);
 }
 
 export function getTextureForMaterial(materialOrId: string | number): CanvasImageSource | null {
   if (typeof materialOrId !== 'string') return null;
 
-  if (materialOrId.startsWith('locked_door:')) return getGeneratedLockedDoor(materialOrId);
+  if (materialOrId.startsWith('locked_door:')) return getLockedDoorTexture(materialOrId);
 
   // Animation runtime takes precedence. Check by raw material name first
   // (e.g. "medical_door") and then by the mapped asset id (e.g. legend's
