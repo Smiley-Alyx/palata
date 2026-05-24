@@ -1,18 +1,17 @@
-import { AMMO_CAPACITY, type Inventory, type InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 
 export type WeaponId = 'pipe' | 'pistol' | 'shotgun';
 
 export const WEAPON_IDS: readonly WeaponId[] = ['pipe', 'pistol', 'shotgun'];
 
+export type WeaponShotKind = 'melee' | 'ranged';
+
 export type WeaponDef = {
   id: WeaponId;
   label: string;
-  ammoId: InventoryItemId | null;
-  maxAmmo: number | null;
+  kind: WeaponShotKind;
   range: number;
   fireSfx: string;
-  emptySfx: string | null;
   hitFleshSfx: string | null;
   hitWallSfx: string | null;
   cooldownMs: number;
@@ -29,11 +28,9 @@ const DEFS: Record<WeaponId, WeaponDef> = {
   pipe: {
     id: 'pipe',
     label: 'PIPE',
-    ammoId: null,
-    maxAmmo: null,
+    kind: 'melee',
     range: 1.4,
     fireSfx: SFX.weapons.pipe.swing,
-    emptySfx: null,
     hitFleshSfx: SFX.weapons.pipe.hitFlesh,
     hitWallSfx: SFX.weapons.pipe.hitWall,
     cooldownMs: 380,
@@ -46,11 +43,9 @@ const DEFS: Record<WeaponId, WeaponDef> = {
   pistol: {
     id: 'pistol',
     label: 'PISTOL',
-    ammoId: 'pistol_ammo',
-    maxAmmo: AMMO_CAPACITY.pistol_ammo,
+    kind: 'ranged',
     range: 10,
     fireSfx: SFX.weapons.pistol.fire,
-    emptySfx: SFX.weapons.pistol.empty,
     hitFleshSfx: null,
     hitWallSfx: null,
     cooldownMs: 280,
@@ -63,11 +58,9 @@ const DEFS: Record<WeaponId, WeaponDef> = {
   shotgun: {
     id: 'shotgun',
     label: 'SHOTGUN',
-    ammoId: 'shotgun_ammo',
-    maxAmmo: AMMO_CAPACITY.shotgun_ammo,
+    kind: 'ranged',
     range: 8,
     fireSfx: SFX.weapons.shotgun.fire,
-    emptySfx: SFX.weapons.pistol.empty,
     hitFleshSfx: null,
     hitWallSfx: null,
     cooldownMs: 720,
@@ -83,64 +76,55 @@ export function getWeaponDef(id: WeaponId): WeaponDef {
   return DEFS[id];
 }
 
-export type WeaponShotKind = 'melee' | 'ranged';
-
 export type WeaponShotResult = {
   weapon: WeaponDef;
   kind: WeaponShotKind;
   fired: boolean;
-  outOfAmmo: boolean;
 };
 
-export function createWeaponsSystem({ inventory }: { inventory: Inventory }) {
-  let current: WeaponId = 'pipe';
+export function createWeaponsSystem() {
+  let current: WeaponId | null = null;
+  const owned = new Set<WeaponId>();
   let onChanged: (() => void) | null = null;
 
-  function reset(opts?: { pistolAmmo?: number; shotgunAmmo?: number }) {
-    const pistolAmmo = opts?.pistolAmmo ?? 0;
-    const shotgunAmmo = opts?.shotgunAmmo ?? 0;
-    if (pistolAmmo > 0) inventory.add('pistol_ammo', pistolAmmo);
-    if (shotgunAmmo > 0) inventory.add('shotgun_ammo', shotgunAmmo);
-    current = 'pipe';
+  function reset() {
+    current = null;
+    owned.clear();
     onChanged?.();
   }
 
-  function getCurrent(): WeaponId {
+  function getCurrent(): WeaponId | null {
     return current;
   }
 
-  function getCurrentDef(): WeaponDef {
-    return DEFS[current];
-  }
-
-  function getAmmo(id: WeaponId = current): number | null {
-    const def = DEFS[id];
-    if (!def.ammoId) return null;
-    return inventory.get(def.ammoId);
+  function getCurrentDef(): WeaponDef | null {
+    return current ? DEFS[current] : null;
   }
 
   function setWeapon(id: WeaponId) {
+    if (!owned.has(id)) return;
     if (current === id) return;
     current = id;
     onChanged?.();
   }
 
-  function cycleWeapon(direction: 1 | -1) {
-    const i = WEAPON_IDS.indexOf(current);
-    const n = WEAPON_IDS.length;
-    setWeapon(WEAPON_IDS[(i + direction + n) % n]);
+  function acquire(id: WeaponId) {
+    owned.add(id);
+    setWeapon(id);
   }
 
-  function tryFire(): WeaponShotResult {
-    const weapon = DEFS[current];
-    const kind: WeaponShotKind = weapon.ammoId ? 'ranged' : 'melee';
+  function cycleWeapon(direction: 1 | -1) {
+    const available = WEAPON_IDS.filter((id) => owned.has(id));
+    if (!available.length) return;
+    const i = current ? available.indexOf(current) : -1;
+    const n = available.length;
+    setWeapon(available[(i + direction + n) % n]);
+  }
 
-    if (weapon.ammoId) {
-      const has = inventory.consume(weapon.ammoId, 1);
-      if (!has) return { weapon, kind, fired: false, outOfAmmo: true };
-      onChanged?.();
-    }
-    return { weapon, kind, fired: true, outOfAmmo: false };
+  function tryFire(): WeaponShotResult | null {
+    if (!current) return null;
+    const weapon = DEFS[current];
+    return { weapon, kind: weapon.kind, fired: true };
   }
 
   function setOnChanged(cb: (() => void) | null) {
@@ -151,8 +135,8 @@ export function createWeaponsSystem({ inventory }: { inventory: Inventory }) {
     reset,
     getCurrent,
     getCurrentDef,
-    getAmmo,
     setWeapon,
+    acquire,
     cycleWeapon,
     tryFire,
     setOnChanged,

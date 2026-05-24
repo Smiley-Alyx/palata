@@ -540,18 +540,11 @@
       }
     },
     {
-      "id": "ammo_post",
-      "type": "ammo",
+      "id": "pistol_ward",
+      "type": "weapon",
       "subtype": "pistol",
-      "x": 22.5,
-      "y": 48.5
-    },
-    {
-      "id": "ammo_storage",
-      "type": "ammo",
-      "subtype": "shotgun",
-      "x": 57.5,
-      "y": 37.5
+      "x": 31.5,
+      "y": 57.5
     },
     {
       "id": "haloperidol_procedure",

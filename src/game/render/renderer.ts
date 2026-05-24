@@ -31,8 +31,8 @@ export function createRenderer({
     alive: boolean;
     scale?: number;
   }>;
-  getWeapon?: () => WeaponId;
-  getWeaponDef?: () => WeaponDef;
+  getWeapon?: () => WeaponId | null;
+  getWeaponDef?: () => WeaponDef | null;
   getPerceptionStages?: () => ReadonlyArray<PerceptionState>;
   getNearestEnemyDistance?: () => number | null;
 }) {
@@ -416,7 +416,7 @@ export function createRenderer({
     const radius = Math.max(6, Math.min(w * 0.18, angularRatio * (w / 2) + 5 + recoil * 10));
     const arm = Math.max(5, Math.min(14, radius * 0.42));
     const gap = radius;
-    const alpha = def.ammoId ? 0.78 : 0.52;
+    const alpha = def.kind === 'ranged' ? 0.78 : 0.52;
 
     ctx.save();
     ctx.lineWidth = 2;

@@ -25,7 +25,7 @@ import {
   createItemsSystem,
   type MedicationSpec,
   type ArtifactSpec,
-  type AmmoSpec,
+  type WeaponSpec,
   type ArmorSpec,
 } from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
@@ -69,7 +69,7 @@ let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
 let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
 const inventory = createInventory();
-const weaponsSystem = createWeaponsSystem({ inventory });
+const weaponsSystem = createWeaponsSystem();
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -210,7 +210,7 @@ function reapplyEntities() {
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
-  const ammoFromEntities: AmmoSpec[] = [];
+  const weaponsFromEntities: WeaponSpec[] = [];
   const armorFromEntities: ArmorSpec[] = [];
   const portalsFromEntities: PortalSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
@@ -277,20 +277,13 @@ function reapplyEntities() {
       });
     }
 
-    if (e.type === 'ammo') {
-      const raw = e as unknown as {
-        id?: string;
-        x: number;
-        y: number;
-        subtype?: string;
-        amount?: number;
-      };
-      ammoFromEntities.push({
+    if (e.type === 'weapon') {
+      const raw = e as unknown as { id?: string; x: number; y: number; subtype?: string };
+      weaponsFromEntities.push({
         id: raw.id,
         x: raw.x,
         y: raw.y,
         subtype: raw.subtype,
-        amount: raw.amount,
       });
     }
 
@@ -378,7 +371,7 @@ function reapplyEntities() {
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
-  itemsSystem?.setAmmoPickups(ammoFromEntities);
+  itemsSystem?.setWeaponPickups(weaponsFromEntities);
   itemsSystem?.setArmorPickups(armorFromEntities);
   portalsSystem?.setPortals(portalsFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
@@ -554,7 +547,7 @@ export function setInventoryOnChanged(cb: (() => void) | null) {
   inventory.setOnChanged(cb);
 }
 
-export function getCurrentWeapon(): WeaponId {
+export function getCurrentWeapon(): WeaponId | null {
   return weaponsSystem.getCurrent();
 }
 
@@ -564,10 +557,6 @@ export function getCurrentWeaponDef() {
 
 export function setCurrentWeapon(id: WeaponId) {
   weaponsSystem.setWeapon(id);
-}
-
-export function getCurrentWeaponAmmo(): number | null {
-  return weaponsSystem.getAmmo();
 }
 
 export function setWeaponOnChanged(cb: (() => void) | null) {
@@ -833,6 +822,7 @@ function ensureEngine() {
     inventory,
     playSfx: (key) => audio.playSfx(key),
     onPickup: (id) => consumeEntity(id),
+    onWeaponPickup: (id) => weaponsSystem.acquire(id),
     setMedication: (on) => worldStateSystem?.setMedication(on),
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
     setWorldState: (state, value) => worldStateSystem?.setState(state, value),
@@ -889,11 +879,8 @@ function ensureEngine() {
       },
       onShoot: () => {
         const result = weaponsSystem.tryFire();
+        if (!result) return;
         const def = result.weapon;
-        if (!result.fired) {
-          if (def.emptySfx) audio.playSfx(def.emptySfx);
-          return;
-        }
         audio.playSfx(def.fireSfx);
         renderer?.triggerWeaponAction();
         if (def.flash) renderer?.triggerFlash();
@@ -984,7 +971,6 @@ export function setMap(grid: number[][]) {
   worldStateSystem?.onMapChanged();
   predatorSystem?.onMapChanged();
   inventory.reset();
-  weaponsSystem.reset({ pistolAmmo: 12, shotgunAmmo: 0 });
   rawTriggers = [];
   rawLights = [];
   rawEntities = [];
@@ -1069,6 +1055,7 @@ export function resetPlayerState() {
   player.flatmap = 0;
   player.hp = player.maxHp;
   player.armor = 0;
+  weaponsSystem.reset();
 }
 
 export function disposeRayc() {
