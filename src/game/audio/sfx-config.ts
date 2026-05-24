@@ -44,6 +44,21 @@ export const SFX = {
       fire: 'weapon.shotgun.fire',
       reload: 'weapon.shotgun.reload',
     },
+    boneBlade: {
+      swing: 'weapon.bone_blade.swing',
+      hitFlesh: 'weapon.bone_blade.hit.flesh',
+    },
+    organicShotgun: {
+      idle: 'weapon.organic_shotgun.idle',
+      fire: 'weapon.organic_shotgun.fire',
+      empty: 'weapon.organic_shotgun.empty',
+      reload: 'weapon.organic_shotgun.reload',
+      overheat: 'weapon.organic_shotgun.overheat',
+    },
+    parasiticRifle: {
+      fire: 'weapon.parasitic_rifle.fire',
+      reload: 'weapon.parasitic_rifle.reload',
+    },
   },
   footsteps: {
     concrete: 'footstep.concrete',
@@ -144,6 +159,29 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   [SFX.weapons.pistol.reload]: url('/assets/sounds/weapons/pistol/pistol_reload.wav'),
   [SFX.weapons.shotgun.fire]: url('/assets/sounds/weapons/shotgun/shotgun_fire.wav'),
   [SFX.weapons.shotgun.reload]: url('/assets/sounds/weapons/shotgun/shotgun_reload.wav'),
+  [SFX.weapons.boneBlade.swing]: url('/assets/sounds/weapons/bone_blade/living_blade_swing.wav'),
+  [SFX.weapons.boneBlade.hitFlesh]: url('/assets/sounds/weapons/bone_blade/living_blade_hit.wav'),
+  [SFX.weapons.organicShotgun.idle]: url(
+    '/assets/sounds/weapons/organic_shotgun/flesh_weapon_idle.wav',
+  ),
+  [SFX.weapons.organicShotgun.fire]: url(
+    '/assets/sounds/weapons/organic_shotgun/flesh_weapon_fire.wav',
+  ),
+  [SFX.weapons.organicShotgun.empty]: url(
+    '/assets/sounds/weapons/organic_shotgun/flesh_weapon_empty.wav',
+  ),
+  [SFX.weapons.organicShotgun.reload]: url(
+    '/assets/sounds/weapons/organic_shotgun/flesh_weapon_reload.wav',
+  ),
+  [SFX.weapons.organicShotgun.overheat]: url(
+    '/assets/sounds/weapons/organic_shotgun/flesh_weapon_overheat.wav',
+  ),
+  [SFX.weapons.parasiticRifle.fire]: url(
+    '/assets/sounds/weapons/parasitic_rifle/parasite_rifle_fire.wav',
+  ),
+  [SFX.weapons.parasiticRifle.reload]: url(
+    '/assets/sounds/weapons/parasitic_rifle/parasite_rifle_reload.wav',
+  ),
 
   // --- Footsteps ---
   [SFX.footsteps.concrete]: url('/assets/sounds/footsteps/footstep_concrete_01.wav'),
