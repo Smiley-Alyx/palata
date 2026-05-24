@@ -27,6 +27,20 @@ body
   box-shadow 0 0 0 4px $wood-dark, 0 16px 48px rgba(0, 0, 0, 0.55)
   background $bg-frame
 
+.app:fullscreen
+  padding 0
+
+.frame:fullscreen
+  width unquote('min(100vw, calc((100vh - 112px) * 4 / 3))')
+  height 100vh
+  grid-template-columns 1fr
+  grid-template-rows auto 112px
+  align-content center
+  justify-content center
+  border 0
+  box-shadow none
+  background #000
+
 :fullscreen .app
   padding 0
 
