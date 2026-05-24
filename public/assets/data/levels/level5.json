@@ -28,6 +28,7 @@
     {
       "id": "l5_city_notice",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 25.5,
       "y": 9.5,
       "title": "Объявление у подъезда",
@@ -37,6 +38,7 @@
     {
       "id": "l5_school_record",
       "type": "note",
+      "sprite": "document_archive",
       "x": 81.5,
       "y": 25.5,
       "title": "Школьный журнал",
@@ -46,6 +48,7 @@
     {
       "id": "l5_diary_page",
       "type": "note",
+      "sprite": "document_photo",
       "x": 49.5,
       "y": 49.5,
       "title": "Страница дневника",
@@ -55,6 +58,7 @@
     {
       "id": "l5_bus_stop",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 17.5,
       "y": 81.5,
       "title": "Расписание автобуса",

@@ -28,6 +28,7 @@
     {
       "id": "l6_hunt_order",
       "type": "note",
+      "sprite": "document_archive",
       "x": 17.5,
       "y": 9.5,
       "title": "Приказ о зачистке",
@@ -37,6 +38,7 @@
     {
       "id": "l6_medical_card_final",
       "type": "note",
+      "sprite": "document_medical_card",
       "x": 65.5,
       "y": 33.5,
       "title": "Последняя страница медкарты",
@@ -46,6 +48,7 @@
     {
       "id": "l6_diary_page",
       "type": "note",
+      "sprite": "document_photo",
       "x": 33.5,
       "y": 65.5,
       "title": "Страница дневника",
@@ -55,6 +58,7 @@
     {
       "id": "l6_wall_phrase",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 89.5,
       "y": 89.5,
       "title": "Надпись на бетоне",

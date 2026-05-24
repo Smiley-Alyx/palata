@@ -67,6 +67,11 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   ammo_pistol: 'assets/sprites/pickups/ammo/pistol_normal.png',
   ammo_shotgun: 'assets/sprites/pickups/ammo/shotgun_normal.png',
   documents: 'assets/sprites/pickups/documents/documents_sheet.png',
+  document_medical_card: 'assets/sprites/pickups/documents/documents_sheet.png',
+  document_archive: 'assets/sprites/pickups/documents/documents_sheet.png',
+  document_brochure: 'assets/sprites/pickups/documents/documents_sheet.png',
+  document_photo: 'assets/sprites/pickups/documents/documents_sheet.png',
+  document_cassette: 'assets/sprites/pickups/documents/documents_sheet.png',
 
   // Hallucinations
   hallucination_entity: 'assets/sprites/enemies/hallucination_entity.png',

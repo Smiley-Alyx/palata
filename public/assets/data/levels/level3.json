@@ -28,6 +28,7 @@
     {
       "id": "l3_medical_card_a",
       "type": "note",
+      "sprite": "document_medical_card",
       "x": 9.5,
       "y": 9.5,
       "title": "Фрагмент медкарты",
@@ -37,6 +38,7 @@
     {
       "id": "l3_diary_page",
       "type": "note",
+      "sprite": "document_photo",
       "x": 65.5,
       "y": 23.5,
       "title": "Страница дневника",
@@ -46,6 +48,7 @@
     {
       "id": "l3_lab_note",
       "type": "note",
+      "sprite": "document_archive",
       "x": 33.5,
       "y": 49.5,
       "title": "Лабораторная пометка",
@@ -55,6 +58,7 @@
     {
       "id": "l3_wall_warning",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 81.5,
       "y": 73.5,
       "title": "Надпись на стене",

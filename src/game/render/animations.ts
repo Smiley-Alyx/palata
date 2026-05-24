@@ -159,6 +159,11 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   goldKey: 'animations/pickups/gold_key.json',
   silverKey: 'animations/pickups/silver_key.json',
   bloodKey: 'animations/pickups/blood_key.json',
+  document_medical_card: 'animations/pickups/document_medical_card.json',
+  document_archive: 'animations/pickups/document_archive.json',
+  document_brochure: 'animations/pickups/document_brochure.json',
+  document_photo: 'animations/pickups/document_photo.json',
+  document_cassette: 'animations/pickups/document_cassette.json',
 
   // First-person weapons.
   pipe: 'animations/weapons/pipe.json',

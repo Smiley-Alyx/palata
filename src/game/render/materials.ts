@@ -74,6 +74,11 @@ const materialToDomId = new Map<string, string>([
   ['ammo_pistol', 'ammo_pistol'],
   ['ammo_shotgun', 'ammo_shotgun'],
   ['documents', 'documents'],
+  ['document_medical_card', 'document_medical_card'],
+  ['document_archive', 'document_archive'],
+  ['document_brochure', 'document_brochure'],
+  ['document_photo', 'document_photo'],
+  ['document_cassette', 'document_cassette'],
 
   // --- Artifact pickups ---
   ['artifact_hallucination', 'artifact_hallucination'],

@@ -28,6 +28,7 @@
     {
       "id": "l2_guard_notice",
       "type": "note",
+      "sprite": "document_archive",
       "x": 17.5,
       "y": 9.5,
       "title": "Инструкция охраны",
@@ -37,6 +38,7 @@
     {
       "id": "l2_ect_schedule",
       "type": "note",
+      "sprite": "document_medical_card",
       "x": 57.5,
       "y": 25.5,
       "title": "Расписание ЭСТ",
@@ -46,6 +48,7 @@
     {
       "id": "l2_diary_page",
       "type": "note",
+      "sprite": "document_photo",
       "x": 89.5,
       "y": 41.5,
       "title": "Страница дневника",
@@ -55,6 +58,7 @@
     {
       "id": "l2_server_label",
       "type": "note",
+      "sprite": "document_cassette",
       "x": 33.5,
       "y": 73.5,
       "title": "Бирка на стойке",

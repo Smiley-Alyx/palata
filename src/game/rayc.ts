@@ -420,7 +420,7 @@ function getNoteSprites() {
     .map((e) => ({
       x: e.x,
       y: e.y,
-      material: 'documents',
+      material: typeof e.sprite === 'string' ? e.sprite : 'document_archive',
       alive: true,
       scale: 0.16,
     }));

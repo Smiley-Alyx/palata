@@ -1,0 +1,10 @@
+{
+  "fps": 1,
+  "loop": false,
+  "_comment": "Old photograph, clean variant from documents_sheet.png.",
+  "sheet": {
+    "src": "sprites/pickups/documents/documents_sheet.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
+    "frames": [{ "x": 973, "y": 90, "w": 244, "h": 234 }]
+  }
+}

@@ -308,6 +308,7 @@
     {
       "id": "spawn_note",
       "type": "note",
+      "sprite": "document_archive",
       "x": 31.5,
       "y": 58.5,
       "title": "Записка на полу",
@@ -317,6 +318,7 @@
     {
       "id": "cell_b_graffiti",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 6.5,
       "y": 56.5,
       "title": "Надпись у койки",
@@ -326,6 +328,7 @@
     {
       "id": "storage_note",
       "type": "note",
+      "sprite": "document_archive",
       "x": 58.5,
       "y": 43.5,
       "title": "Опись имущества",
@@ -335,6 +338,7 @@
     {
       "id": "archive_note",
       "type": "note",
+      "sprite": "document_archive",
       "x": 10.5,
       "y": 35.5,
       "title": "Журнал санитарного поста — обрывок",
@@ -344,6 +348,7 @@
     {
       "id": "archive_note_2",
       "type": "note",
+      "sprite": "document_medical_card",
       "x": 4.5,
       "y": 25.5,
       "title": "Карточка пациента",
@@ -353,6 +358,7 @@
     {
       "id": "procedure_note",
       "type": "note",
+      "sprite": "document_medical_card",
       "x": 7.5,
       "y": 16.5,
       "title": "Карта процедур",
@@ -362,6 +368,7 @@
     {
       "id": "ward_a_note",
       "type": "note",
+      "sprite": "document_brochure",
       "x": 55.5,
       "y": 11.5,
       "title": "Плитка в душевой",
