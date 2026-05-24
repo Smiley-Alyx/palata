@@ -131,6 +131,12 @@ export function createEnemiesSystem({
     return r < orderlyW ? 'medical_orderly' : 'skeleton_husk';
   }
 
+  function damageCooldownForDifficulty(difficulty: Difficulty): number {
+    if (difficulty === 'lost') return 720;
+    if (difficulty === 'trapped') return 620;
+    return 520;
+  }
+
   function rollEnemyKind(): EnemyKind {
     return rollEnemyKindFromDifficulty(getDifficulty());
   }
@@ -630,7 +636,7 @@ export function createEnemiesSystem({
           playSfx(SFX.player.hurtMedium);
           e.attackFlashMs = 220;
           onDamagePulse?.();
-          enemyDamageCooldownMs = 650;
+          enemyDamageCooldownMs = damageCooldownForDifficulty(getDifficulty());
           if (player.hp <= 0) {
             onKillFill?.();
           }

@@ -1,5 +1,43 @@
 import type { Player } from '../../types/game';
+import type { Difficulty } from '../game-types';
 import type { KeyId } from './doors';
+
+const HEALTH_PICKUP_TUNING: Record<
+  Difficulty,
+  {
+    healAmount: number;
+    baseDesired: number;
+    missingFactor: number;
+    spawnCooldownMs: number;
+    minPlayerDist: number;
+    minMissingRatioToSpawn: number;
+  }
+> = {
+  lost: {
+    healAmount: 22,
+    baseDesired: 10,
+    missingFactor: 0.9,
+    spawnCooldownMs: 2200,
+    minPlayerDist: 2.1,
+    minMissingRatioToSpawn: 0,
+  },
+  trapped: {
+    healAmount: 18,
+    baseDesired: 5,
+    missingFactor: 1.1,
+    spawnCooldownMs: 4200,
+    minPlayerDist: 2.55,
+    minMissingRatioToSpawn: 0.15,
+  },
+  consumed: {
+    healAmount: 12,
+    baseDesired: 0,
+    missingFactor: 3.2,
+    spawnCooldownMs: 11000,
+    minPlayerDist: 3.25,
+    minMissingRatioToSpawn: 0.45,
+  },
+};
 
 export function createPickupsSystem({
   player,
@@ -13,7 +51,7 @@ export function createPickupsSystem({
   playHealthSfx: () => void;
   playKeySfx?: () => void;
   isBlocked: (x: number, y: number, r: number) => boolean;
-  getDifficulty: () => 'lost' | 'trapped' | 'consumed';
+  getDifficulty: () => Difficulty;
   onKeyPickup?: (id: KeyId) => void;
 }) {
   type HealthPickup = {
@@ -74,7 +112,8 @@ export function createPickupsSystem({
     for (const p of healthPickups) {
       if (!p.alive) continue;
       if (Math.hypot(player.x - p.x, player.y - p.y) > pickupR) continue;
-      player.hp = Math.min(player.maxHp, player.hp + 20);
+      const tuning = HEALTH_PICKUP_TUNING[getDifficulty()];
+      player.hp = Math.min(player.maxHp, player.hp + tuning.healAmount);
       p.alive = false;
       playHealthSfx();
     }
@@ -107,10 +146,11 @@ export function createPickupsSystem({
     const missing = Math.max(0, player.maxHp - player.hp);
     const missingRatio = player.maxHp > 0 ? missing / player.maxHp : 0;
 
-    const difficulty = getDifficulty();
-    const base = difficulty === 'lost' ? 12 : difficulty === 'trapped' ? 8 : 5;
-    const factor = difficulty === 'lost' ? 1.1 : difficulty === 'trapped' ? 1.45 : 1.85;
-    return Math.max(0, Math.round(base * (1 + missingRatio * factor)));
+    const tuning = HEALTH_PICKUP_TUNING[getDifficulty()];
+    if (missingRatio < tuning.minMissingRatioToSpawn) return 0;
+
+    const desired = tuning.baseDesired + Math.floor(missingRatio * tuning.missingFactor);
+    return Math.max(0, desired);
   }
 
   function updateHealthSpawning(dt: number) {
@@ -124,23 +164,22 @@ export function createPickupsSystem({
     const alive = countAliveHealthPickups();
     if (alive >= desired) return;
 
-    const difficulty = getDifficulty();
+    const tuning = HEALTH_PICKUP_TUNING[getDifficulty()];
     const tries = 18;
     const pickupR = 0.25;
-    const minPlayerDist = difficulty === 'lost' ? 2.1 : difficulty === 'trapped' ? 2.35 : 2.55;
 
     for (let i = 0; i < tries; i++) {
       const c = healthFloorCandidates[Math.floor(Math.random() * healthFloorCandidates.length)];
       const x = c.x + 0.5;
       const y = c.y + 0.5;
-      if (Math.hypot(x - player.x, y - player.y) < minPlayerDist) continue;
+      if (Math.hypot(x - player.x, y - player.y) < tuning.minPlayerDist) continue;
       if (isBlocked(x, y, pickupR)) continue;
       if (hitHealthPickupCircle(x, y, pickupR * 4.0)) continue;
       healthPickups.push({ x, y, alive: true });
       break;
     }
 
-    healthSpawnCooldownMs = difficulty === 'lost' ? 1800 : difficulty === 'trapped' ? 2400 : 3100;
+    healthSpawnCooldownMs = tuning.spawnCooldownMs;
   }
 
   function tick(dt: number) {

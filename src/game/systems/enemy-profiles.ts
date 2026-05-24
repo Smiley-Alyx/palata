@@ -32,7 +32,7 @@ const HUSK: EnemyProfile = {
   damage: {
     lost: { min: 4, max: 7 },
     trapped: { min: 4, max: 9 },
-    consumed: { min: 4, max: 12 },
+    consumed: { min: 7, max: 15 },
   },
 };
 
@@ -48,7 +48,7 @@ const ORDERLY: EnemyProfile = {
   damage: {
     lost: { min: 16, max: 24 },
     trapped: { min: 16, max: 28 },
-    consumed: { min: 16, max: 36 },
+    consumed: { min: 22, max: 42 },
   },
 };
 
@@ -64,7 +64,7 @@ const DEFORMED: EnemyProfile = {
   damage: {
     lost: { min: 10, max: 16 },
     trapped: { min: 12, max: 20 },
-    consumed: { min: 14, max: 26 },
+    consumed: { min: 18, max: 32 },
   },
 };
 

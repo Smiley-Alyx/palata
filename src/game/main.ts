@@ -121,16 +121,16 @@ function placeRandomHealthPickups({
   let maxCount = 10;
   let minSpawnDist = 2.1;
   if (difficulty === 'trapped') {
-    divisor = 150;
-    minCount = 2;
-    maxCount = 7;
-    minSpawnDist = 2.35;
-  }
-  if (difficulty === 'consumed') {
-    divisor = 200;
+    divisor = 190;
     minCount = 1;
     maxCount = 5;
-    minSpawnDist = 2.55;
+    minSpawnDist = 2.65;
+  }
+  if (difficulty === 'consumed') {
+    divisor = 320;
+    minCount = 0;
+    maxCount = 3;
+    minSpawnDist = 3.25;
   }
 
   const approxCount = Math.floor((w * h) / divisor);
