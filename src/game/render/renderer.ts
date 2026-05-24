@@ -23,7 +23,13 @@ export function createRenderer({
   getViewHeight: () => number;
   player: Player;
   getEnemies?: () => Array<{ x: number; y: number; alive: boolean; attackFlashMs?: number }>;
-  getSprites?: () => Array<{ x: number; y: number; material: string; alive: boolean; scale?: number }>;
+  getSprites?: () => Array<{
+    x: number;
+    y: number;
+    material: string;
+    alive: boolean;
+    scale?: number;
+  }>;
   getWeapon?: () => WeaponId;
   getPerceptionStages?: () => ReadonlyArray<PerceptionState>;
   getNearestEnemyDistance?: () => number | null;
@@ -31,6 +37,7 @@ export function createRenderer({
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
 
+  let ceilingMaterial: string | number | null = null;
   let floorMaterial: string | number | null = null;
 
   let ambientLight01 = 1;
@@ -40,14 +47,12 @@ export function createRenderer({
   let killFill = 0;
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
-  let floorPlaneCache:
-    | {
-        w: number;
-        h: number;
-        canvas: HTMLCanvasElement;
-        ctx: CanvasRenderingContext2D;
-      }
-    | null = null;
+  let backgroundPlaneCache: {
+    w: number;
+    h: number;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+  } | null = null;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
 
@@ -136,8 +141,11 @@ export function createRenderer({
     if (typeof colors.floor === 'string') floorColor = colors.floor;
   }
 
-  function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
-    // Ceiling materials are intentionally ignored; the flat shaded ceiling preserves depth better.
+  function setBackgroundMaterials(materials: {
+    ceiling?: string | number | null;
+    floor?: string | number | null;
+  }) {
+    if ('ceiling' in materials) ceilingMaterial = materials.ceiling ?? null;
     if ('floor' in materials) floorMaterial = materials.floor ?? null;
   }
 
@@ -145,16 +153,17 @@ export function createRenderer({
     ambientLight01 = Math.max(0, Math.min(1, light01));
   }
 
-  function drawTexturedFloor(
+  function drawTexturedPlane(
     output: ImageData,
     texture: ImageData,
     screenRow: number,
     outputRow: number,
     screenH: number,
+    ceiling: boolean,
   ) {
     const w = output.width;
     const horizon = screenH / 2;
-    const rowDelta = screenRow - horizon;
+    const rowDelta = ceiling ? horizon - screenRow : screenRow - horizon;
     if (rowDelta <= 0) return;
 
     const rowDistance = (screenH * 0.5) / rowDelta;
@@ -189,9 +198,9 @@ export function createRenderer({
     }
   }
 
-  function getFloorPlaneCanvas(w: number, h: number) {
-    if (floorPlaneCache && floorPlaneCache.w === w && floorPlaneCache.h === h) {
-      return floorPlaneCache;
+  function getBackgroundPlaneCanvas(w: number, h: number) {
+    if (backgroundPlaneCache && backgroundPlaneCache.w === w && backgroundPlaneCache.h === h) {
+      return backgroundPlaneCache;
     }
 
     const canvas = document.createElement('canvas');
@@ -201,8 +210,37 @@ export function createRenderer({
     if (!cctx) return null;
     cctx.imageSmoothingEnabled = false;
 
-    floorPlaneCache = { w, h, canvas, ctx: cctx };
-    return floorPlaneCache;
+    backgroundPlaneCache = { w, h, canvas, ctx: cctx };
+    return backgroundPlaneCache;
+  }
+
+  function drawBackgroundPlane(
+    texture: ImageData | null,
+    y: number,
+    height: number,
+    ceiling: boolean,
+    scale: number,
+  ) {
+    if (!texture) return;
+
+    const planeW = Math.ceil(getViewWidth() / scale);
+    const planeH = Math.ceil(height / scale);
+    const plane = getBackgroundPlaneCanvas(planeW, planeH);
+    if (!plane) return;
+
+    const pixels = plane.ctx.createImageData(planeW, planeH);
+    const horizon = Math.floor(getViewHeight() / 2);
+    for (let row = 0; row < planeH; row++) {
+      const screenRow = ceiling ? row * scale : horizon + row * scale;
+      drawTexturedPlane(pixels, texture, screenRow, row, getViewHeight(), ceiling);
+    }
+    plane.ctx.putImageData(pixels, 0, 0);
+
+    ctx.save();
+    ctx.globalAlpha = 0.68;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(plane.canvas, 0, 0, planeW, planeH, 0, y, getViewWidth(), height);
+    ctx.restore();
   }
 
   function drawBackground() {
@@ -210,6 +248,8 @@ export function createRenderer({
     const h = getViewHeight();
 
     ctx.clearRect(0, 0, w, h);
+    const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
+    const ceilingData = ceilingTexture ? getTextureData(ceilingTexture) : null;
     const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
     const floorData = floorTexture ? getTextureData(floorTexture) : null;
 
@@ -219,21 +259,9 @@ export function createRenderer({
     ctx.fillStyle = floorColor;
     ctx.fillRect(0, h / 2, w, h / 2);
 
-    if (floorData) {
-      const floorScale = w > 480 ? 2 : 1;
-      const floorW = Math.ceil(w / floorScale);
-      const floorH = Math.ceil((h / 2) / floorScale);
-      const floorPlane = getFloorPlaneCanvas(floorW, floorH);
-      if (floorPlane) {
-        const planes = floorPlane.ctx.createImageData(floorW, floorH);
-        const horizon = Math.floor(h / 2);
-        for (let y = 0; y < floorH; y++) {
-          drawTexturedFloor(planes, floorData, horizon + y * floorScale, y, h);
-        }
-        floorPlane.ctx.putImageData(planes, 0, 0);
-        ctx.drawImage(floorPlane.canvas, 0, 0, floorW, floorH, 0, h / 2, w, h / 2);
-      }
-    }
+    const planeScale = w > 480 ? 4 : 2;
+    drawBackgroundPlane(ceilingData, 0, h / 2, true, planeScale);
+    drawBackgroundPlane(floorData, h / 2, h / 2, false, planeScale);
 
     // Distance shading for ceiling/floor: darker at the horizon (far),
     // brighter near the camera.
@@ -357,7 +385,14 @@ export function createRenderer({
 
   function drawSpriteList(
     zBuffer: Float64Array,
-    listIn: Array<{ x: number; y: number; alive: boolean; material: string; attackFlashMs?: number; scale?: number }>,
+    listIn: Array<{
+      x: number;
+      y: number;
+      alive: boolean;
+      material: string;
+      attackFlashMs?: number;
+      scale?: number;
+    }>,
   ) {
     if (!listIn.length) return;
 
@@ -439,12 +474,25 @@ export function createRenderer({
       const profile = kind ? getEnemyProfile(kind) : null;
       const mat = profile ? profile.material : 'enemy';
       const scale = profile && typeof profile.scale === 'number' ? profile.scale : 1;
-      return { x: e.x, y: e.y, alive: e.alive, material: mat, attackFlashMs: e.attackFlashMs, scale };
+      return {
+        x: e.x,
+        y: e.y,
+        alive: e.alive,
+        material: mat,
+        attackFlashMs: e.attackFlashMs,
+        scale,
+      };
     });
     drawSpriteList(zBuffer, enemies);
 
     const spritesRaw = typeof getSprites === 'function' ? getSprites() : [];
-    const sprites = spritesRaw.map((s) => ({ x: s.x, y: s.y, alive: s.alive, material: s.material, scale: s.scale }));
+    const sprites = spritesRaw.map((s) => ({
+      x: s.x,
+      y: s.y,
+      alive: s.alive,
+      material: s.material,
+      scale: s.scale,
+    }));
     drawSpriteList(zBuffer, sprites);
   }
 
