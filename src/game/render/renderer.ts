@@ -40,6 +40,14 @@ export function createRenderer({
   let killFill = 0;
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
+  let floorPlaneCache:
+    | {
+        w: number;
+        h: number;
+        canvas: HTMLCanvasElement;
+        ctx: CanvasRenderingContext2D;
+      }
+    | null = null;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
 
@@ -140,15 +148,16 @@ export function createRenderer({
   function drawTexturedFloor(
     output: ImageData,
     texture: ImageData,
-    row: number,
+    screenRow: number,
+    outputRow: number,
+    screenH: number,
   ) {
     const w = output.width;
-    const h = output.height;
-    const horizon = h / 2;
-    const rowDelta = row - horizon;
+    const horizon = screenH / 2;
+    const rowDelta = screenRow - horizon;
     if (rowDelta <= 0) return;
 
-    const rowDistance = (h * 0.5) / rowDelta;
+    const rowDistance = (screenH * 0.5) / rowDelta;
     const leftAngle = player.rot + player.fov / 2;
     const rightAngle = player.rot - player.fov / 2;
     const leftX = Math.cos(leftAngle);
@@ -164,7 +173,7 @@ export function createRenderer({
     const texData = texture.data;
     const texW = texture.width;
     const texH = texture.height;
-    let out = row * w * 4;
+    let out = outputRow * w * 4;
 
     for (let x = 0; x < w; x++) {
       const tx = Math.floor((worldX - Math.floor(worldX)) * texW) % texW;
@@ -178,6 +187,22 @@ export function createRenderer({
       worldX += stepX;
       worldY += stepY;
     }
+  }
+
+  function getFloorPlaneCanvas(w: number, h: number) {
+    if (floorPlaneCache && floorPlaneCache.w === w && floorPlaneCache.h === h) {
+      return floorPlaneCache;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const cctx = canvas.getContext('2d');
+    if (!cctx) return null;
+    cctx.imageSmoothingEnabled = false;
+
+    floorPlaneCache = { w, h, canvas, ctx: cctx };
+    return floorPlaneCache;
   }
 
   function drawBackground() {
@@ -195,13 +220,19 @@ export function createRenderer({
     ctx.fillRect(0, h / 2, w, h / 2);
 
     if (floorData) {
-      const planes = ctx.getImageData(0, 0, w, h);
-      for (let y = 0; y < h; y++) {
-        if (y > h / 2) {
-          drawTexturedFloor(planes, floorData, y);
+      const floorScale = w > 480 ? 2 : 1;
+      const floorW = Math.ceil(w / floorScale);
+      const floorH = Math.ceil((h / 2) / floorScale);
+      const floorPlane = getFloorPlaneCanvas(floorW, floorH);
+      if (floorPlane) {
+        const planes = floorPlane.ctx.createImageData(floorW, floorH);
+        const horizon = Math.floor(h / 2);
+        for (let y = 0; y < floorH; y++) {
+          drawTexturedFloor(planes, floorData, horizon + y * floorScale, y, h);
         }
+        floorPlane.ctx.putImageData(planes, 0, 0);
+        ctx.drawImage(floorPlane.canvas, 0, 0, floorW, floorH, 0, h / 2, w, h / 2);
       }
-      ctx.putImageData(planes, 0, 0);
     }
 
     // Distance shading for ceiling/floor: darker at the horizon (far),
@@ -289,7 +320,14 @@ export function createRenderer({
     weaponActionStartedAtMs = performance.now();
   }
 
-  function drawRay(dist: number, x: number, offset: number, img: string | number, light01: number = 1) {
+  function drawRay(
+    dist: number,
+    x: number,
+    offset: number,
+    img: string | number,
+    light01: number = 1,
+    columnWidth: number = 1,
+  ) {
     const viewWidth = getViewWidth();
     const viewHeight = getViewHeight();
     const distanceProjectionPlane = viewWidth / 2 / Math.tan(player.fov / 2);
@@ -311,9 +349,9 @@ export function createRenderer({
     const shade = 1 - l;
     if (shade > 0.001) {
       const shaded = getShadedTexture(texture, shade);
-      ctx.drawImage(shaded, texX, 0, 1, texH, x, y0, 1, sliceHeight);
+      ctx.drawImage(shaded, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
     } else {
-      ctx.drawImage(texture, texX, 0, 1, texH, x, y0, 1, sliceHeight);
+      ctx.drawImage(texture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
     }
   }
 

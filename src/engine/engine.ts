@@ -15,6 +15,7 @@ type Renderer = {
     offset: number,
     img: string | number,
     light01?: number,
+    columnWidth?: number,
   ) => void;
   drawMap: () => void;
   drawSprites: (zBuffer: Float64Array) => void;

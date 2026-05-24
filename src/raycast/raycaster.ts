@@ -7,6 +7,7 @@ type DrawRay = (
   offset: number,
   img: string | number,
   light01?: number,
+  columnWidth?: number,
 ) => void;
 
 type WallFace = 'N' | 'S' | 'E' | 'W';
@@ -45,11 +46,17 @@ export function castRays({
 }): { zBuffer: Float64Array } {
   const viewWidth = getViewWidth();
   const zBuffer = new Float64Array(viewWidth);
-  const angleBetweenRays = ((player.fov * 180) / Math.PI / viewWidth) * (Math.PI / 180);
+  const columnWidth = viewWidth > 480 ? 2 : 1;
+  const rayCount = Math.ceil(viewWidth / columnWidth);
+  const angleBetweenRays = player.fov / rayCount;
 
   let angle = addRotToAngle(player.fov / 2, player.rot);
-  for (let i = 0; i < viewWidth; i++) {
-    zBuffer[i] = castSingleRay({ player, world, angle, row: i, drawRay });
+  for (let i = 0, x = 0; x < viewWidth; i++, x += columnWidth) {
+    const width = Math.min(columnWidth, viewWidth - x);
+    const dist = castSingleRay({ player, world, angle, row: x, columnWidth: width, drawRay });
+    for (let j = 0; j < width; j++) {
+      zBuffer[x + j] = dist;
+    }
     angle = addRotToAngle(-angleBetweenRays, angle);
   }
 
@@ -61,12 +68,14 @@ function castSingleRay({
   world,
   angle,
   row,
+  columnWidth,
   drawRay,
 }: {
   player: Player;
   world: World;
   angle: number;
   row: number;
+  columnWidth: number;
   drawRay: DrawRay;
 }) {
   const facingRight = angle < (90 * Math.PI) / 180 || angle > (270 * Math.PI) / 180;
@@ -211,7 +220,7 @@ function castSingleRay({
     hit && typeof world.getWallTextureOffset === 'function'
       ? world.getWallTextureOffset(hit)
       : offset;
-  drawRay(dist, row, textureOffset, imgOut, light01);
+  drawRay(dist, row, textureOffset, imgOut, light01, columnWidth);
 
   return dist;
 }
