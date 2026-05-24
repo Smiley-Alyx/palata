@@ -112,10 +112,10 @@ type WeaponPickup = {
 };
 
 const WEAPON_SPRITE: Record<WeaponSubtype, string> = {
-  skalpel: 'skalpel',
-  pipe: 'pipe',
-  pistol: 'pistol',
-  shotgun: 'shotgun',
+  skalpel: 'weapon_pickup_skalpel',
+  pipe: 'weapon_pickup_pipe',
+  pistol: 'weapon_pickup_pistol',
+  shotgun: 'weapon_pickup_shotgun',
 };
 
 const WEAPON_PICKUP_AMMO: Partial<Record<WeaponSubtype, { id: InventoryItemId; amount: number }>> =

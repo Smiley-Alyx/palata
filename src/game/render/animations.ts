@@ -164,6 +164,10 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   document_brochure: 'animations/pickups/document_brochure.json',
   document_photo: 'animations/pickups/document_photo.json',
   document_cassette: 'animations/pickups/document_cassette.json',
+  weapon_pickup_skalpel: 'animations/pickups/weapon_skalpel.json',
+  weapon_pickup_pipe: 'animations/pickups/weapon_pipe.json',
+  weapon_pickup_pistol: 'animations/pickups/weapon_pistol.json',
+  weapon_pickup_shotgun: 'animations/pickups/weapon_shotgun.json',
 
   // First-person weapons.
   skalpel: 'animations/weapons/skalpel.json',

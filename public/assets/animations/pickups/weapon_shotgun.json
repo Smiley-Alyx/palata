@@ -1,0 +1,10 @@
+{
+  "fps": 1,
+  "loop": false,
+  "_comment": "Shotgun pickup from the 1536x1024 weapon pickup sheet.",
+  "sheet": {
+    "src": "sprites/pickups/weapons/weapon_pickups.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
+    "frames": [{ "x": 40, "y": 595, "w": 344, "h": 141 }]
+  }
+}
