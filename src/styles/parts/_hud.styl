@@ -3,10 +3,10 @@
 .hud
   grid-column 1 / -1
   display grid
-  grid-template-columns 1fr 1fr 1fr 1fr 1fr
+  grid-template-columns minmax(70px, 0.7fr) minmax(64px, 0.6fr) minmax(110px, 1fr) 132px minmax(64px, 0.6fr) minmax(64px, 0.6fr) minmax(96px, 0.9fr)
   align-items center
-  gap 12px
-  padding 10px 12px
+  gap 8px
+  padding 8px 10px
   border-top 4px solid $wood-dark
   background linear-gradient(180deg, #2c2c2c 0%, #151515 100%)
 
@@ -14,49 +14,65 @@
     border-top 0
 
 .hud-block
-  height 92px
+  height 78px
   border 2px solid #1f1f1f
   background rgba(0, 0, 0, 0.35)
   display grid
   grid-template-rows 1fr auto
   align-items center
   justify-items center
-  padding 6px 8px
+  padding 5px 6px
   width 100%
   box-sizing border-box
+  min-width 0
 
 .hud-value
-  font-size 34px
+  font-size 26px
   line-height 1
   font-weight 700
-  letter-spacing 1px
+  letter-spacing 0
   color $danger
   text-shadow 0 2px 0 rgba(0, 0, 0, 0.65)
+  max-width 100%
+  overflow hidden
+  text-overflow ellipsis
+  white-space nowrap
 
 .hud-label
-  font-size 12px
-  letter-spacing 2px
+  font-size 10px
+  letter-spacing 1px
   color rgba(255, 255, 255, 0.75)
 
 .hud-keys-row
   display flex
-  gap 8px
+  gap 6px
   align-items center
   justify-content center
+  min-height 42px
 
 .hud-key
-  width 28px
-  height 28px
+  display none
+  width 24px
+  height 40px
+  background-repeat no-repeat
+  background-size 300% 100%
+  background-position left center
   image-rendering pixelated
-  filter grayscale(1) brightness(0.65)
-  opacity 0.65
 
   &.is-owned
-    filter none
-    opacity 1
+    display block
+
+.hud-key-gold
+  background-image url('/assets/sprites/pickups/keys/gold_key_hd.png')
+
+.hud-key-silver
+  background-image url('/assets/sprites/pickups/keys/silver_key_hd.png')
+
+.hud-key-blood
+  background-image url('/assets/sprites/pickups/keys/blood_key.png')
 
 .hud-face
-  height 92px
+  height 78px
   border 2px solid #1f1f1f
   background rgba(0, 0, 0, 0.45)
   display flex
@@ -73,27 +89,6 @@
     image-rendering pixelated
 
 .hud-weapon
-  justify-items start
-  padding 10px 12px
-  grid-template-rows 1fr
-  align-items start
-  justify-content start
-
-.hud-weapon-title
-  font-size 12px
-  letter-spacing 2px
-  color rgba(255, 255, 255, 0.75)
-
-.hud-weapon-value
-  font-size 18px
-  color $text
-
-.hud-weapon-row
-  width 100%
-  display flex
-  align-items baseline
-  justify-content space-between
-  gap 10px
-
-  & + &
-    margin-top 6px
+  .hud-value
+    color $text
+    font-size 18px

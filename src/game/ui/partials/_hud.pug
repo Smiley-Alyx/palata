@@ -1,33 +1,26 @@
 //- Bottom HUD: stats, portrait, weapon, keys.
 
 .hud#hudRoot
-  .hud-block
+  .hud-block.hud-stat
     .hud-value#hudHealthValue 100%
     .hud-label HEALTH
-  .hud-block
+  .hud-block.hud-stat
     .hud-value#hudArmorValue 0%
     .hud-label ARMOR
+  .hud-block.hud-weapon
+    .hud-value#hudWeaponValue -
+    .hud-label WEAPON
   .hud-face
     canvas#hudPortrait(width="128" height="96")
-  .hud-block.hud-weapon
-    .hud-weapon-row
-      .hud-weapon-title WEAPON
-      .hud-weapon-value#hudWeaponValue -
-    .hud-weapon-row
-      .hud-weapon-title AMMO
-      .hud-weapon-value#hudAmmoValue 50
-  .hud-block
+  .hud-block.hud-stat
+    .hud-value#hudAmmoValue 50
+    .hud-label AMMO
+  .hud-block.hud-stat
     .hud-value#hudMedsValue 0
     .hud-label MEDS
-  .hud-block
-    .hud-value#hudDocsValue 0
-    .hud-label DOCS
-  .hud-block
-    .hud-value#hudArtifactsValue 0
-    .hud-label ARTIFACTS
   .hud-keys.hud-block
     .hud-keys-row
-      img.hud-key#hudKeyGold(src=assets.goldKey)
-      img.hud-key#hudKeySilver(src=assets.silverKey)
-      img.hud-key#hudKeyBlood(src=assets.bloodKey)
+      .hud-key.hud-key-gold#hudKeyGold
+      .hud-key.hud-key-silver#hudKeySilver
+      .hud-key.hud-key-blood#hudKeyBlood
     .hud-label KEYS

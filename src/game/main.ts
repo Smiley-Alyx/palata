@@ -420,11 +420,11 @@ function initHpUi() {
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
-    if (keyGoldEl instanceof HTMLImageElement)
+    if (keyGoldEl instanceof HTMLElement)
       keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
-    if (keySilverEl instanceof HTMLImageElement)
+    if (keySilverEl instanceof HTMLElement)
       keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
-    if (keyBloodEl instanceof HTMLImageElement)
+    if (keyBloodEl instanceof HTMLElement)
       keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
   };
   syncKeys();
@@ -433,18 +433,20 @@ function initHpUi() {
     if (!hudCtx || !hudCanvas) return;
     if (!spriteImg || spriteImg.naturalWidth <= 0 || spriteImg.naturalHeight <= 0) return;
 
-    const frames = 4;
-    const frameW = Math.floor(spriteImg.naturalWidth / frames);
-    const frameH = spriteImg.naturalHeight;
+    const cols = 3;
+    const rows = 5;
+    const frameW = spriteImg.naturalWidth / cols;
+    const frameH = spriteImg.naturalHeight / rows;
 
-    let idx = 0;
-    if (hpRatio <= 0.25) idx = 3;
-    else if (hpRatio <= 0.5) idx = 2;
-    else if (hpRatio <= 0.75) idx = 1;
-    else idx = 0;
+    let frame = 0;
+    if (hpRatio <= 0) frame = 14;
+    else if (hpRatio <= 0.25) frame = 5;
+    else if (hpRatio <= 0.5) frame = 4;
+    else if (hpRatio <= 0.75) frame = 3;
 
-    const sx = idx * frameW;
-    const sy = 0;
+    const sx = (frame % cols) * frameW;
+    const sy = Math.floor(frame / cols) * frameH;
+    const faceH = frameH * 0.78;
 
     const dw = hudCanvas.width;
     const dh = hudCanvas.height;
@@ -453,7 +455,7 @@ function initHpUi() {
     hudCtx.imageSmoothingEnabled = false;
 
     // Letterbox to avoid squishing the face.
-    const srcAspect = frameW / frameH;
+    const srcAspect = frameW / faceH;
     const dstAspect = dw / dh;
     let drawW = dw;
     let drawH = dh;
@@ -466,7 +468,7 @@ function initHpUi() {
     }
     const dx = Math.floor((dw - drawW) / 2);
     const dy = Math.floor((dh - drawH) / 2);
-    hudCtx.drawImage(spriteImg, sx, sy, frameW, frameH, dx, dy, drawW, drawH);
+    hudCtx.drawImage(spriteImg, sx, sy, frameW, faceH, dx, dy, drawW, drawH);
   }
 
   let fpsFrames = 0;
