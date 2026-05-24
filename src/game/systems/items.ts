@@ -94,7 +94,7 @@ const AMMO_PICKUP_AMOUNT: Record<AmmoSubtype, number> = {
   shotgun: 4,
 };
 
-export type WeaponSubtype = 'pipe' | 'pistol' | 'shotgun';
+export type WeaponSubtype = 'skalpel' | 'pipe' | 'pistol' | 'shotgun';
 
 export type WeaponSpec = {
   id?: string;
@@ -112,6 +112,7 @@ type WeaponPickup = {
 };
 
 const WEAPON_SPRITE: Record<WeaponSubtype, string> = {
+  skalpel: 'skalpel',
   pipe: 'pipe',
   pistol: 'pistol',
   shotgun: 'shotgun',
@@ -233,7 +234,13 @@ export function createItemsSystem({
           .filter((w) => w && typeof w.x === 'number' && typeof w.y === 'number')
           .map((w) => {
             const subtype: WeaponSubtype =
-              w.subtype === 'pipe' ? 'pipe' : w.subtype === 'shotgun' ? 'shotgun' : 'pistol';
+              w.subtype === 'skalpel'
+                ? 'skalpel'
+                : w.subtype === 'pipe'
+                  ? 'pipe'
+                  : w.subtype === 'shotgun'
+                    ? 'shotgun'
+                    : 'pistol';
             return {
               id: w.id,
               x: w.x,

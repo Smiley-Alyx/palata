@@ -138,6 +138,12 @@ export function createEnemiesSystem({
     return 520;
   }
 
+  function healthMultiplierForDifficulty(difficulty: Difficulty): number {
+    if (difficulty === 'lost') return 1;
+    if (difficulty === 'trapped') return 1.5;
+    return 2;
+  }
+
   function rollEnemyKind(): EnemyKind {
     return rollEnemyKindFromDifficulty(getDifficulty());
   }
@@ -153,7 +159,7 @@ export function createEnemiesSystem({
     const cy = tileY + 0.5;
     const alerted = opts?.alerted ?? false;
     const kind = opts?.kind ?? 'medical_orderly';
-    const hp = getEnemyProfile(kind).hp;
+    const hp = getEnemyProfile(kind).hp * healthMultiplierForDifficulty(getDifficulty());
     return {
       id: opts?.id,
       x: cx,

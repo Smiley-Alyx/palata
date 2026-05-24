@@ -1,9 +1,9 @@
 import type { Inventory, InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 
-export type WeaponId = 'pipe' | 'pistol' | 'shotgun';
+export type WeaponId = 'skalpel' | 'pipe' | 'pistol' | 'shotgun';
 
-export const WEAPON_IDS: readonly WeaponId[] = ['pipe', 'pistol', 'shotgun'];
+export const WEAPON_IDS: readonly WeaponId[] = ['skalpel', 'pipe', 'pistol', 'shotgun'];
 
 export type WeaponShotKind = 'melee' | 'ranged';
 
@@ -28,6 +28,23 @@ export type WeaponDef = {
 const degToRad = (deg: number) => (deg * Math.PI) / 180;
 
 const DEFS: Record<WeaponId, WeaponDef> = {
+  skalpel: {
+    id: 'skalpel',
+    label: 'SCALPEL',
+    kind: 'melee',
+    ammoId: null,
+    range: 1.25,
+    fireSfx: SFX.weapons.pipe.swing,
+    emptySfx: null,
+    hitFleshSfx: SFX.weapons.pipe.hitFlesh,
+    hitWallSfx: SFX.weapons.pipe.hitWall,
+    cooldownMs: 300,
+    damage: 0.5,
+    flash: false,
+    noiseRadius: 2.5,
+    spreadRad: degToRad(10),
+    hitHalfAngleRad: degToRad(32),
+  },
   pipe: {
     id: 'pipe',
     label: 'PIPE',
