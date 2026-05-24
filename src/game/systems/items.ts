@@ -94,7 +94,7 @@ const AMMO_PICKUP_AMOUNT: Record<AmmoSubtype, number> = {
   shotgun: 4,
 };
 
-export type WeaponSubtype = 'skalpel' | 'pipe' | 'pistol' | 'shotgun';
+export type WeaponSubtype = 'skalpel' | 'pipe' | 'pistol' | 'revolver' | 'shotgun';
 
 export type WeaponSpec = {
   id?: string;
@@ -115,12 +115,14 @@ const WEAPON_SPRITE: Record<WeaponSubtype, string> = {
   skalpel: 'weapon_pickup_skalpel',
   pipe: 'weapon_pickup_pipe',
   pistol: 'weapon_pickup_pistol',
+  revolver: 'weapon_pickup_revolver',
   shotgun: 'weapon_pickup_shotgun',
 };
 
 const WEAPON_PICKUP_AMMO: Partial<Record<WeaponSubtype, { id: InventoryItemId; amount: number }>> =
   {
     pistol: { id: 'pistol_ammo', amount: 10 },
+    revolver: { id: 'pistol_ammo', amount: 6 },
     shotgun: { id: 'shotgun_ammo', amount: 4 },
   };
 
@@ -238,9 +240,11 @@ export function createItemsSystem({
                 ? 'skalpel'
                 : w.subtype === 'pipe'
                   ? 'pipe'
-                  : w.subtype === 'shotgun'
-                    ? 'shotgun'
-                    : 'pistol';
+                  : w.subtype === 'revolver'
+                    ? 'revolver'
+                    : w.subtype === 'shotgun'
+                      ? 'shotgun'
+                      : 'pistol';
             return {
               id: w.id,
               x: w.x,

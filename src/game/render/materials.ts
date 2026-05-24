@@ -76,6 +76,7 @@ const materialToDomId = new Map<string, string>([
   ['weapon_pickup_skalpel', 'weapon_pickup_skalpel'],
   ['weapon_pickup_pipe', 'weapon_pickup_pipe'],
   ['weapon_pickup_pistol', 'weapon_pickup_pistol'],
+  ['weapon_pickup_revolver', 'weapon_pickup_revolver'],
   ['weapon_pickup_shotgun', 'weapon_pickup_shotgun'],
   ['documents', 'documents'],
   ['document_medical_card', 'document_medical_card'],

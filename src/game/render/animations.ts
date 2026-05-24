@@ -167,12 +167,14 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   weapon_pickup_skalpel: 'animations/pickups/weapon_skalpel.json',
   weapon_pickup_pipe: 'animations/pickups/weapon_pipe.json',
   weapon_pickup_pistol: 'animations/pickups/weapon_pistol.json',
+  weapon_pickup_revolver: 'animations/pickups/weapon_pistol.json',
   weapon_pickup_shotgun: 'animations/pickups/weapon_shotgun.json',
 
   // First-person weapons.
   skalpel: 'animations/weapons/skalpel.json',
   pipe: 'animations/weapons/pipe.json',
   pistol: 'animations/weapons/pistol.json',
+  revolver: 'animations/weapons/revolver.json',
   shotgun: 'animations/weapons/shotgun.json',
 });
 

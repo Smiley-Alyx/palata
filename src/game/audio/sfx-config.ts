@@ -40,6 +40,11 @@ export const SFX = {
       empty: 'weapon.pistol.empty',
       reload: 'weapon.pistol.reload',
     },
+    revolver: {
+      fire: 'weapon.revolver.fire',
+      reload: 'weapon.revolver.reload',
+      cylinderSpin: 'weapon.revolver.cylinder_spin',
+    },
     shotgun: {
       fire: 'weapon.shotgun.fire',
       reload: 'weapon.shotgun.reload',
@@ -176,6 +181,11 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   [SFX.weapons.pistol.fire]: url('/assets/sounds/weapons/pistol/pistol_fire.wav'),
   [SFX.weapons.pistol.empty]: url('/assets/sounds/weapons/pistol/pistol_empty.wav'),
   [SFX.weapons.pistol.reload]: url('/assets/sounds/weapons/pistol/pistol_reload.wav'),
+  [SFX.weapons.revolver.fire]: url('/assets/sounds/weapons/revolver/revolver_fire.wav'),
+  [SFX.weapons.revolver.reload]: url('/assets/sounds/weapons/revolver/revolver_reload.wav'),
+  [SFX.weapons.revolver.cylinderSpin]: url(
+    '/assets/sounds/weapons/revolver/revolver_cylinder_spin.wav',
+  ),
   [SFX.weapons.shotgun.fire]: url('/assets/sounds/weapons/shotgun/shotgun_fire.wav'),
   [SFX.weapons.shotgun.reload]: url('/assets/sounds/weapons/shotgun/shotgun_reload.wav'),
   [SFX.weapons.boneBlade.swing]: url('/assets/sounds/weapons/bone_blade/living_blade_swing.wav'),
