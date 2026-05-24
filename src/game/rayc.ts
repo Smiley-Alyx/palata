@@ -387,6 +387,18 @@ function despawnEntityRuntime(id: string) {
   if (rawEntities.length !== before) reapplyEntities();
 }
 
+function getNoteSprites() {
+  return activeInteractables
+    .filter((e) => e.type === 'note')
+    .map((e) => ({
+      x: e.x,
+      y: e.y,
+      material: 'documents',
+      alive: true,
+      scale: 0.16,
+    }));
+}
+
 export function setEntities(next: LevelEntityJson[]) {
   ensureEngine();
   rawEntities = Array.isArray(next) ? next : [];
@@ -764,6 +776,7 @@ function ensureEngine() {
       ...(pickupsSystem?.getSprites() ?? []),
       ...(itemsSystem?.getSprites() ?? []),
       ...(hallucinationsSystem?.getSprites() ?? []),
+      ...getNoteSprites(),
     ],
     getWeapon: () => weaponsSystem.getCurrent(),
     getWeaponDef: () => weaponsSystem.getCurrentDef(),

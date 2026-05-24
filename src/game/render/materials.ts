@@ -70,6 +70,7 @@ const materialToDomId = new Map<string, string>([
   ['injector', 'injector'],
   ['ammo_pistol', 'ammo_pistol'],
   ['ammo_shotgun', 'ammo_shotgun'],
+  ['documents', 'documents'],
 
   // --- Artifact pickups ---
   ['artifact_hallucination', 'artifact_hallucination'],
