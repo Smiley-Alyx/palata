@@ -1,0 +1,10 @@
+{
+  "fps": 1,
+  "loop": false,
+  "_comment": "1536x1024 sheet, 3 horizontal armor variants. Green armor only.",
+  "sheet": {
+    "src": "sprites/pickups/armor/armor_sheet.png",
+    "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
+    "frames": [{ "x": 552, "y": 277, "w": 428, "h": 427 }]
+  }
+}

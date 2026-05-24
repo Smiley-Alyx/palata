@@ -3,6 +3,7 @@ import type { Difficulty, EnemyKind } from '../game-types';
 import { getMap, hitWall, isDoorCell } from '../../state/map-state';
 import { SFX } from '../audio/sfx-config';
 import { getEnemyProfile, rollEnemyDamage } from './enemy-profiles';
+import { applyPlayerDamage } from './player-stats';
 
 export type Enemy = {
   x: number;
@@ -624,7 +625,7 @@ export function createEnemiesSystem({
           hasLineOfSight(e.x, e.y, player.x, player.y)
         ) {
           const dmg = rollEnemyDamage(e.kind, getDifficulty());
-          player.hp = Math.max(0, player.hp - dmg);
+          applyPlayerDamage(player, dmg);
           playSfx(getEnemyProfile(e.kind).attack);
           playSfx(SFX.player.hurtMedium);
           e.attackFlashMs = 220;

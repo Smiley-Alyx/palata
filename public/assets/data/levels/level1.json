@@ -577,6 +577,27 @@
       "type": "health_pickup",
       "x": 31.5,
       "y": 49.5
+    },
+    {
+      "id": "armor_blue_ward",
+      "type": "armor",
+      "subtype": "blue",
+      "x": 7.5,
+      "y": 13.5
+    },
+    {
+      "id": "armor_green_storage",
+      "type": "armor",
+      "subtype": "green",
+      "x": 55.5,
+      "y": 31.5
+    },
+    {
+      "id": "armor_red_lower",
+      "type": "armor",
+      "subtype": "red",
+      "x": 38.5,
+      "y": 50.5
     }
   ],
   "lights": [

@@ -55,6 +55,9 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   silverKey: 'assets/sprites/pickups/keys/silver_key_hd.png',
   bloodKey: 'assets/sprites/pickups/keys/blood_key.png',
   health: 'assets/sprites/pickups/health/aid_kit.png',
+  armor_blue: 'assets/sprites/pickups/armor/armor_sheet.png',
+  armor_green: 'assets/sprites/pickups/armor/armor_sheet.png',
+  armor_red: 'assets/sprites/pickups/armor/armor_sheet.png',
 
   // Items / medication
   haloperidol: 'assets/sprites/pickups/medication/haloperidol.png',

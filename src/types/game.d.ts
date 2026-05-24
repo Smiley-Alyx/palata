@@ -16,6 +16,8 @@ export interface Player {
   rot: number;
   hp: number;
   maxHp: number;
+  armor: number;
+  maxArmor: number;
   speed: number;
   sprint: number;
   sprintFactor: number;

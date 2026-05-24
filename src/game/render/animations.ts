@@ -151,6 +151,9 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   // Pickup sprites — 1536x1024 horizontal triptychs (idle / damaged / glitched).
   // Slice the idle frame, cropping the label band at the bottom of each cell.
   health: 'animations/pickups/aid_kit.json',
+  armor_blue: 'animations/pickups/armor_blue.json',
+  armor_green: 'animations/pickups/armor_green.json',
+  armor_red: 'animations/pickups/armor_red.json',
   haloperidol: 'animations/pickups/haloperidol.json',
   injector: 'animations/pickups/injector.json',
   goldKey: 'animations/pickups/gold_key.json',

@@ -26,6 +26,7 @@ import {
   type MedicationSpec,
   type ArtifactSpec,
   type AmmoSpec,
+  type ArmorSpec,
 } from './systems/items';
 import { createWeaponsSystem, WEAPON_IDS, type WeaponId } from './systems/weapons';
 import { createAmbienceSystem, type AmbientEmitterSpec } from './systems/ambience';
@@ -204,6 +205,7 @@ function reapplyEntities() {
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
   const ammoFromEntities: AmmoSpec[] = [];
+  const armorFromEntities: ArmorSpec[] = [];
   const portalsFromEntities: PortalSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
 
@@ -286,6 +288,16 @@ function reapplyEntities() {
       });
     }
 
+    if (e.type === 'armor') {
+      const raw = e as unknown as { id?: string; x: number; y: number; subtype?: string };
+      armorFromEntities.push({
+        id: raw.id,
+        x: raw.x,
+        y: raw.y,
+        subtype: raw.subtype,
+      });
+    }
+
     if (e.type === 'ambient_loop') {
       const raw = e as unknown as {
         id?: string;
@@ -361,6 +373,7 @@ function reapplyEntities() {
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
   itemsSystem?.setAmmoPickups(ammoFromEntities);
+  itemsSystem?.setArmorPickups(armorFromEntities);
   portalsSystem?.setPortals(portalsFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
@@ -604,6 +617,8 @@ const player: PlayerInstance = {
   rot: -1.5,
   hp: 100,
   maxHp: 100,
+  armor: 0,
+  maxArmor: 100,
   speed: 0.05,
   sprint: 0,
   sprintFactor: 2,
@@ -1035,6 +1050,7 @@ export function resetPlayerState() {
   player.sprint = 0;
   player.flatmap = 0;
   player.hp = player.maxHp;
+  player.armor = 0;
 }
 
 export function disposeRayc() {

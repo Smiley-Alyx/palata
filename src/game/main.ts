@@ -47,6 +47,7 @@ import {
 import { bindNoteOverlayControls, isNoteOverlayVisible } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
+import { applyPlayerDamage } from './systems/player-stats';
 import {
   CONTROL_ACTIONS,
   CREDITS,
@@ -522,6 +523,9 @@ function initHpUi() {
     const hp = Math.max(0, Math.floor(p.hp));
     const maxHp = Math.max(1, Math.floor(p.maxHp));
     const pct = Math.max(0, Math.min(999, Math.round((hp / maxHp) * 100)));
+    const armor = Math.max(0, Math.floor(p.armor));
+    const maxArmor = Math.max(1, Math.floor(p.maxArmor));
+    const armorPct = Math.max(0, Math.min(999, Math.round((armor / maxArmor) * 100)));
 
     fpsFrames += 1;
     const fpsElapsed = now - fpsLastAt;
@@ -539,7 +543,7 @@ function initHpUi() {
       const ammo = getCurrentWeaponAmmo();
       ammoEl.textContent = ammo === null ? '--' : String(ammo);
     }
-    if (armorEl) armorEl.textContent = '0%';
+    if (armorEl) armorEl.textContent = `${armorPct}%`;
     const inv = getInventorySnapshot();
     if (medsEl) {
       medsEl.textContent = String(inv.haloperidol + inv.injector);
@@ -1262,7 +1266,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.code !== 'KeyH' || e.repeat) return;
   if (!running) return;
   const p = getPlayer();
-  p.hp = Math.max(0, p.hp - 10);
+  applyPlayerDamage(p, 10);
 });
 function bootstrap() {
   const appRoot = document.getElementById('app');
