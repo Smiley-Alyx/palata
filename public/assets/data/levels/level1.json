@@ -481,8 +481,8 @@
     {
       "id": "patrol_husk_lower_2",
       "type": "enemy_spawn",
-      "x": 44.5,
-      "y": 52.5,
+      "x": 38.5,
+      "y": 53.5,
       "kind": "skeleton_husk"
     },
     {
@@ -540,11 +540,18 @@
       }
     },
     {
-      "id": "pistol_ward",
+      "id": "skalpel_escape",
+      "type": "weapon",
+      "subtype": "skalpel",
+      "x": 31.5,
+      "y": 60.5
+    },
+    {
+      "id": "pistol_treatment_search",
       "type": "weapon",
       "subtype": "pistol",
-      "x": 31.5,
-      "y": 57.5
+      "x": 57.5,
+      "y": 31.5
     },
     {
       "id": "ammo_post",
