@@ -46,6 +46,7 @@ export function createPickupsSystem({
   isBlocked,
   getDifficulty,
   onKeyPickup,
+  onEntityPickup,
 }: {
   player: Player;
   playHealthSfx: () => void;
@@ -53,8 +54,10 @@ export function createPickupsSystem({
   isBlocked: (x: number, y: number, r: number) => boolean;
   getDifficulty: () => Difficulty;
   onKeyPickup?: (id: KeyId) => void;
+  onEntityPickup?: (entityId: string) => void;
 }) {
   type HealthPickup = {
+    id?: string;
     x: number;
     y: number;
     alive: boolean;
@@ -63,6 +66,7 @@ export function createPickupsSystem({
   let healthPickups: HealthPickup[] = [];
 
   type KeyPickup = {
+    entityId?: string;
     x: number;
     y: number;
     id: KeyId;
@@ -73,13 +77,19 @@ export function createPickupsSystem({
   let healthFloorCandidates: Array<{ x: number; y: number }> = [];
   let healthSpawnCooldownMs = 0;
 
-  function setHealthPickups(next: Array<{ x: number; y: number }>) {
-    healthPickups = next.map((p) => ({ x: p.x, y: p.y, alive: true }));
+  function setHealthPickups(next: Array<{ id?: string; x: number; y: number }>) {
+    healthPickups = next.map((p) => ({ id: p.id, x: p.x, y: p.y, alive: true }));
     healthSpawnCooldownMs = 0;
   }
 
-  function setKeyPickups(next: Array<{ x: number; y: number; id: KeyId }>) {
-    keyPickups = next.map((p) => ({ x: p.x, y: p.y, id: p.id, alive: true }));
+  function setKeyPickups(next: Array<{ entityId?: string; x: number; y: number; id: KeyId }>) {
+    keyPickups = next.map((p) => ({
+      entityId: p.entityId,
+      x: p.x,
+      y: p.y,
+      id: p.id,
+      alive: true,
+    }));
   }
 
   function getSprites() {
@@ -107,7 +117,6 @@ export function createPickupsSystem({
   }
 
   function updatePickups() {
-    if (!healthPickups.length) return;
     const pickupR = 0.42;
     for (const p of healthPickups) {
       if (!p.alive) continue;
@@ -115,6 +124,7 @@ export function createPickupsSystem({
       const tuning = HEALTH_PICKUP_TUNING[getDifficulty()];
       player.hp = Math.min(player.maxHp, player.hp + tuning.healAmount);
       p.alive = false;
+      if (p.id) onEntityPickup?.(p.id);
       playHealthSfx();
     }
 
@@ -122,6 +132,7 @@ export function createPickupsSystem({
       if (!k.alive) continue;
       if (Math.hypot(player.x - k.x, player.y - k.y) > pickupR) continue;
       k.alive = false;
+      if (k.entityId) onEntityPickup?.(k.entityId);
       onKeyPickup?.(k.id);
       playKeySfx?.();
     }

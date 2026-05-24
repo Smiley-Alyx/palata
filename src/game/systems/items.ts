@@ -122,6 +122,7 @@ export function createItemsSystem({
   player,
   inventory,
   playSfx,
+  onPickup,
   setMedication,
   getPerceptionStages,
   setWorldState,
@@ -129,6 +130,7 @@ export function createItemsSystem({
   player: Player;
   inventory: Inventory;
   playSfx: (key: string) => void;
+  onPickup?: (id: string) => void;
   setMedication: (on: boolean) => void;
   getPerceptionStages: () => ReadonlyArray<string>;
   setWorldState: (state: string, value: boolean) => void;
@@ -218,6 +220,7 @@ export function createItemsSystem({
       if (Math.hypot(player.x - m.x, player.y - m.y) > pickupR) continue;
 
       m.alive = false;
+      if (m.id) onPickup?.(m.id);
       inventory.add(MEDICATION_INVENTORY_ID[m.subtype], 1);
 
       if (m.subtype === 'haloperidol') {
@@ -246,6 +249,7 @@ export function createItemsSystem({
       if (!a.alive) continue;
       if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
       a.alive = false;
+      if (a.id) onPickup?.(a.id);
       inventory.add('artifact', 1);
       playSfx(SFX.ui.secretFound);
     }
@@ -254,6 +258,7 @@ export function createItemsSystem({
       if (!a.alive) continue;
       if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
       a.alive = false;
+      if (a.id) onPickup?.(a.id);
       inventory.add(AMMO_INVENTORY_ID[a.subtype], a.amount);
       playSfx(SFX.ui.pickupMedkit);
     }
@@ -262,6 +267,7 @@ export function createItemsSystem({
       if (!a.alive) continue;
       if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
       a.alive = false;
+      if (a.id) onPickup?.(a.id);
       addPlayerArmor(player, ARMOR_VALUE[a.subtype]);
       playSfx(SFX.ui.pickupAmmo);
     }

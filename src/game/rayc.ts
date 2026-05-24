@@ -78,6 +78,7 @@ let baseGrid: number[][] | null = null;
 let rawGeometryOverrides: LevelGeometryOverrideJson[] = [];
 let entityIdSeq = 1;
 let entityDrivenEnemies = false;
+const consumedEntityIds = new Set<string>();
 
 let activeInteractables: Array<{
   id?: string;
@@ -158,11 +159,9 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
       const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
       const isDocument = !!(e as any).isDocument;
       showNoteOverlay(title, text, { document: isDocument });
-      if (isDocument) {
-        inventory.add('document', 1);
-        if (typeof e.id === 'string' && e.id) {
-          despawnEntityRuntime(e.id);
-        }
+      if (isDocument) inventory.add('document', 1);
+      if (typeof e.id === 'string' && e.id) {
+        consumeEntity(e.id);
       }
       return true;
     }
@@ -191,16 +190,23 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
 function reapplyEntities() {
   const ws = worldStateSystem;
   if (!ws) return;
-  const enabled = rawEntities.filter((e) => ws.isEnabled(e));
+  const enabled = rawEntities.filter(
+    (e) => (!e.id || !consumedEntityIds.has(e.id)) && ws.isEnabled(e),
+  );
 
   activeInteractables = enabled.filter(
     (e) => e.type === 'note' || e.type === 'button' || e.type === 'switch' || e.type === 'door',
   );
 
-  const keyPickupsFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
+  const keyPickupsFromEntities: Array<{
+    entityId?: string;
+    x: number;
+    y: number;
+    id: KeyId;
+  }> = [];
   const doorLocksFromEntities: Array<{ x: number; y: number; id: KeyId }> = [];
-  const healthPickupsFromEntities: Array<{ x: number; y: number }> = [];
-  const enemiesFromEntities: Array<{ x: number; y: number; kind?: EnemyKind }> = [];
+  const healthPickupsFromEntities: Array<{ id?: string; x: number; y: number }> = [];
+  const enemiesFromEntities: Array<{ id?: string; x: number; y: number; kind?: EnemyKind }> = [];
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
@@ -214,7 +220,7 @@ function reapplyEntities() {
     if (e.type === 'key') {
       const keyId = (e.subtype ?? '') as string;
       if (keyId === 'gold' || keyId === 'silver' || keyId === 'blood') {
-        keyPickupsFromEntities.push({ x: e.x, y: e.y, id: keyId });
+        keyPickupsFromEntities.push({ entityId: e.id, x: e.x, y: e.y, id: keyId });
       }
     }
     if (e.type === 'door_lock') {
@@ -225,7 +231,7 @@ function reapplyEntities() {
     }
 
     if (e.type === 'health_pickup' || e.type === 'health') {
-      healthPickupsFromEntities.push({ x: e.x, y: e.y });
+      healthPickupsFromEntities.push({ id: e.id, x: e.x, y: e.y });
     }
 
     if (e.type === 'enemy_spawn') {
@@ -248,7 +254,7 @@ function reapplyEntities() {
         typeof kindRaw === 'string' && (allowed as readonly string[]).includes(kindRaw)
           ? (kindRaw as EnemyKind)
           : undefined;
-      enemiesFromEntities.push({ x: e.x, y: e.y, kind });
+      enemiesFromEntities.push({ id: e.id, x: e.x, y: e.y, kind });
     }
 
     if (e.type === 'medication') {
@@ -400,6 +406,12 @@ function despawnEntityRuntime(id: string) {
   const before = rawEntities.length;
   rawEntities = rawEntities.filter((e) => e.id !== id);
   if (rawEntities.length !== before) reapplyEntities();
+}
+
+function consumeEntity(id: string) {
+  if (!id) return;
+  consumedEntityIds.add(id);
+  activeInteractables = activeInteractables.filter((e) => e.id !== id);
 }
 
 function getNoteSprites() {
@@ -708,6 +720,9 @@ function ensureEngine() {
     },
     onDamagePulse: () => renderer?.triggerDamagePulse(),
     onKillFill: () => renderer?.triggerKillFill(),
+    onEnemyKilled: (id) => {
+      if (id) consumeEntity(id);
+    },
   });
 
   pickupsSystem = createPickupsSystem({
@@ -721,6 +736,7 @@ function ensureEngine() {
       );
     },
     getDifficulty: () => currentDifficulty,
+    onEntityPickup: (id) => consumeEntity(id),
     onKeyPickup: (id) => {
       ownedKeys[id] = true;
     },
@@ -816,6 +832,7 @@ function ensureEngine() {
     player,
     inventory,
     playSfx: (key) => audio.playSfx(key),
+    onPickup: (id) => consumeEntity(id),
     setMedication: (on) => worldStateSystem?.setMedication(on),
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
     setWorldState: (state, value) => worldStateSystem?.setState(state, value),
@@ -974,6 +991,7 @@ export function setMap(grid: number[][]) {
   rawGeometryOverrides = [];
   entityIdSeq = 1;
   entityDrivenEnemies = false;
+  consumedEntityIds.clear();
   activeInteractables = [];
 }
 

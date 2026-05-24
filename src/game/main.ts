@@ -636,7 +636,7 @@ let dead = false;
 let deathTimer: number | null = null;
 let transitioningLevel = false;
 let currentLevelId: string | null = null;
-let gameConfig: GameConfig = loadGameConfig();
+const gameConfig: GameConfig = loadGameConfig();
 let currentDifficulty: Difficulty = gameConfig.difficulty;
 let menuMode: 'main' | 'pause' = 'main';
 
@@ -1008,7 +1008,6 @@ async function startLevelById(
 function pauseGame() {
   if (!running || dead || transitioningLevel) return;
   stopRayc();
-  resetKeys();
   running = false;
   paused = true;
   showPauseMenu();
@@ -1017,7 +1016,6 @@ function pauseGame() {
 function resumeGame() {
   if (!paused || dead || transitioningLevel || !currentLevelId) return;
   hideMenu();
-  resetKeys();
   playMusic();
   startRayc();
   running = true;

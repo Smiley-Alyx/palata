@@ -6,6 +6,7 @@ import { getEnemyProfile, rollEnemyDamage } from './enemy-profiles';
 import { applyPlayerDamage } from './player-stats';
 
 export type Enemy = {
+  id?: string;
   x: number;
   y: number;
   kind: EnemyKind;
@@ -49,7 +50,7 @@ export function createEnemiesSystem({
   stopLoopingSfx: (key: string) => void;
   onRequestOpenDoor: (xMap: number, yMap: number) => void;
   isDoorBlocking?: (xMap: number, yMap: number) => boolean;
-  onEnemyKilled?: () => void;
+  onEnemyKilled?: (id?: string) => void;
   onDamagePulse?: () => void;
   onKillFill?: () => void;
 }) {
@@ -144,7 +145,7 @@ export function createEnemiesSystem({
   function createEnemyAtWorld(
     x: number,
     y: number,
-    opts?: { kind?: EnemyKind; alerted?: boolean; attackFlashMs?: number },
+    opts?: { id?: string; kind?: EnemyKind; alerted?: boolean; attackFlashMs?: number },
   ): Enemy {
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
@@ -154,6 +155,7 @@ export function createEnemiesSystem({
     const kind = opts?.kind ?? 'medical_orderly';
     const hp = getEnemyProfile(kind).hp;
     return {
+      id: opts?.id,
       x: cx,
       y: cy,
       kind,
@@ -182,7 +184,7 @@ export function createEnemiesSystem({
   function spawnEnemyAtWorld(
     x: number,
     y: number,
-    opts?: { kind?: EnemyKind; alerted?: boolean; attackFlashMs?: number },
+    opts?: { id?: string; kind?: EnemyKind; alerted?: boolean; attackFlashMs?: number },
   ) {
     const enemy = createEnemyAtWorld(x, y, opts);
     enemies.push(enemy);
@@ -647,9 +649,10 @@ export function createEnemiesSystem({
     updateEnemySightLoop(nearestVisible ? getEnemyProfile(nearestVisible.kind).sightLoop : null);
   }
 
-  function setEnemies(next: Array<{ x: number; y: number; kind?: EnemyKind }>) {
+  function setEnemies(next: Array<{ id?: string; x: number; y: number; kind?: EnemyKind }>) {
     enemies = next.map((e) =>
       createEnemyAtWorld(e.x, e.y, {
+        id: e.id,
         kind: e.kind ?? rollEnemyKindFromDifficulty(getDifficulty()),
       }),
     );
@@ -678,7 +681,7 @@ export function createEnemiesSystem({
         if (enemyAt) clearEnemyFromGrid(i, e.tileX, e.tileY);
       }
       onKillFill?.();
-      onEnemyKilled?.();
+      onEnemyKilled?.(e.id);
       return true;
     }
     const hurtSfx = getEnemyProfile(e.kind).hurt;
