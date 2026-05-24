@@ -47,7 +47,7 @@ export const CONTROL_HINTS: ControlHint[] = [
 ];
 
 export const CREDITS = [
-  'Game design, code, levels: Alexandra Shornikova',
+  'Game design, code, levels: Alya Zanoza',
   'Engine: custom TypeScript raycasting renderer',
   'Inspired by Wolfenstein 3D, DOOM, Blood',
 ];
