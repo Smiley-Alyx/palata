@@ -902,6 +902,11 @@ export function setBackgroundMaterials(materials: {
   renderer?.setBackgroundMaterials(materials);
 }
 
+export function setLightingMultiplier(multiplier: number) {
+  ensureEngine();
+  renderer?.setLightingMultiplier(multiplier);
+}
+
 export function triggerDeathOverlay() {
   ensureEngine();
   renderer?.triggerKillFill();

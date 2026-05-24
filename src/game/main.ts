@@ -26,6 +26,7 @@ import {
   setHealthPickups,
   setKeyPickups,
   setLegend,
+  setLightingMultiplier,
   setMap,
   setMaterialsWall,
   setLights,
@@ -350,12 +351,14 @@ function initAudioUi() {
   const sfxToggleBtn = document.getElementById('sfxToggleBtn');
   const musicVolumeEl = document.getElementById('musicVolume');
   const sfxVolumeEl = document.getElementById('sfxVolume');
+  const lightingEl = document.getElementById('lightingLevel');
   const fpsToggleBtn = document.getElementById('fpsToggleBtn');
 
   if (!(musicToggleBtn instanceof HTMLButtonElement)) return;
   if (!(sfxToggleBtn instanceof HTMLButtonElement)) return;
   if (!(musicVolumeEl instanceof HTMLInputElement)) return;
   if (!(sfxVolumeEl instanceof HTMLInputElement)) return;
+  if (!(lightingEl instanceof HTMLInputElement)) return;
   if (!(fpsToggleBtn instanceof HTMLButtonElement)) return;
 
   const syncUi = () => {
@@ -364,6 +367,7 @@ function initAudioUi() {
     sfxToggleBtn.textContent = state.sfxEnabled ? 'SFX: on' : 'SFX: off';
     musicVolumeEl.value = String(state.musicVolume);
     sfxVolumeEl.value = String(state.sfxVolume);
+    lightingEl.value = String(gameConfig.video.lighting);
     fpsToggleBtn.textContent = gameConfig.ui.showFps ? 'FPS: on' : 'FPS: off';
     syncFpsVisibility();
   };
@@ -398,6 +402,15 @@ function initAudioUi() {
     if (!Number.isFinite(v)) return;
     setSfxVolume(v);
     gameConfig.audio.sfxVolume = Math.max(0, Math.min(1, v));
+    persistGameConfig();
+    syncUi();
+  });
+
+  lightingEl.addEventListener('input', () => {
+    const v = Number(lightingEl.value);
+    if (!Number.isFinite(v)) return;
+    gameConfig.video.lighting = Math.max(0.7, Math.min(1.4, v));
+    setLightingMultiplier(gameConfig.video.lighting);
     persistGameConfig();
     syncUi();
   });
@@ -639,6 +652,7 @@ function applyStoredConfig() {
   setSfxEnabled(gameConfig.audio.sfxEnabled);
   setMusicVolume(gameConfig.audio.musicVolume);
   setSfxVolume(gameConfig.audio.sfxVolume);
+  setLightingMultiplier(gameConfig.video.lighting);
   setControlBindings(gameConfig.controls);
   setDifficulty(currentDifficulty);
   syncFpsVisibility();

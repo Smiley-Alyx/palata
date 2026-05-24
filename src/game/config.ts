@@ -8,6 +8,9 @@ export type GameConfig = {
     musicVolume: number;
     sfxVolume: number;
   };
+  video: {
+    lighting: number;
+  };
   ui: {
     showFps: boolean;
   };
@@ -93,6 +96,9 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     musicVolume: 0.5,
     sfxVolume: 0.7,
   },
+  video: {
+    lighting: 1.12,
+  },
   ui: {
     showFps: true,
   },
@@ -113,6 +119,12 @@ function clamp01(value: unknown, fallback: number) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, Math.min(1, n));
+}
+
+function clampRange(value: unknown, fallback: number, min: number, max: number) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
 }
 
 function isDifficulty(value: unknown): value is Difficulty {
@@ -185,6 +197,9 @@ export function loadGameConfig(): GameConfig {
             : DEFAULT_GAME_CONFIG.audio.sfxEnabled,
         musicVolume: clamp01(parsed.audio?.musicVolume, DEFAULT_GAME_CONFIG.audio.musicVolume),
         sfxVolume: clamp01(parsed.audio?.sfxVolume, DEFAULT_GAME_CONFIG.audio.sfxVolume),
+      },
+      video: {
+        lighting: clampRange(parsed.video?.lighting, DEFAULT_GAME_CONFIG.video.lighting, 0.7, 1.4),
       },
       ui: {
         showFps:

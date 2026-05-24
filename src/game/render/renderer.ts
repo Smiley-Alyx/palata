@@ -43,6 +43,7 @@ export function createRenderer({
   let floorMaterial: string | number | null = null;
 
   let ambientLight01 = 1;
+  let lightingMultiplier = 1.12;
 
   let flash = 0;
   let damagePulse = 0;
@@ -117,7 +118,11 @@ export function createRenderer({
     const start = 2.5;
     const end = 13;
     const t = Math.max(0, Math.min(1, (dist - start) / (end - start)));
-    return 1 - t * 0.74;
+    return 1 - t * 0.66;
+  }
+
+  function getDarkAlpha(alpha: number): number {
+    return Math.max(0, Math.min(0.92, alpha + (1 - lightingMultiplier) * 0.35));
   }
 
   function getTextureData(texture: CanvasImageSource): ImageData | null {
@@ -161,6 +166,11 @@ export function createRenderer({
 
   function setAmbientLight01(light01: number) {
     ambientLight01 = Math.max(0, Math.min(1, light01));
+  }
+
+  function setLightingMultiplier(multiplier: number) {
+    if (!Number.isFinite(multiplier)) return;
+    lightingMultiplier = Math.max(0.7, Math.min(1.4, multiplier));
   }
 
   function drawTexturedPlane(
@@ -283,15 +293,15 @@ export function createRenderer({
     ctx.save();
     const ceilingShade = ctx.createLinearGradient(0, 0, 0, h / 2);
     ceilingShade.addColorStop(0, 'rgba(0,0,0,0)');
-    ceilingShade.addColorStop(0.45, 'rgba(0,0,0,0.32)');
-    ceilingShade.addColorStop(1, 'rgba(0,0,0,0.72)');
+    ceilingShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.28)})`);
+    ceilingShade.addColorStop(1, `rgba(0,0,0,${getDarkAlpha(0.64)})`);
     ctx.fillStyle = ceilingShade;
     ctx.fillRect(0, 0, w, h / 2);
 
     const floorShade = ctx.createLinearGradient(0, h / 2, 0, h);
     // Near horizon = far away → dark; near bottom = close → bright.
-    floorShade.addColorStop(0, 'rgba(0,0,0,0.72)');
-    floorShade.addColorStop(0.45, 'rgba(0,0,0,0.32)');
+    floorShade.addColorStop(0, `rgba(0,0,0,${getDarkAlpha(0.64)})`);
+    floorShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.28)})`);
     floorShade.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = floorShade;
     ctx.fillRect(0, h / 2, w, h / 2);
@@ -306,13 +316,14 @@ export function createRenderer({
       Math.max(w, h) * 0.75,
     );
     vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(0.68, 'rgba(0,0,0,0.22)');
-    vignette.addColorStop(1, 'rgba(0,0,0,0.48)');
+    vignette.addColorStop(0.68, `rgba(0,0,0,${getDarkAlpha(0.18)})`);
+    vignette.addColorStop(1, `rgba(0,0,0,${getDarkAlpha(0.4)})`);
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, w, h);
 
     // Screen-space darkness driven by world lighting.
-    const darkness = 0.08 + (1 - ambientLight01) * 0.66;
+    const litAmbient = Math.max(0, Math.min(1, ambientLight01 * lightingMultiplier));
+    const darkness = 0.04 + (1 - litAmbient) * 0.58;
     if (darkness > 0.001) {
       ctx.fillStyle = `rgba(0,0,0,${Math.min(0.86, darkness)})`;
       ctx.fillRect(0, 0, w, h);
@@ -430,7 +441,7 @@ export function createRenderer({
     const y0 = viewHeight / 2 - sliceHeight / 2;
 
     // Apply lighting as a dark overlay (cheap and stable for retro look).
-    const l = Math.max(0, Math.min(1, light01 * getDistanceLight01(dist)));
+    const l = Math.max(0, Math.min(1, light01 * lightingMultiplier * getDistanceLight01(dist)));
     const shade = 1 - l;
     if (shade > 0.001) {
       const shaded = getShadedTexture(texture, shade);
@@ -666,6 +677,7 @@ export function createRenderer({
     setBackgroundColors,
     setBackgroundMaterials,
     setAmbientLight01,
+    setLightingMultiplier,
     triggerFlash,
     triggerDamagePulse,
     triggerKillFill,
