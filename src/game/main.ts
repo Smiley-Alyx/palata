@@ -45,6 +45,13 @@ import {
 import { bindNoteOverlayControls } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
+import {
+  CONTROL_HINTS,
+  CREDITS,
+  loadGameConfig,
+  saveGameConfig,
+  type GameConfig,
+} from './config';
 
 function getDefaultMusicForLevelId(levelId: string) {
   const base = new URL(import.meta.env.BASE_URL, window.location.origin);
@@ -339,11 +346,13 @@ function initAudioUi() {
   const sfxToggleBtn = document.getElementById('sfxToggleBtn');
   const musicVolumeEl = document.getElementById('musicVolume');
   const sfxVolumeEl = document.getElementById('sfxVolume');
+  const fpsToggleBtn = document.getElementById('fpsToggleBtn');
 
   if (!(musicToggleBtn instanceof HTMLButtonElement)) return;
   if (!(sfxToggleBtn instanceof HTMLButtonElement)) return;
   if (!(musicVolumeEl instanceof HTMLInputElement)) return;
   if (!(sfxVolumeEl instanceof HTMLInputElement)) return;
+  if (!(fpsToggleBtn instanceof HTMLButtonElement)) return;
 
   const syncUi = () => {
     const state = getAudioState();
@@ -351,17 +360,23 @@ function initAudioUi() {
     sfxToggleBtn.textContent = state.sfxEnabled ? 'SFX: on' : 'SFX: off';
     musicVolumeEl.value = String(state.musicVolume);
     sfxVolumeEl.value = String(state.sfxVolume);
+    fpsToggleBtn.textContent = gameConfig.ui.showFps ? 'FPS: on' : 'FPS: off';
+    syncFpsVisibility();
   };
 
   musicToggleBtn.addEventListener('click', () => {
     const state = getAudioState();
     setMusicEnabled(!state.musicEnabled);
+    gameConfig.audio.musicEnabled = !state.musicEnabled;
+    persistGameConfig();
     syncUi();
   });
 
   sfxToggleBtn.addEventListener('click', () => {
     const state = getAudioState();
     setSfxEnabled(!state.sfxEnabled);
+    gameConfig.audio.sfxEnabled = !state.sfxEnabled;
+    persistGameConfig();
     syncUi();
   });
 
@@ -369,6 +384,8 @@ function initAudioUi() {
     const v = Number(musicVolumeEl.value);
     if (!Number.isFinite(v)) return;
     setMusicVolume(v);
+    gameConfig.audio.musicVolume = Math.max(0, Math.min(1, v));
+    persistGameConfig();
     syncUi();
   });
 
@@ -376,6 +393,14 @@ function initAudioUi() {
     const v = Number(sfxVolumeEl.value);
     if (!Number.isFinite(v)) return;
     setSfxVolume(v);
+    gameConfig.audio.sfxVolume = Math.max(0, Math.min(1, v));
+    persistGameConfig();
+    syncUi();
+  });
+
+  fpsToggleBtn.addEventListener('click', () => {
+    gameConfig.ui.showFps = !gameConfig.ui.showFps;
+    persistGameConfig();
     syncUi();
   });
 
@@ -567,6 +592,7 @@ function showMenu() {
   const el = document.getElementById('menuRoot');
   if (!(el instanceof HTMLElement)) return;
   el.style.display = '';
+  showMenuPanel('menuMainPanel');
   applyMenuAudio();
 }
 
@@ -575,7 +601,28 @@ let dead = false;
 let deathTimer: number | null = null;
 let transitioningLevel = false;
 let currentLevelId: string | null = null;
-let currentDifficulty: Difficulty = 'lost';
+let gameConfig: GameConfig = loadGameConfig();
+let currentDifficulty: Difficulty = gameConfig.difficulty;
+
+function persistGameConfig() {
+  gameConfig.difficulty = currentDifficulty;
+  saveGameConfig(gameConfig);
+}
+
+function syncFpsVisibility() {
+  const fpsEl = document.getElementById('fpsText');
+  if (!(fpsEl instanceof HTMLElement)) return;
+  fpsEl.style.display = gameConfig.ui.showFps ? '' : 'none';
+}
+
+function applyStoredConfig() {
+  setMusicEnabled(gameConfig.audio.musicEnabled);
+  setSfxEnabled(gameConfig.audio.sfxEnabled);
+  setMusicVolume(gameConfig.audio.musicVolume);
+  setSfxVolume(gameConfig.audio.sfxVolume);
+  setDifficulty(currentDifficulty);
+  syncFpsVisibility();
+}
 
 function showBloodOverlay() {
   const el = document.getElementById('bloodOverlay');
@@ -726,6 +773,13 @@ function hideEndingScreen() {
   const el = document.getElementById('endingRoot');
   if (!(el instanceof HTMLElement)) return;
   el.style.display = 'none';
+}
+
+function showMenuPanel(panelId: string) {
+  const panels = document.querySelectorAll<HTMLElement>('#menuRoot .menu-panel');
+  for (const panel of Array.from(panels)) {
+    panel.style.display = panel.id === panelId ? '' : 'none';
+  }
 }
 
 function showLevelTransitionMessage(message?: string) {
@@ -915,8 +969,14 @@ function initMenu() {
   hideDeathScreen();
   hideEndingScreen();
 
-  const levelsRoot = document.getElementById('menuLevels');
+  const newGameBtn = document.getElementById('menuNewGameBtn');
+  const savesBtn = document.getElementById('menuSavesBtn');
+  const settingsBtn = document.getElementById('menuSettingsBtn');
+  const creditsBtn = document.getElementById('menuCreditsBtn');
+  const startBtn = document.getElementById('menuStartBtn');
   const difficultyRoot = document.getElementById('menuDifficulty');
+  const controlsRoot = document.getElementById('menuControls');
+  const creditsRoot = document.getElementById('menuCredits');
 
   if (difficultyRoot instanceof HTMLElement) {
     const opts: Array<{ id: Difficulty; label: string }> = [
@@ -933,6 +993,7 @@ function initMenu() {
       btn.textContent = o.label;
       btn.addEventListener('click', () => {
         currentDifficulty = o.id;
+        persistGameConfig();
         const all = difficultyRoot.querySelectorAll('button');
         for (const b of Array.from(all)) b.classList.remove('is-selected');
         btn.classList.add('is-selected');
@@ -941,41 +1002,62 @@ function initMenu() {
     }
   }
 
-  if (levelsRoot instanceof HTMLElement) {
-    void (async () => {
-      try {
-        const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
-        levelsRoot.innerHTML = '';
-
-        const visibleLevels = levelsIndex.levels.filter((l) => !l.hidden);
-        for (const level of visibleLevels) {
-          const btn = document.createElement('button');
-          btn.className = 'btn';
-          btn.type = 'button';
-          btn.textContent = level.name ?? level.id;
-          btn.addEventListener('click', () => {
-            setDifficulty(currentDifficulty);
-            void startLevelById(level.id, currentDifficulty);
-          });
-          levelsRoot.appendChild(btn);
-        }
-      } catch (err) {
-        console.error('Failed to load levels index', err);
-        levelsRoot.innerHTML = '';
-
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.type = 'button';
-        btn.textContent = 'Start';
-        btn.addEventListener('click', () => {
-          setDifficulty(currentDifficulty);
-          void startLevelById('level1', currentDifficulty);
-        });
-        levelsRoot.appendChild(btn);
-      }
-    })();
+  if (controlsRoot instanceof HTMLElement) {
+    controlsRoot.innerHTML = '';
+    for (const hint of CONTROL_HINTS) {
+      const item = document.createElement('li');
+      const key = document.createElement('span');
+      key.className = 'key';
+      key.textContent = hint.key;
+      item.appendChild(key);
+      item.append(' — ' + hint.action);
+      controlsRoot.appendChild(item);
+    }
   }
 
+  if (creditsRoot instanceof HTMLElement) {
+    creditsRoot.innerHTML = '';
+    for (const line of CREDITS) {
+      const item = document.createElement('li');
+      item.textContent = line;
+      creditsRoot.appendChild(item);
+    }
+  }
+
+  if (newGameBtn instanceof HTMLButtonElement) {
+    newGameBtn.addEventListener('click', () => showMenuPanel('menuNewGamePanel'));
+  }
+  if (savesBtn instanceof HTMLButtonElement) {
+    savesBtn.addEventListener('click', () => showMenuPanel('menuSavesPanel'));
+  }
+  if (settingsBtn instanceof HTMLButtonElement) {
+    settingsBtn.addEventListener('click', () => showMenuPanel('menuSettingsPanel'));
+  }
+  if (creditsBtn instanceof HTMLButtonElement) {
+    creditsBtn.addEventListener('click', () => showMenuPanel('menuCreditsPanel'));
+  }
+
+  for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('.menu-back'))) {
+    btn.addEventListener('click', () => {
+      showMenuPanel(btn.dataset.menuTarget || 'menuMainPanel');
+    });
+  }
+
+  if (startBtn instanceof HTMLButtonElement) {
+    startBtn.addEventListener('click', () => {
+      void (async () => {
+        try {
+          const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
+          setDifficulty(currentDifficulty);
+          await startLevelById(levelsIndex.default, currentDifficulty);
+        } catch (err) {
+          console.error('Failed to start default level', err);
+          setDifficulty(currentDifficulty);
+          await startLevelById('level1', currentDifficulty);
+        }
+      })();
+    });
+  }
 }
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -1004,6 +1086,7 @@ function bootstrap() {
   // Missing descriptors fail soft and the static material fallback keeps the
   // game playable.
   void loadAnimationRegistry();
+  applyStoredConfig();
   initCanvas();
 
   initAudioUi();

@@ -10,19 +10,22 @@
   z-index 10
 
 .menu-box
-  width min(420px, 90%)
+  width min(460px, 90%)
+  max-height 92%
+  overflow auto
   border 4px solid $wood
   box-shadow 0 0 0 4px $wood-dark, 0 16px 48px rgba(0, 0, 0, 0.6)
-  background linear-gradient(180deg, #24160f 0%, #140f0d 100%)
+  background linear-gradient(180deg, #2a2117 0%, #120d0b 100%)
   padding 18px
   text-align center
 
 .menu-title
   color $accent
-  font-size 28px
-  letter-spacing 2px
+  font-size 38px
+  letter-spacing 3px
   text-transform uppercase
   margin-bottom 6px
+  text-shadow 3px 3px 0 #000
 
 .menu-subtitle
   color rgba(216, 216, 216, 0.85)
@@ -51,6 +54,37 @@
   display flex
   flex-direction column
   gap 10px
+
+.menu-panel
+  display flex
+  flex-direction column
+  gap 12px
+
+.menu-section-title
+  color $accent
+  font-size 14px
+  letter-spacing 2px
+  text-transform uppercase
+  text-align left
+  border-bottom 1px solid rgba(243, 210, 122, 0.35)
+  padding-bottom 6px
+
+.menu-panel .help-list
+  text-align left
+  max-height 150px
+  overflow auto
+
+.credits-list
+  list-style none
+  padding 0
+  margin 0
+  display flex
+  flex-direction column
+  gap 8px
+  color rgba(236, 236, 236, 0.82)
+  font-size 12px
+  line-height 1.4
+  text-align left
 
 .menu--ending
   background radial-gradient(circle at center, rgba(20, 10, 30, 0.7) 0%, rgba(0, 0, 0, 0.95) 70%)

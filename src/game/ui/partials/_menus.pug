@@ -4,9 +4,50 @@
   .menu-box
     .menu-title PALATA
     .menu-subtitle Soviet psychiatric horror
-    .menu-buttons
-      #menuDifficulty
-      #menuLevels
+
+    .menu-panel#menuMainPanel
+      .menu-buttons
+        button.btn#menuNewGameBtn(type="button") New Game
+        button.btn#menuSavesBtn(type="button") Saves
+        button.btn#menuSettingsBtn(type="button") Settings
+        button.btn#menuCreditsBtn(type="button") Credits
+
+    .menu-panel#menuNewGamePanel(style="display: none")
+      .menu-section-title Choose difficulty
+      #menuDifficulty.menu-buttons
+      .menu-buttons
+        button.btn#menuStartBtn(type="button") Start
+        button.btn.menu-back(type="button" data-menu-target="menuMainPanel") Back
+
+    .menu-panel#menuSavesPanel(style="display: none")
+      .menu-section-title Saves
+      .menu-epitaph Save slots are sealed for now.
+      .menu-buttons
+        button.btn.menu-back(type="button" data-menu-target="menuMainPanel") Back
+
+    .menu-panel#menuSettingsPanel(style="display: none")
+      .menu-section-title Settings
+      .control-group
+        button.btn#musicToggleBtn(type="button") Music: on
+        label.label
+          | Music volume
+          input.range#musicVolume(type="range" min="0" max="1" step="0.01" value="0.5")
+        button.btn#sfxToggleBtn(type="button") SFX: on
+        label.label
+          | SFX volume
+          input.range#sfxVolume(type="range" min="0" max="1" step="0.01" value="0.7")
+        button.btn#fpsToggleBtn(type="button") FPS: on
+        button.btn#fullscreenBtn(type="button") Fullscreen
+      .menu-section-title Controls
+      ul.help-list#menuControls
+      .menu-buttons
+        button.btn.menu-back(type="button" data-menu-target="menuMainPanel") Back
+
+    .menu-panel#menuCreditsPanel(style="display: none")
+      .menu-section-title Credits
+      ul.credits-list#menuCredits
+      .menu-buttons
+        button.btn.menu-back(type="button" data-menu-target="menuMainPanel") Back
 
 .menu.menu--death#deathRoot(style="display: none")
   .menu-box

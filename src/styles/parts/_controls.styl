@@ -8,10 +8,18 @@
   color $accent
   font inherit
   cursor pointer
+  text-transform uppercase
+  letter-spacing 1px
+  text-shadow 2px 2px 0 #000
+
+  &:hover
+    background #3a2418
+    color #fff
 
   &.is-selected
     background #3a2418
     border-color $accent
+    color #fff
 
   &:active
     transform translateY(1px)
