@@ -156,11 +156,13 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
       const title = typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note';
       const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
       const isDocument = !!(e as any).isDocument;
-      if (isDocument && !(e as any).__collectedDocument) {
-        (e as any).__collectedDocument = true;
+      showNoteOverlay(title, text, { document: isDocument });
+      if (isDocument) {
         inventory.add('document', 1);
+        if (typeof e.id === 'string' && e.id) {
+          despawnEntityRuntime(e.id);
+        }
       }
-      showNoteOverlay(title, text);
       return true;
     }
 
@@ -401,7 +403,13 @@ function getNoteSprites() {
 
 export function setEntities(next: LevelEntityJson[]) {
   ensureEngine();
-  rawEntities = Array.isArray(next) ? next : [];
+  entityIdSeq = 1;
+  rawEntities = Array.isArray(next)
+    ? next.map((e) => ({
+        ...e,
+        id: typeof e.id === 'string' && e.id.length ? e.id : `e_${entityIdSeq++}`,
+      }))
+    : [];
   reapplyEntities();
 }
 

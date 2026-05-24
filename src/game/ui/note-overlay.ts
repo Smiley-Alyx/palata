@@ -21,13 +21,18 @@ export function isNoteOverlayVisible(): boolean {
   return root.style.display !== 'none';
 }
 
-export function showNoteOverlay(title: string, text: string) {
+export function showNoteOverlay(
+  title: string,
+  text: string,
+  opts: { document?: boolean } = {},
+) {
   const root = getRoot();
   if (!root) return;
   const titleEl = getTitleEl();
   const textEl = getTextEl();
   if (titleEl) titleEl.textContent = title;
   if (textEl) textEl.textContent = text;
+  root.classList.toggle('note--document', !!opts.document);
   root.style.display = '';
 }
 
@@ -35,6 +40,7 @@ export function hideNoteOverlay() {
   const root = getRoot();
   if (!root) return;
   root.style.display = 'none';
+  root.classList.remove('note--document');
 }
 
 export function bindNoteOverlayControls({

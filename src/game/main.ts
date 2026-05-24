@@ -44,7 +44,7 @@ import {
   type Difficulty,
   unlockAudio,
 } from './rayc';
-import { bindNoteOverlayControls } from './ui/note-overlay';
+import { bindNoteOverlayControls, isNoteOverlayVisible } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import {
@@ -1247,6 +1247,7 @@ function initMenu() {
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (!gameConfig.controls.menu.includes(e.code) || e.repeat) return;
+  if (isNoteOverlayVisible()) return;
   if (dead) return;
   if (running) {
     pauseGame();
