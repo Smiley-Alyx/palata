@@ -12,6 +12,13 @@
         button.btn#menuSettingsBtn(type="button") Settings
         button.btn#menuCreditsBtn(type="button") Credits
 
+    .menu-panel#menuPausePanel(style="display: none")
+      .menu-section-title Paused
+      .menu-buttons
+        button.btn#menuResumeBtn(type="button") Resume
+        button.btn#menuPauseSettingsBtn(type="button") Settings
+        button.btn#menuPauseMainBtn(type="button") Main Menu
+
     .menu-panel#menuNewGamePanel(style="display: none")
       .menu-section-title Choose difficulty
       #menuDifficulty.menu-buttons
@@ -41,7 +48,7 @@
       .menu-section-title Controls
       ul.help-list#menuControls
       .menu-buttons
-        button.btn.menu-back(type="button" data-menu-target="menuMainPanel") Back
+        button.btn.menu-back(type="button" data-menu-target="contextRoot") Back
 
     .menu-panel#menuCreditsPanel(style="display: none")
       .menu-section-title Credits

@@ -591,18 +591,33 @@ function hideMenu() {
 function showMenu() {
   const el = document.getElementById('menuRoot');
   if (!(el instanceof HTMLElement)) return;
+  menuMode = 'main';
   el.style.display = '';
   showMenuPanel('menuMainPanel');
   applyMenuAudio();
 }
 
+function showPauseMenu() {
+  const el = document.getElementById('menuRoot');
+  if (!(el instanceof HTMLElement)) return;
+  menuMode = 'pause';
+  el.style.display = '';
+  showMenuPanel('menuPausePanel');
+}
+
+function getMenuRootPanelId() {
+  return menuMode === 'pause' ? 'menuPausePanel' : 'menuMainPanel';
+}
+
 let running = false;
+let paused = false;
 let dead = false;
 let deathTimer: number | null = null;
 let transitioningLevel = false;
 let currentLevelId: string | null = null;
 let gameConfig: GameConfig = loadGameConfig();
 let currentDifficulty: Difficulty = gameConfig.difficulty;
+let menuMode: 'main' | 'pause' = 'main';
 
 function persistGameConfig() {
   gameConfig.difficulty = currentDifficulty;
@@ -811,7 +826,7 @@ const LOADING_SUBTITLES = [
   'Inhale, hold, exhale',
 ];
 
-function showLoadingScreen({ levelName }: { levelName: string }) {
+function showLoadingScreen({ levelName, title }: { levelName: string; title?: string }) {
   return new Promise<void>((resolve) => {
     const root = document.getElementById('loadingRoot');
     const titleEl = document.getElementById('loadingTitle');
@@ -821,7 +836,7 @@ function showLoadingScreen({ levelName }: { levelName: string }) {
       resolve();
       return;
     }
-    if (titleEl instanceof HTMLElement) titleEl.textContent = `Entering ${levelName}`;
+    if (titleEl instanceof HTMLElement) titleEl.textContent = title ?? `Entering ${levelName}`;
     if (subEl instanceof HTMLElement) {
       subEl.textContent = LOADING_SUBTITLES[Math.floor(Math.random() * LOADING_SUBTITLES.length)];
     }
@@ -850,6 +865,7 @@ function enterDeathState() {
 
   stopRayc();
   running = false;
+  paused = false;
 
   applyMenuAudio();
 
@@ -881,6 +897,7 @@ async function transitionToNextLevel(levelId?: string, message?: string) {
 
   stopRayc();
   running = false;
+  paused = false;
 
   const nextLevelId = levelId ?? (currentLevelId ? await findNextLevelId(currentLevelId) : null);
   if (!nextLevelId) {
@@ -902,6 +919,7 @@ async function startLevelById(
   unlockAudio();
 
   dead = false;
+  paused = false;
   if (deathTimer !== null) window.clearTimeout(deathTimer);
   hideDeathScreen();
   hideBloodOverlay();
@@ -964,6 +982,25 @@ async function startLevelById(
   currentLevelId = levelEntry.id;
 }
 
+function pauseGame() {
+  if (!running || dead || transitioningLevel) return;
+  stopRayc();
+  resetKeys();
+  running = false;
+  paused = true;
+  showPauseMenu();
+}
+
+function resumeGame() {
+  if (!paused || dead || transitioningLevel || !currentLevelId) return;
+  hideMenu();
+  resetKeys();
+  playMusic();
+  startRayc();
+  running = true;
+  paused = false;
+}
+
 function normalizeConsoleLevelId(level: string | number) {
   if (typeof level === 'number' && Number.isFinite(level)) return `level${Math.floor(level)}`;
   const value = String(level).trim();
@@ -1014,11 +1051,14 @@ function installConsoleCommands() {
 }
 
 function initMenu() {
-  showMenu();
+  hideMenu();
   hideDeathScreen();
   hideEndingScreen();
 
   const newGameBtn = document.getElementById('menuNewGameBtn');
+  const resumeBtn = document.getElementById('menuResumeBtn');
+  const pauseSettingsBtn = document.getElementById('menuPauseSettingsBtn');
+  const pauseMainBtn = document.getElementById('menuPauseMainBtn');
   const savesBtn = document.getElementById('menuSavesBtn');
   const settingsBtn = document.getElementById('menuSettingsBtn');
   const creditsBtn = document.getElementById('menuCreditsBtn');
@@ -1076,6 +1116,19 @@ function initMenu() {
   if (newGameBtn instanceof HTMLButtonElement) {
     newGameBtn.addEventListener('click', () => showMenuPanel('menuNewGamePanel'));
   }
+  if (resumeBtn instanceof HTMLButtonElement) {
+    resumeBtn.addEventListener('click', () => resumeGame());
+  }
+  if (pauseSettingsBtn instanceof HTMLButtonElement) {
+    pauseSettingsBtn.addEventListener('click', () => showMenuPanel('menuSettingsPanel'));
+  }
+  if (pauseMainBtn instanceof HTMLButtonElement) {
+    pauseMainBtn.addEventListener('click', () => {
+      paused = false;
+      currentLevelId = null;
+      showMenu();
+    });
+  }
   if (savesBtn instanceof HTMLButtonElement) {
     savesBtn.addEventListener('click', () => showMenuPanel('menuSavesPanel'));
   }
@@ -1088,7 +1141,8 @@ function initMenu() {
 
   for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('.menu-back'))) {
     btn.addEventListener('click', () => {
-      showMenuPanel(btn.dataset.menuTarget || 'menuMainPanel');
+      const target = btn.dataset.menuTarget || 'menuMainPanel';
+      showMenuPanel(target === 'contextRoot' ? getMenuRootPanelId() : target);
     });
   }
 
@@ -1111,11 +1165,14 @@ function initMenu() {
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.code !== 'Escape' || e.repeat) return;
-  if (!running) return;
   if (dead) return;
-  stopRayc();
-  showMenu();
-  running = false;
+  if (running) {
+    pauseGame();
+    return;
+  }
+  if (paused) {
+    resumeGame();
+  }
 });
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -1144,6 +1201,13 @@ function bootstrap() {
   initDeathUi();
   initMenu();
   bindNoteOverlayControls();
+  void showStartupSequence();
+}
+
+async function showStartupSequence() {
+  await showLoadingScreen({ levelName: 'PALATA', title: 'Loading PALATA' });
+  if (running || paused || dead) return;
+  showMenu();
 }
 
 if (document.readyState === 'loading') {
