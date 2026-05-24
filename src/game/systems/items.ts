@@ -117,6 +117,12 @@ const WEAPON_SPRITE: Record<WeaponSubtype, string> = {
   shotgun: 'shotgun',
 };
 
+const WEAPON_PICKUP_AMMO: Partial<Record<WeaponSubtype, { id: InventoryItemId; amount: number }>> =
+  {
+    pistol: { id: 'pistol_ammo', amount: 10 },
+    shotgun: { id: 'shotgun_ammo', amount: 4 },
+  };
+
 export type ArmorSubtype = 'blue' | 'green' | 'red';
 
 export type ArmorSpec = {
@@ -329,6 +335,8 @@ export function createItemsSystem({
       w.alive = false;
       if (w.id) onPickup?.(w.id);
       onWeaponPickup(w.subtype);
+      const ammo = WEAPON_PICKUP_AMMO[w.subtype];
+      if (ammo) inventory.add(ammo.id, ammo.amount);
       playSfx(SFX.ui.pickupAmmo);
     }
 
