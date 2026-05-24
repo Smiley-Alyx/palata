@@ -10,7 +10,7 @@
   },
   "audio": {
     "music": {
-      "src": "/assets/music/level_1/level_1_palata.wav",
+      "src": "/assets/music/level_1/level_1_palata.mp3",
       "loop": true,
       "volume": 0.45
     }

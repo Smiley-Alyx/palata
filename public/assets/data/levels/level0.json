@@ -15,7 +15,7 @@
   },
   "audio": {
     "music": {
-      "src": "/assets/music/menu/main_chrevo.wav",
+      "src": "/assets/music/menu/main_chrevo.mp3",
       "loop": true,
       "volume": 0.5
     }

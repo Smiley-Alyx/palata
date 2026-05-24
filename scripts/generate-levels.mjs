@@ -191,7 +191,7 @@ const LEVELS = [
     seed: 1011,
     rot: 0,
     colors: { ceiling: '#c7b27a', floor: '#6e5a3c' }, // pale yellow ceiling, carpet
-    music: '/audio/music/level_1.wav',
+    music: '/assets/music/level_1/level_1_palata.mp3',
   },
   {
     file: 'level2.json',
@@ -200,7 +200,7 @@ const LEVELS = [
     seed: 2022,
     rot: 1.2,
     colors: { ceiling: '#bcd4d8', floor: '#3f6c84' }, // damp tile / water
-    music: '/audio/music/level_2.wav',
+    music: '/assets/music/level_2/level_2_legacy.mp3',
   },
   {
     file: 'level3.json',
@@ -209,7 +209,7 @@ const LEVELS = [
     seed: 3033,
     rot: -0.6,
     colors: { ceiling: '#d8d2a8', floor: '#5a4630' }, // fluorescent / wood
-    music: '/audio/music/level_3.wav',
+    music: '/assets/music/level_3/level_3_legacy.mp3',
   },
   {
     file: 'level4.json',
@@ -218,7 +218,7 @@ const LEVELS = [
     seed: 4044,
     rot: 2.4,
     colors: { ceiling: '#3a4350', floor: '#2f2f33' }, // cold cement
-    music: '/audio/music/level_4.wav',
+    music: '/assets/music/level_4/level_4_legacy.mp3',
   },
   {
     file: 'level5.json',
@@ -227,7 +227,7 @@ const LEVELS = [
     seed: 5055,
     rot: 0.4,
     colors: { ceiling: '#4a1818', floor: '#1a0a0a' }, // blood red
-    music: '/audio/music/level_5.wav',
+    music: '/assets/music/level_5/level_5.mp3',
   },
   {
     file: 'level6.json',
@@ -236,7 +236,7 @@ const LEVELS = [
     seed: 6066,
     rot: -1.5,
     colors: { ceiling: '#0c0c12', floor: '#1a1a1c' }, // near-black
-    music: '/audio/music/level_6.wav',
+    music: '/assets/music/level_6/level_6.mp3',
   },
 ];
 

@@ -10,7 +10,7 @@
   },
   "audio": {
     "music": {
-      "src": "/assets/music/level_5/level_5.wav",
+      "src": "/assets/music/level_5/level_5.mp3",
       "loop": true,
       "volume": 0.5
     }
