@@ -159,6 +159,7 @@ export function createRenderer({
     screenRow: number,
     outputRow: number,
     screenH: number,
+    screenW: number,
     ceiling: boolean,
   ) {
     const w = output.width;
@@ -166,13 +167,17 @@ export function createRenderer({
     const rowDelta = ceiling ? horizon - screenRow : screenRow - horizon;
     if (rowDelta <= 0) return;
 
-    const rowDistance = (screenH * 0.5) / rowDelta;
-    const leftAngle = player.rot + player.fov / 2;
-    const rightAngle = player.rot - player.fov / 2;
-    const leftX = Math.cos(leftAngle);
-    const leftY = -Math.sin(leftAngle);
-    const rightX = Math.cos(rightAngle);
-    const rightY = -Math.sin(rightAngle);
+    const projectionPlane = screenW / 2 / Math.tan(player.fov / 2);
+    const rowDistance = (projectionPlane * 0.5) / rowDelta;
+    const dirX = Math.cos(player.rot);
+    const dirY = -Math.sin(player.rot);
+    const planeSize = Math.tan(player.fov / 2);
+    const planeX = -Math.sin(player.rot) * planeSize;
+    const planeY = -Math.cos(player.rot) * planeSize;
+    const leftX = dirX + planeX;
+    const leftY = dirY + planeY;
+    const rightX = dirX - planeX;
+    const rightY = dirY - planeY;
     const stepX = (rowDistance * (rightX - leftX)) / w;
     const stepY = (rowDistance * (rightY - leftY)) / w;
 
@@ -232,7 +237,7 @@ export function createRenderer({
     const horizon = Math.floor(getViewHeight() / 2);
     for (let row = 0; row < planeH; row++) {
       const screenRow = ceiling ? row * scale : horizon + row * scale;
-      drawTexturedPlane(pixels, texture, screenRow, row, getViewHeight(), ceiling);
+      drawTexturedPlane(pixels, texture, screenRow, row, getViewHeight(), getViewWidth(), ceiling);
     }
     plane.ctx.putImageData(pixels, 0, 0);
 
