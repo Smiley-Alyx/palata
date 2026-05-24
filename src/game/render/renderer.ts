@@ -31,7 +31,6 @@ export function createRenderer({
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
 
-  let ceilingMaterial: string | number | null = null;
   let floorMaterial: string | number | null = null;
 
   let ambientLight01 = 1;
@@ -41,15 +40,6 @@ export function createRenderer({
   let killFill = 0;
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
-  let ceilingCache:
-    | {
-        w: number;
-        h: number;
-        color: string;
-        texture: CanvasImageSource | null;
-        canvas: HTMLCanvasElement;
-      }
-    | null = null;
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
 
@@ -134,16 +124,12 @@ export function createRenderer({
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
     if (typeof colors.ceiling === 'string') {
       ceilingColor = colors.ceiling;
-      ceilingCache = null;
     }
     if (typeof colors.floor === 'string') floorColor = colors.floor;
   }
 
   function setBackgroundMaterials(materials: { ceiling?: string | number | null; floor?: string | number | null }) {
-    if ('ceiling' in materials) {
-      ceilingMaterial = materials.ceiling ?? null;
-      ceilingCache = null;
-    }
+    // Ceiling materials are intentionally ignored; the flat shaded ceiling preserves depth better.
     if ('floor' in materials) floorMaterial = materials.floor ?? null;
   }
 
@@ -194,49 +180,16 @@ export function createRenderer({
     }
   }
 
-  function getCeilingCanvas(w: number, h: number, texture: CanvasImageSource | null): HTMLCanvasElement {
-    if (
-      ceilingCache &&
-      ceilingCache.w === w &&
-      ceilingCache.h === h &&
-      ceilingCache.color === ceilingColor &&
-      ceilingCache.texture === texture
-    ) {
-      return ceilingCache.canvas;
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const cctx = canvas.getContext('2d');
-    if (!cctx) return canvas;
-
-    cctx.imageSmoothingEnabled = false;
-    cctx.fillStyle = ceilingColor;
-    cctx.fillRect(0, 0, w, h);
-
-    if (texture) {
-      const pattern = cctx.createPattern(texture, 'repeat');
-      if (pattern) {
-        cctx.fillStyle = pattern;
-        cctx.fillRect(0, 0, w, h);
-      }
-    }
-
-    ceilingCache = { w, h, color: ceilingColor, texture, canvas };
-    return canvas;
-  }
-
   function drawBackground() {
     const w = getViewWidth();
     const h = getViewHeight();
 
     ctx.clearRect(0, 0, w, h);
-    const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
     const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
     const floorData = floorTexture ? getTextureData(floorTexture) : null;
 
-    ctx.drawImage(getCeilingCanvas(w, Math.ceil(h / 2), ceilingTexture), 0, 0);
+    ctx.fillStyle = ceilingColor;
+    ctx.fillRect(0, 0, w, h / 2);
 
     ctx.fillStyle = floorColor;
     ctx.fillRect(0, h / 2, w, h / 2);
