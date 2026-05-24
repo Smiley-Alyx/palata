@@ -112,6 +112,14 @@ export function createRenderer({
     return shaded;
   }
 
+  function getDistanceLight01(dist: number): number {
+    if (!Number.isFinite(dist) || dist <= 0) return 1;
+    const start = 2.5;
+    const end = 13;
+    const t = Math.max(0, Math.min(1, (dist - start) / (end - start)));
+    return 1 - t * 0.74;
+  }
+
   function getTextureData(texture: CanvasImageSource): ImageData | null {
     const cached = textureDataCache.get(texture as object);
     if (cached) return cached;
@@ -274,10 +282,9 @@ export function createRenderer({
     // brighter near the camera.
     ctx.save();
     const ceilingShade = ctx.createLinearGradient(0, 0, 0, h / 2);
-    // Near top of screen = horizon (far away) → fully black.
-    ceilingShade.addColorStop(0, 'rgba(0,0,0,0.72)');
-    ceilingShade.addColorStop(0.55, 'rgba(0,0,0,0.32)');
-    ceilingShade.addColorStop(1, 'rgba(0,0,0,0)');
+    ceilingShade.addColorStop(0, 'rgba(0,0,0,0)');
+    ceilingShade.addColorStop(0.45, 'rgba(0,0,0,0.32)');
+    ceilingShade.addColorStop(1, 'rgba(0,0,0,0.72)');
     ctx.fillStyle = ceilingShade;
     ctx.fillRect(0, 0, w, h / 2);
 
@@ -423,7 +430,7 @@ export function createRenderer({
     const y0 = viewHeight / 2 - sliceHeight / 2;
 
     // Apply lighting as a dark overlay (cheap and stable for retro look).
-    const l = Math.max(0, Math.min(1, light01));
+    const l = Math.max(0, Math.min(1, light01 * getDistanceLight01(dist)));
     const shade = 1 - l;
     if (shade > 0.001) {
       const shaded = getShadedTexture(texture, shade);

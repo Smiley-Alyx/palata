@@ -78,133 +78,60 @@ function castSingleRay({
   columnWidth: number;
   drawRay: DrawRay;
 }) {
-  const facingRight = angle < (90 * Math.PI) / 180 || angle > (270 * Math.PI) / 180;
-  const facingUp = angle < (180 * Math.PI) / 180;
+  const dirX = Math.cos(angle);
+  const dirY = -Math.sin(angle);
+  let xMap = Math.floor(player.x);
+  let yMap = Math.floor(player.y);
 
-  let x = 0;
-  let y = 0;
-  let dX = 0;
-  let dY = 0;
-  let xMap = 0;
-  let yMap = 0;
+  const deltaDistX = Math.abs(dirX) < 0.000001 ? Infinity : Math.abs(1 / dirX);
+  const deltaDistY = Math.abs(dirY) < 0.000001 ? Infinity : Math.abs(1 / dirY);
 
-  let hitXMapH = 0;
-  let hitYMapH = 0;
-  let hitXMapV = 0;
-  let hitYMapV = 0;
+  const stepX = dirX < 0 ? -1 : 1;
+  const stepY = dirY < 0 ? -1 : 1;
+  let sideDistX = dirX < 0 ? (player.x - xMap) * deltaDistX : (xMap + 1 - player.x) * deltaDistX;
+  let sideDistY = dirY < 0 ? (player.y - yMap) * deltaDistY : (yMap + 1 - player.y) * deltaDistY;
 
-  // По горизонтали
-  let slope = 1 / (Math.sin(-angle) / Math.cos(-angle));
-  y = facingUp ? Math.floor(player.y) : Math.ceil(player.y);
-  x = player.x + (y - player.y) * slope;
-
-  dY = facingUp ? -1 : 1;
-  dX = dY * slope;
-
-  let distH = Infinity;
-  let xHitH = 0;
-  let yHitH = 0;
-  let hitH: RayHit | null = null;
-  let offsetH = 0;
-
-  for (let steps = 0; steps < 4096; steps++) {
-    yMap = Math.floor(y + (facingUp ? -1 : 0));
-    xMap = Math.floor(x);
-
-    const probeX = xMap + 0.5;
-    const probeY = yMap + 0.5;
-    const solid =
-      typeof world.isRaySolidAt === 'function'
-        ? world.isRaySolidAt(xMap, yMap, ((x % 1) + 1) % 1)
-        : world.isRaySolid(probeX, probeY);
-    if (solid) {
-      distH = Math.abs((player.x - x) / Math.cos(angle));
-      xHitH = x;
-      yHitH = y;
-      offsetH = x % 1;
-      const material = world.getMaterial(probeX, probeY);
-      hitXMapH = xMap;
-      hitYMapH = yMap;
-      hitH = {
-        xMap,
-        yMap,
-        face: facingUp ? 'S' : 'N',
-        isVerticalHit: false,
-        material,
-        dist: distH,
-        offset: offsetH,
-      };
-      break;
-    }
-
-    x += dX;
-    y += dY;
-  }
-
-  // По вертикали
-  slope = Math.sin(-angle) / Math.cos(-angle);
-  x = facingRight ? Math.ceil(player.x) : Math.floor(player.x);
-  y = player.y + (x - player.x) * slope;
-  dX = facingRight ? 1 : -1;
-  dY = dX * slope;
-
-  let distV = Infinity;
-  let xHitV = 0;
-  let yHitV = 0;
-  let hitV: RayHit | null = null;
-  let offsetV = 0;
-
-  for (let steps = 0; steps < 4096; steps++) {
-    xMap = Math.floor(x + (facingRight ? 0 : -1));
-    yMap = Math.floor(y);
-
-    const probeX = xMap + 0.5;
-    const probeY = yMap + 0.5;
-    const solid =
-      typeof world.isRaySolidAt === 'function'
-        ? world.isRaySolidAt(xMap, yMap, ((y % 1) + 1) % 1)
-        : world.isRaySolid(probeX, probeY);
-    if (solid) {
-      distV = Math.abs((player.y - y) / Math.sin(angle));
-      xHitV = x;
-      yHitV = y;
-      offsetV = y % 1;
-      const material = world.getMaterial(probeX, probeY);
-      hitXMapV = xMap;
-      hitYMapV = yMap;
-      hitV = {
-        xMap,
-        yMap,
-        face: facingRight ? 'W' : 'E',
-        isVerticalHit: true,
-        material,
-        dist: distV,
-        offset: offsetV,
-      };
-      break;
-    }
-
-    x += dX;
-    y += dY;
-  }
-
-  let dist = 0;
-  let offset = 0;
   let hit: RayHit | null = null;
 
-  if (distV < distH) {
-    x = xHitV;
-    y = yHitV;
-    dist = distV;
-    offset = offsetV;
-    hit = hitV;
-  } else {
-    x = xHitH;
-    y = yHitH;
-    dist = distH;
-    offset = offsetH;
-    hit = hitH;
+  for (let steps = 0; steps < 4096; steps++) {
+    const isVerticalHit = sideDistX < sideDistY;
+    if (isVerticalHit) {
+      xMap += stepX;
+      sideDistX += deltaDistX;
+    } else {
+      yMap += stepY;
+      sideDistY += deltaDistY;
+    }
+
+    const rayDist = isVerticalHit
+      ? (xMap - player.x + (1 - stepX) / 2) / dirX
+      : (yMap - player.y + (1 - stepY) / 2) / dirY;
+    const hitX = player.x + rayDist * dirX;
+    const hitY = player.y + rayDist * dirY;
+    const offset = isVerticalHit ? ((hitY % 1) + 1) % 1 : ((hitX % 1) + 1) % 1;
+    const probeX = xMap + 0.5;
+    const probeY = yMap + 0.5;
+    const solid =
+      typeof world.isRaySolidAt === 'function'
+        ? world.isRaySolidAt(xMap, yMap, offset)
+        : world.isRaySolid(probeX, probeY);
+
+    if (!solid) continue;
+
+    const material = world.getMaterial(probeX, probeY);
+    hit = {
+      xMap,
+      yMap,
+      face: isVerticalHit ? (stepX > 0 ? 'W' : 'E') : stepY > 0 ? 'N' : 'S',
+      isVerticalHit,
+      material,
+      dist: rayDist,
+      offset,
+    };
+    break;
   }
+
+  if (!hit) return 0;
 
   const rawMaterial = hit ? hit.material : 0;
   const imgOut =
@@ -215,11 +142,11 @@ function castSingleRay({
       ? world.getLightAt(hit.xMap + 0.5, hit.yMap + 0.5)
       : 1;
 
-  dist = dist * Math.cos(player.rot - angle);
+  const dist = hit.dist * Math.cos(player.rot - angle);
   const textureOffset =
     hit && typeof world.getWallTextureOffset === 'function'
       ? world.getWallTextureOffset(hit)
-      : offset;
+      : hit.offset;
   drawRay(dist, row, textureOffset, imgOut, light01, columnWidth);
 
   return dist;
