@@ -132,8 +132,8 @@ export function createEnemiesSystem({
   }
 
   function damageCooldownForDifficulty(difficulty: Difficulty): number {
-    if (difficulty === 'lost') return 720;
-    if (difficulty === 'trapped') return 620;
+    if (difficulty === 'lost') return 670;
+    if (difficulty === 'trapped') return 570;
     return 520;
   }
 

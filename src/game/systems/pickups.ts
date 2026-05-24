@@ -14,20 +14,20 @@ const HEALTH_PICKUP_TUNING: Record<
   }
 > = {
   lost: {
-    healAmount: 22,
-    baseDesired: 10,
+    healAmount: 20,
+    baseDesired: 8,
     missingFactor: 0.9,
-    spawnCooldownMs: 2200,
-    minPlayerDist: 2.1,
+    spawnCooldownMs: 2800,
+    minPlayerDist: 2.35,
     minMissingRatioToSpawn: 0,
   },
   trapped: {
-    healAmount: 18,
-    baseDesired: 5,
+    healAmount: 16,
+    baseDesired: 4,
     missingFactor: 1.1,
-    spawnCooldownMs: 4200,
-    minPlayerDist: 2.55,
-    minMissingRatioToSpawn: 0.15,
+    spawnCooldownMs: 5600,
+    minPlayerDist: 2.9,
+    minMissingRatioToSpawn: 0.2,
   },
   consumed: {
     healAmount: 12,

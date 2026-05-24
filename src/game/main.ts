@@ -116,15 +116,15 @@ function placeRandomHealthPickups({
     }
   }
 
-  let divisor = 120;
-  let minCount = 3;
-  let maxCount = 10;
-  let minSpawnDist = 2.1;
+  let divisor = 150;
+  let minCount = 2;
+  let maxCount = 8;
+  let minSpawnDist = 2.35;
   if (difficulty === 'trapped') {
-    divisor = 190;
+    divisor = 230;
     minCount = 1;
-    maxCount = 5;
-    minSpawnDist = 2.65;
+    maxCount = 4;
+    minSpawnDist = 2.9;
   }
   if (difficulty === 'consumed') {
     divisor = 320;
@@ -286,16 +286,16 @@ function placeRandomEnemies({
       q.push(p);
     }
   }
-  let divisor = 34;
-  let minCount = 18;
-  let maxCount = 46;
-  let minSpawnDist = 2.55;
+  let divisor = 30;
+  let minCount = 22;
+  let maxCount = 54;
+  let minSpawnDist = 2.35;
 
   if (difficulty === 'trapped') {
-    divisor = 24;
-    minCount = 28;
-    maxCount = 70;
-    minSpawnDist = 2.25;
+    divisor = 20;
+    minCount = 36;
+    maxCount = 88;
+    minSpawnDist = 2.05;
   }
   if (difficulty === 'consumed') {
     divisor = 14;

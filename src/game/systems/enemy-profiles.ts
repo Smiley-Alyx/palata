@@ -30,8 +30,8 @@ const HUSK: EnemyProfile = {
   hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.husk.death,
   damage: {
-    lost: { min: 4, max: 7 },
-    trapped: { min: 4, max: 9 },
+    lost: { min: 5, max: 8 },
+    trapped: { min: 6, max: 11 },
     consumed: { min: 7, max: 15 },
   },
 };
@@ -46,8 +46,8 @@ const ORDERLY: EnemyProfile = {
   hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.orderly.death,
   damage: {
-    lost: { min: 16, max: 24 },
-    trapped: { min: 16, max: 28 },
+    lost: { min: 18, max: 27 },
+    trapped: { min: 20, max: 32 },
     consumed: { min: 22, max: 42 },
   },
 };
@@ -62,8 +62,8 @@ const DEFORMED: EnemyProfile = {
   hurt: SFX.enemies.orderly.hurt,
   death: SFX.enemies.husk.death,
   damage: {
-    lost: { min: 10, max: 16 },
-    trapped: { min: 12, max: 20 },
+    lost: { min: 12, max: 18 },
+    trapped: { min: 14, max: 24 },
     consumed: { min: 18, max: 32 },
   },
 };
