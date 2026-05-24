@@ -409,9 +409,9 @@ export function getKeys() {
 }
 
 function getWallTextureId(hit: RayHit<string | number>): string | number {
-  // After moving from sliced 4x4 atlases to single per-material textures,
-  // the wall id is just the raw material name from the legend / materialsWall.
-  // (Per-segment variation will come back later if needed via materialsWall.)
+  const lock = doorsSystem?.getDoorLock(hit.xMap, hit.yMap);
+  if (lock && typeof hit.material === 'string') return `locked_door:${hit.material}:${lock}`;
+
   return hit.material;
 }
 

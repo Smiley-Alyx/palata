@@ -185,6 +185,7 @@ export function createDoorsSystem({
   return {
     requestOpenDoor,
     interactWorld,
+    getDoorLock: keyForCell,
     isDoorBlocking,
     isDoorRayBlockingAt,
     getDoorTextureOffset,
