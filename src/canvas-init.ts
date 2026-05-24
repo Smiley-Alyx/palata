@@ -21,7 +21,11 @@ export function getCanvasCssHeight() {
 
 let initialized = false;
 
-export function initCanvas(): void {
+export function initCanvas({
+  getFullscreenBindings,
+}: {
+  getFullscreenBindings?: (() => string[]) | null;
+} = {}): void {
   if (initialized) return;
   initialized = true;
 
@@ -77,7 +81,7 @@ export function initCanvas(): void {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
-  // Fullscreen: кнопка в UI + горячая клавиша F.
+  // Fullscreen: кнопка в UI + горячая клавиша.
   // В fullscreen растягиваем canvas на весь экран.
   const toggleFullscreen = async (): Promise<void> => {
     try {
@@ -105,7 +109,8 @@ export function initCanvas(): void {
   }
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.code === 'KeyF' && !e.repeat) {
+    const bindings = getFullscreenBindings?.() ?? ['KeyF'];
+    if (bindings.includes(e.code) && !e.repeat) {
       toggleFullscreen();
     }
   });

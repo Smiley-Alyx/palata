@@ -6,7 +6,20 @@ type Input = {
   unbind: () => void;
   isDown: (code: string) => boolean;
   isMouseDown: (button: number) => boolean;
+  isAnyBindingDown: (bindings: readonly string[]) => boolean;
   consumeMouseDeltaX: () => number;
+};
+
+type Controls = {
+  moveForward: string[];
+  moveBackward: string[];
+  strafeLeft: string[];
+  strafeRight: string[];
+  turnLeft: string[];
+  turnRight: string[];
+  sprint: string[];
+  use: string[];
+  shoot: string[];
 };
 
 type Renderer = {
@@ -54,6 +67,7 @@ export function createEngine({
   renderer,
   world,
   events,
+  getControls,
 }: {
   getViewWidth: () => number;
   getViewHeight: () => number;
@@ -62,6 +76,7 @@ export function createEngine({
   renderer: Renderer;
   world: World;
   events?: EngineEvents;
+  getControls?: () => Controls;
 }) {
   let started = false;
   let rafId: number | null = null;
@@ -78,6 +93,17 @@ export function createEngine({
   let footstepCooldownMs = 0;
   let shootCooldownMs = 0;
   const mouseSensitivity = 0.0025;
+  const defaultControls: Controls = {
+    moveForward: ['KeyW', 'ArrowUp'],
+    moveBackward: ['KeyS', 'ArrowDown'],
+    strafeLeft: ['KeyA'],
+    strafeRight: ['KeyD'],
+    turnLeft: ['ArrowLeft'],
+    turnRight: ['ArrowRight'],
+    sprint: ['ShiftLeft', 'ShiftRight'],
+    use: ['KeyE'],
+    shoot: ['Mouse0', 'Space'],
+  };
 
   function setSpawn(spawn: Spawn | null) {
     if (!spawn || typeof spawn !== 'object') return;
@@ -87,39 +113,37 @@ export function createEngine({
   }
 
   function processInput(dt: number) {
-    const useDown = input.isDown('KeyE');
+    const controls = getControls?.() ?? defaultControls;
+    const useDown = input.isAnyBindingDown(controls.use);
     if (useDown && !prevUseDown) {
       tryInteractInFront();
     }
     prevUseDown = useDown;
 
-    const shootDown = input.isDown('Space') || input.isMouseDown(0);
+    const shootDown = input.isAnyBindingDown(controls.shoot);
     if (shootDown && !prevShootDown && shootCooldownMs <= 0) {
       events?.onShoot?.();
       shootCooldownMs = 220;
     }
     prevShootDown = shootDown;
 
-    const forward =
-      input.isDown('KeyW') || input.isDown('ArrowUp')
-        ? 1
-        : input.isDown('KeyS') || input.isDown('ArrowDown')
-          ? -1
-          : 0;
-    const strafe =
-      input.isDown('KeyD')
-        ? 1
-        : input.isDown('KeyA')
-          ? -1
-          : 0;
+    const forward = input.isAnyBindingDown(controls.moveForward)
+      ? 1
+      : input.isAnyBindingDown(controls.moveBackward)
+        ? -1
+        : 0;
+    const strafe = input.isAnyBindingDown(controls.strafeRight)
+      ? 1
+      : input.isAnyBindingDown(controls.strafeLeft)
+        ? -1
+        : 0;
     player.mov = forward;
-    player.dir =
-      input.isDown('ArrowLeft')
-        ? 1
-        : input.isDown('ArrowRight')
-          ? -1
-          : 0;
-    player.sprint = input.isDown('ShiftLeft') || input.isDown('ShiftRight') ? 1 : 0;
+    player.dir = input.isAnyBindingDown(controls.turnLeft)
+      ? 1
+      : input.isAnyBindingDown(controls.turnRight)
+        ? -1
+        : 0;
+    player.sprint = input.isAnyBindingDown(controls.sprint) ? 1 : 0;
 
     const timeScale = dt * 60;
 

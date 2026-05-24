@@ -1,12 +1,12 @@
-export function createInput(
-  {
-    onToggleMap,
-    getPointerTarget,
-  }: {
-    onToggleMap?: (() => void) | null;
-    getPointerTarget?: (() => HTMLElement | null) | null;
-  } = {},
-) {
+export function createInput({
+  onToggleMap,
+  getPointerTarget,
+  getToggleMapBindings,
+}: {
+  onToggleMap?: (() => void) | null;
+  getPointerTarget?: (() => HTMLElement | null) | null;
+  getToggleMapBindings?: (() => string[]) | null;
+} = {}) {
   const keysDown: Record<string, boolean> = Object.create(null);
   const mouseDown: Record<number, boolean> = Object.create(null);
 
@@ -34,7 +34,8 @@ export function createInput(
       }
 
       if (!e.repeat) {
-        if (e.code === 'KeyM' && typeof onToggleMap === 'function') {
+        const mapBindings = getToggleMapBindings?.() ?? ['KeyM'];
+        if (mapBindings.includes(e.code) && typeof onToggleMap === 'function') {
           onToggleMap();
         }
       }
@@ -60,10 +61,16 @@ export function createInput(
 
     onMouseDown = function (e: MouseEvent) {
       const target = getPointerTarget?.() ?? null;
-      const isGameMouseEvent = !target || e.target === target || document.pointerLockElement === target;
+      const isGameMouseEvent =
+        !target || e.target === target || document.pointerLockElement === target;
       if (!isGameMouseEvent) return;
 
-      if (target && e.target === target && e.button === 0 && document.pointerLockElement !== target) {
+      if (
+        target &&
+        e.target === target &&
+        e.button === 0 &&
+        document.pointerLockElement !== target
+      ) {
         target.requestPointerLock();
       }
 
@@ -120,6 +127,18 @@ export function createInput(
     return !!mouseDown[button];
   }
 
+  function isBindingDown(binding: string): boolean {
+    if (binding.startsWith('Mouse')) {
+      const button = Number(binding.slice(5));
+      return Number.isFinite(button) && isMouseDown(button);
+    }
+    return isDown(binding);
+  }
+
+  function isAnyBindingDown(bindings: readonly string[]): boolean {
+    return bindings.some(isBindingDown);
+  }
+
   function consumeMouseDeltaX(): number {
     const value = mouseDeltaX;
     mouseDeltaX = 0;
@@ -131,6 +150,8 @@ export function createInput(
     unbind,
     isDown,
     isMouseDown,
+    isBindingDown,
+    isAnyBindingDown,
     consumeMouseDeltaX,
   };
 }

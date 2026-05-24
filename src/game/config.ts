@@ -11,11 +11,78 @@ export type GameConfig = {
   ui: {
     showFps: boolean;
   };
+  controls: ControlBindings;
 };
 
 export type ControlHint = {
   key: string;
   action: string;
+};
+
+export type ControlAction =
+  | 'moveForward'
+  | 'moveBackward'
+  | 'strafeLeft'
+  | 'strafeRight'
+  | 'turnLeft'
+  | 'turnRight'
+  | 'sprint'
+  | 'use'
+  | 'shoot'
+  | 'weapon1'
+  | 'weapon2'
+  | 'weapon3'
+  | 'cycleWeapon'
+  | 'predatorDash'
+  | 'toggleMap'
+  | 'fullscreen'
+  | 'menu';
+
+export type ControlBindings = Record<ControlAction, string[]>;
+
+export type ControlActionMeta = {
+  id: ControlAction;
+  action: string;
+};
+
+export const CONTROL_ACTIONS: ControlActionMeta[] = [
+  { id: 'moveForward', action: 'вперёд' },
+  { id: 'moveBackward', action: 'назад' },
+  { id: 'strafeLeft', action: 'стрейф влево' },
+  { id: 'strafeRight', action: 'стрейф вправо' },
+  { id: 'turnLeft', action: 'поворот влево' },
+  { id: 'turnRight', action: 'поворот вправо' },
+  { id: 'sprint', action: 'спринт' },
+  { id: 'use', action: 'открыть дверь / взаимодействие' },
+  { id: 'shoot', action: 'выстрел / удар' },
+  { id: 'weapon1', action: 'труба' },
+  { id: 'weapon2', action: 'пистолет' },
+  { id: 'weapon3', action: 'дробовик' },
+  { id: 'cycleWeapon', action: 'циклически переключать оружие' },
+  { id: 'predatorDash', action: 'рывок (predator)' },
+  { id: 'toggleMap', action: 'карта' },
+  { id: 'fullscreen', action: 'fullscreen' },
+  { id: 'menu', action: 'меню' },
+];
+
+export const DEFAULT_CONTROL_BINDINGS: ControlBindings = {
+  moveForward: ['KeyW', 'ArrowUp'],
+  moveBackward: ['KeyS', 'ArrowDown'],
+  strafeLeft: ['KeyA'],
+  strafeRight: ['KeyD'],
+  turnLeft: ['ArrowLeft'],
+  turnRight: ['ArrowRight'],
+  sprint: ['ShiftLeft', 'ShiftRight'],
+  use: ['KeyE'],
+  shoot: ['Mouse0', 'Space'],
+  weapon1: ['Digit1'],
+  weapon2: ['Digit2'],
+  weapon3: ['Digit3'],
+  cycleWeapon: ['KeyQ'],
+  predatorDash: ['KeyV'],
+  toggleMap: ['KeyM'],
+  fullscreen: ['KeyF'],
+  menu: ['Escape'],
 };
 
 export const DEFAULT_GAME_CONFIG: GameConfig = {
@@ -29,22 +96,10 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   ui: {
     showFps: true,
   },
+  controls: structuredClone(DEFAULT_CONTROL_BINDINGS),
 };
 
-export const CONTROL_HINTS: ControlHint[] = [
-  { key: 'W/S', action: 'вперёд / назад' },
-  { key: 'A/D', action: 'стрейф' },
-  { key: 'Mouse / ←/→', action: 'поворот' },
-  { key: 'Shift', action: 'спринт' },
-  { key: 'E', action: 'открыть дверь' },
-  { key: 'LMB / Space', action: 'выстрел / удар' },
-  { key: '1/2/3', action: 'труба / пистолет / дробовик' },
-  { key: 'Q', action: 'циклически переключать оружие' },
-  { key: 'V', action: 'рывок (predator)' },
-  { key: 'M', action: 'карта' },
-  { key: 'F', action: 'fullscreen' },
-  { key: 'Esc', action: 'меню' },
-];
+export const CONTROL_HINTS: ControlHint[] = getControlHints(DEFAULT_CONTROL_BINDINGS);
 
 export const CREDITS = [
   'Game design, code, levels: Alya Zanoza',
@@ -62,6 +117,51 @@ function clamp01(value: unknown, fallback: number) {
 
 function isDifficulty(value: unknown): value is Difficulty {
   return value === 'lost' || value === 'trapped' || value === 'consumed';
+}
+
+function normalizeControls(value: unknown): ControlBindings {
+  const source = value && typeof value === 'object' ? (value as Partial<ControlBindings>) : {};
+  const result = structuredClone(DEFAULT_CONTROL_BINDINGS);
+
+  for (const action of CONTROL_ACTIONS) {
+    const bindings = source[action.id];
+    if (!Array.isArray(bindings)) continue;
+    const normalized = bindings.filter((binding): binding is string => {
+      return typeof binding === 'string' && binding.length > 0;
+    });
+    result[action.id] = normalized.length ? normalized : [...DEFAULT_CONTROL_BINDINGS[action.id]];
+  }
+
+  return result;
+}
+
+export function formatControlBinding(binding: string): string {
+  if (binding === 'Mouse0') return 'LMB';
+  if (binding === 'Mouse1') return 'MMB';
+  if (binding === 'Mouse2') return 'RMB';
+
+  const aliases: Record<string, string> = {
+    ArrowUp: '↑',
+    ArrowDown: '↓',
+    ArrowLeft: '←',
+    ArrowRight: '→',
+    Escape: 'Esc',
+    Space: 'Space',
+    ShiftLeft: 'Left Shift',
+    ShiftRight: 'Right Shift',
+  };
+
+  if (aliases[binding]) return aliases[binding];
+  if (/^Key[A-Z]$/.test(binding)) return binding.slice(3);
+  if (/^Digit\d$/.test(binding)) return binding.slice(5);
+  return binding;
+}
+
+export function getControlHints(controls: ControlBindings): ControlHint[] {
+  return CONTROL_ACTIONS.map((meta) => ({
+    key: controls[meta.id].map(formatControlBinding).join(' / '),
+    action: meta.action,
+  }));
 }
 
 export function loadGameConfig(): GameConfig {
@@ -92,6 +192,7 @@ export function loadGameConfig(): GameConfig {
             ? parsed.ui.showFps
             : DEFAULT_GAME_CONFIG.ui.showFps,
       },
+      controls: normalizeControls(parsed.controls),
     };
   } catch {
     return structuredClone(DEFAULT_GAME_CONFIG);

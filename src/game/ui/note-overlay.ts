@@ -37,7 +37,11 @@ export function hideNoteOverlay() {
   root.style.display = 'none';
 }
 
-export function bindNoteOverlayControls() {
+export function bindNoteOverlayControls({
+  getCloseBindings,
+}: {
+  getCloseBindings?: (() => string[]) | null;
+} = {}) {
   if (bound) return;
   bound = true;
 
@@ -50,7 +54,8 @@ export function bindNoteOverlayControls() {
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.repeat) return;
-    if (e.code !== 'Escape' && e.code !== 'KeyE') return;
+    const bindings = getCloseBindings?.() ?? ['Escape', 'KeyE'];
+    if (!bindings.includes(e.code)) return;
     const root = getRoot();
     if (!root || root.style.display === 'none') return;
     hideNoteOverlay();

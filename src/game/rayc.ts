@@ -41,6 +41,7 @@ import type { LevelWorldStatesJson } from './levels/level-loader';
 import type { LevelEntityJson } from './levels/level-loader';
 import type { LevelTriggerActionJson } from './levels/level-loader';
 import { showNoteOverlay } from './ui/note-overlay';
+import { DEFAULT_CONTROL_BINDINGS, type ControlBindings } from './config';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -64,6 +65,7 @@ let ambienceSystem: ReturnType<typeof createAmbienceSystem> | null = null;
 let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
 let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
+let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
 
@@ -526,13 +528,17 @@ export function setWeaponOnChanged(cb: (() => void) | null) {
   weaponsSystem.setOnChanged(cb);
 }
 
+export function setControlBindings(next: ControlBindings) {
+  controls = structuredClone(next);
+}
+
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.repeat) return;
-  if (e.code === 'Digit1') weaponsSystem.setWeapon(WEAPON_IDS[0]);
-  else if (e.code === 'Digit2') weaponsSystem.setWeapon(WEAPON_IDS[1]);
-  else if (e.code === 'Digit3') weaponsSystem.setWeapon(WEAPON_IDS[2]);
-  else if (e.code === 'KeyQ') weaponsSystem.cycleWeapon(1);
-  else if (e.code === 'KeyV') tryPredatorDash();
+  if (controls.weapon1.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[0]);
+  else if (controls.weapon2.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[1]);
+  else if (controls.weapon3.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[2]);
+  else if (controls.cycleWeapon.includes(e.code)) weaponsSystem.cycleWeapon(1);
+  else if (controls.predatorDash.includes(e.code)) tryPredatorDash();
 });
 
 function tryPredatorDash() {
@@ -587,6 +593,7 @@ const player: PlayerInstance = {
 
 const input = createInput({
   getPointerTarget: getCanvas,
+  getToggleMapBindings: () => controls.toggleMap,
   onToggleMap: function () {
     player.flatmap = player.flatmap ? 0 : 1;
   },
@@ -796,6 +803,7 @@ function ensureEngine() {
     player,
     input,
     renderer,
+    getControls: () => controls,
     world: createWorldAdapter({
       isSolid: (x: number, y: number) => {
         const playerRadius = 0.22;

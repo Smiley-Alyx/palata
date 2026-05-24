@@ -20,6 +20,7 @@ import {
   setAudioConfig,
   setBackgroundColors,
   setBackgroundMaterials,
+  setControlBindings,
   setDoorLocks,
   setEnemies,
   setHealthPickups,
@@ -46,10 +47,13 @@ import { bindNoteOverlayControls } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import {
-  CONTROL_HINTS,
+  CONTROL_ACTIONS,
   CREDITS,
+  DEFAULT_CONTROL_BINDINGS,
+  formatControlBinding,
   loadGameConfig,
   saveGameConfig,
+  type ControlAction,
   type GameConfig,
 } from './config';
 
@@ -635,6 +639,7 @@ function applyStoredConfig() {
   setSfxEnabled(gameConfig.audio.sfxEnabled);
   setMusicVolume(gameConfig.audio.musicVolume);
   setSfxVolume(gameConfig.audio.sfxVolume);
+  setControlBindings(gameConfig.controls);
   setDifficulty(currentDifficulty);
   syncFpsVisibility();
 }
@@ -1065,7 +1070,10 @@ function initMenu() {
   const startBtn = document.getElementById('menuStartBtn');
   const difficultyRoot = document.getElementById('menuDifficulty');
   const controlsRoot = document.getElementById('menuControls');
+  const controlsResetBtn = document.getElementById('controlsResetBtn');
   const creditsRoot = document.getElementById('menuCredits');
+  let listeningControl: ControlAction | null = null;
+  let renderControls = () => {};
 
   if (difficultyRoot instanceof HTMLElement) {
     const opts: Array<{ id: Difficulty; label: string }> = [
@@ -1092,16 +1100,76 @@ function initMenu() {
   }
 
   if (controlsRoot instanceof HTMLElement) {
-    controlsRoot.innerHTML = '';
-    for (const hint of CONTROL_HINTS) {
-      const item = document.createElement('li');
-      const key = document.createElement('span');
-      key.className = 'key';
-      key.textContent = hint.key;
-      item.appendChild(key);
-      item.append(' — ' + hint.action);
-      controlsRoot.appendChild(item);
-    }
+    renderControls = () => {
+      controlsRoot.innerHTML = '';
+      for (const control of CONTROL_ACTIONS) {
+        const item = document.createElement('li');
+        item.className = 'control-bind-row';
+
+        const label = document.createElement('span');
+        label.className = 'control-bind-action';
+        label.textContent = control.action;
+        item.appendChild(label);
+
+        const btn = document.createElement('button');
+        btn.className = 'btn control-bind-btn';
+        btn.type = 'button';
+        btn.textContent =
+          listeningControl === control.id
+            ? 'Press key...'
+            : gameConfig.controls[control.id].map(formatControlBinding).join(' / ');
+        btn.addEventListener('click', () => {
+          listeningControl = control.id;
+          renderControls();
+        });
+        item.appendChild(btn);
+        controlsRoot.appendChild(item);
+      }
+    };
+
+    const applyControlBinding = (binding: string) => {
+      if (!listeningControl) return;
+      gameConfig.controls[listeningControl] = [binding];
+      listeningControl = null;
+      setControlBindings(gameConfig.controls);
+      persistGameConfig();
+      renderControls();
+    };
+
+    window.addEventListener(
+      'keydown',
+      (e: KeyboardEvent) => {
+        if (!listeningControl) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.repeat) return;
+        applyControlBinding(e.code);
+      },
+      true,
+    );
+
+    window.addEventListener(
+      'mousedown',
+      (e: MouseEvent) => {
+        if (!listeningControl) return;
+        e.preventDefault();
+        e.stopPropagation();
+        applyControlBinding(`Mouse${e.button}`);
+      },
+      true,
+    );
+
+    renderControls();
+  }
+
+  if (controlsResetBtn instanceof HTMLButtonElement) {
+    controlsResetBtn.addEventListener('click', () => {
+      gameConfig.controls = structuredClone(DEFAULT_CONTROL_BINDINGS);
+      listeningControl = null;
+      setControlBindings(gameConfig.controls);
+      persistGameConfig();
+      renderControls();
+    });
   }
 
   if (creditsRoot instanceof HTMLElement) {
@@ -1164,7 +1232,7 @@ function initMenu() {
 }
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.code !== 'Escape' || e.repeat) return;
+  if (!gameConfig.controls.menu.includes(e.code) || e.repeat) return;
   if (dead) return;
   if (running) {
     pauseGame();
@@ -1194,13 +1262,17 @@ function bootstrap() {
   void loadAnimationRegistry();
   applyStoredConfig();
   installConsoleCommands();
-  initCanvas();
+  initCanvas({
+    getFullscreenBindings: () => gameConfig.controls.fullscreen,
+  });
 
   initAudioUi();
   initHpUi();
   initDeathUi();
   initMenu();
-  bindNoteOverlayControls();
+  bindNoteOverlayControls({
+    getCloseBindings: () => [...gameConfig.controls.menu, ...gameConfig.controls.use],
+  });
   void showStartupSequence();
 }
 
