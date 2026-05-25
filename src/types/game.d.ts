@@ -19,8 +19,9 @@ export interface Player {
   armor: number;
   maxArmor: number;
   speed: number;
-  sprint: number;
-  sprintFactor: number;
+  moving: boolean;
+  sneaking: boolean;
+  sneakFactor: number;
   rotSpeed: number;
   fov: number;
   flatmap: number;

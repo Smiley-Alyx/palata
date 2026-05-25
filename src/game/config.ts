@@ -29,7 +29,7 @@ export type ControlAction =
   | 'strafeRight'
   | 'turnLeft'
   | 'turnRight'
-  | 'sprint'
+  | 'sneak'
   | 'use'
   | 'shoot'
   | 'weapon1'
@@ -56,7 +56,7 @@ export const CONTROL_ACTIONS: ControlActionMeta[] = [
   { id: 'strafeRight', action: 'стрейф вправо' },
   { id: 'turnLeft', action: 'поворот влево' },
   { id: 'turnRight', action: 'поворот вправо' },
-  { id: 'sprint', action: 'спринт' },
+  { id: 'sneak', action: 'подкрадываться' },
   { id: 'use', action: 'открыть дверь / взаимодействие' },
   { id: 'shoot', action: 'выстрел / удар' },
   { id: 'weapon1', action: 'скальпель' },
@@ -77,7 +77,7 @@ export const DEFAULT_CONTROL_BINDINGS: ControlBindings = {
   strafeRight: ['KeyD'],
   turnLeft: ['ArrowLeft'],
   turnRight: ['ArrowRight'],
-  sprint: ['ShiftLeft', 'ShiftRight'],
+  sneak: ['ControlLeft', 'ControlRight'],
   use: ['KeyE'],
   shoot: ['Mouse0', 'Space'],
   weapon1: ['Digit1'],
@@ -162,8 +162,8 @@ export function formatControlBinding(binding: string): string {
     ArrowRight: '→',
     Escape: 'Esc',
     Space: 'Space',
-    ShiftLeft: 'Left Shift',
-    ShiftRight: 'Right Shift',
+    ControlLeft: 'Left Ctrl',
+    ControlRight: 'Right Ctrl',
   };
 
   if (aliases[binding]) return aliases[binding];

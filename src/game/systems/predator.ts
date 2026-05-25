@@ -3,7 +3,6 @@ import type { PerceptionState } from './world-state';
 
 type TierStats = {
   speedMul: number;
-  sprintMul: number;
   damageMul: number;
   hpPerSecond: number;
   noiseMul: number;
@@ -18,7 +17,6 @@ export type PredatorTuning = {
 const DEFAULT_TUNING: PredatorTuning = {
   predator: {
     speedMul: 1.35,
-    sprintMul: 1.15,
     damageMul: 2,
     hpPerSecond: 1.5,
     noiseMul: 0.5,
@@ -26,7 +24,6 @@ const DEFAULT_TUNING: PredatorTuning = {
   },
   infected: {
     speedMul: 1.1,
-    sprintMul: 1.0,
     damageMul: 1.25,
     hpPerSecond: 0,
     noiseMul: 0.85,
@@ -44,7 +41,6 @@ export function createPredatorSystem({
   tuning?: PredatorTuning;
 }) {
   let baseSpeed: number | null = null;
-  let baseSprintFactor: number | null = null;
   let lastTier: 'none' | 'infected' | 'predator' = 'none';
   let hpAccumulator = 0;
   let dashCooldownMs = 0;
@@ -59,15 +55,12 @@ export function createPredatorSystem({
   function applyTier(tier: 'none' | 'infected' | 'predator') {
     if (tier === lastTier) return;
     if (baseSpeed === null) baseSpeed = player.speed;
-    if (baseSprintFactor === null) baseSprintFactor = player.sprintFactor;
 
     const cfg = tier === 'none' ? null : tuning[tier];
     if (!cfg) {
       player.speed = baseSpeed;
-      player.sprintFactor = baseSprintFactor;
     } else {
       player.speed = baseSpeed * cfg.speedMul;
-      player.sprintFactor = baseSprintFactor * cfg.sprintMul;
     }
     lastTier = tier;
   }
@@ -141,9 +134,7 @@ export function createPredatorSystem({
 
   function onMapChanged() {
     if (baseSpeed !== null) player.speed = baseSpeed;
-    if (baseSprintFactor !== null) player.sprintFactor = baseSprintFactor;
     baseSpeed = null;
-    baseSprintFactor = null;
     lastTier = 'none';
     hpAccumulator = 0;
     dashCooldownMs = 0;

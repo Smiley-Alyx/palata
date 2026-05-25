@@ -17,7 +17,7 @@ type Controls = {
   strafeRight: string[];
   turnLeft: string[];
   turnRight: string[];
-  sprint: string[];
+  sneak: string[];
   use: string[];
   shoot: string[];
 };
@@ -100,7 +100,7 @@ export function createEngine({
     strafeRight: ['KeyD'],
     turnLeft: ['ArrowLeft'],
     turnRight: ['ArrowRight'],
-    sprint: ['ShiftLeft', 'ShiftRight'],
+    sneak: ['ControlLeft', 'ControlRight'],
     use: ['KeyE'],
     shoot: ['Mouse0', 'Space'],
   };
@@ -143,11 +143,11 @@ export function createEngine({
       : input.isAnyBindingDown(controls.turnRight)
         ? -1
         : 0;
-    player.sprint = input.isAnyBindingDown(controls.sprint) ? 1 : 0;
+    player.sneaking = input.isAnyBindingDown(controls.sneak);
 
     const timeScale = dt * 60;
 
-    const speed = player.speed * (player.sprint ? player.sprintFactor : 1) * timeScale;
+    const speed = player.speed * (player.sneaking ? player.sneakFactor : 1) * timeScale;
     const movementLength = Math.hypot(forward, strafe) || 1;
     const forwardStep = (forward / movementLength) * speed;
     const strafeStep = (strafe / movementLength) * speed;
@@ -207,13 +207,14 @@ export function createEngine({
 
     const moving = forward !== 0 || strafe !== 0;
     const actuallyMoved = moved && (oldX !== player.x || oldY !== player.y);
+    player.moving = moving && actuallyMoved;
 
     footstepCooldownMs = Math.max(0, footstepCooldownMs - dt * 1000);
     shootCooldownMs = Math.max(0, shootCooldownMs - dt * 1000);
     if (moving && actuallyMoved && footstepCooldownMs <= 0) {
-      events?.onFootstep?.();
       const walkIntervalMs = 360;
-      footstepCooldownMs = player.sprint ? walkIntervalMs / 4 : walkIntervalMs;
+      if (!player.sneaking) events?.onFootstep?.();
+      footstepCooldownMs = player.sneaking ? walkIntervalMs * 2 : walkIntervalMs;
     }
   }
 

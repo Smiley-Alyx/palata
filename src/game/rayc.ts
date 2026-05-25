@@ -646,8 +646,9 @@ const player: PlayerInstance = {
   armor: 0,
   maxArmor: 100,
   speed: 0.05,
-  sprint: 0,
-  sprintFactor: 2,
+  moving: false,
+  sneaking: false,
+  sneakFactor: 0.55,
   rotSpeed: (2 * Math.PI) / 180,
   fov: (60 * Math.PI) / 180,
   flatmap: 0,
@@ -1081,7 +1082,8 @@ export function stopRayc() {
 export function resetPlayerState() {
   player.mov = 0;
   player.dir = 0;
-  player.sprint = 0;
+  player.moving = false;
+  player.sneaking = false;
   player.flatmap = 0;
   player.hp = player.maxHp;
   player.armor = 0;
