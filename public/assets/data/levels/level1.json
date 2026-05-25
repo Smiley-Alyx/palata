@@ -423,22 +423,22 @@
       "id": "gold_key",
       "type": "key",
       "subtype": "gold",
-      "x": 58.5,
-      "y": 43.5
+      "x": 45.5,
+      "y": 48.5
     },
     {
       "id": "silver_key",
       "type": "key",
       "subtype": "silver",
-      "x": 4.5,
-      "y": 25.5
+      "x": 45.5,
+      "y": 35.5
     },
     {
       "id": "blood_key",
       "type": "key",
       "subtype": "blood",
-      "x": 55.5,
-      "y": 11.5
+      "x": 45.5,
+      "y": 16.5
     },
     {
       "id": "amb_spawn_lights",
