@@ -61,7 +61,7 @@ export type World<MaterialId = string | number> = {
 
 export function createEngine({
   getViewWidth,
-  getViewHeight,
+  getViewHeight: _getViewHeight,
   player,
   input,
   renderer,

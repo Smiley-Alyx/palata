@@ -18,7 +18,7 @@ import { createEnemiesSystem } from './systems/enemies';
 import { createPickupsSystem } from './systems/pickups';
 import { createTriggersSystem } from './systems/triggers';
 import { createLightsSystem } from './systems/lights';
-import { loadAnimationRegistry, tickAnimations } from './render/animations';
+import { tickAnimations } from './render/animations';
 import { createHallucinationsSystem, type HallucinationSpec } from './systems/hallucinations';
 import { createInventory, type InventorySnapshot } from './systems/inventory';
 import {

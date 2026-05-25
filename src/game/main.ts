@@ -4,7 +4,6 @@ import { mountAppDom } from './ui/dom';
 import { startAssetPreload, getImage } from './assets/loader';
 import { loadAnimationRegistry } from './render/animations';
 import {
-  disposeRayc,
   getAudioState,
   getPlayer,
   getKeys,
@@ -178,10 +177,6 @@ function applyMenuAudio() {
     sfx: DEFAULT_SFX,
   });
   playMusic();
-}
-
-function cloneGrid(grid: number[][]) {
-  return grid.map((row) => row.slice());
 }
 
 function initDeathUi() {
