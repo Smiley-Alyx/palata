@@ -15,7 +15,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.ts'],
+      files: ['**/*.{ts,mts}'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint'],
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
