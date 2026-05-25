@@ -36,7 +36,12 @@ function loadSheetImage(src: string): HTMLImageElement {
   return loadFrame(src);
 }
 
-function clearTransparentEdges(ctx: CanvasRenderingContext2D, w: number, h: number, key: TransparentEdgeKey) {
+function clearTransparentEdges(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  key: TransparentEdgeKey,
+) {
   const image = ctx.getImageData(0, 0, w, h);
   const { data } = image;
   const seen = new Uint8Array(w * h);
@@ -83,7 +88,11 @@ function clearTransparentEdges(ctx: CanvasRenderingContext2D, w: number, h: numb
 
 // Carve a sheet into per-frame off-screen canvases. The canvas list is built
 // up-front but each canvas is painted lazily once the source image decodes.
-function sliceSheet(src: string, rects: SheetRect[], transparentEdges?: TransparentEdgeKey): HTMLCanvasElement[] {
+function sliceSheet(
+  src: string,
+  rects: SheetRect[],
+  transparentEdges?: TransparentEdgeKey,
+): HTMLCanvasElement[] {
   const img = loadSheetImage(src);
   const canvases: HTMLCanvasElement[] = rects.map((r) => {
     const c = document.createElement('canvas');
@@ -230,7 +239,12 @@ function parseDescriptor(data: unknown): AnimationDescriptor | null {
 
       let transparentEdges: TransparentEdgeKey | undefined;
       if (s.transparentEdges && typeof s.transparentEdges === 'object') {
-        const te = s.transparentEdges as { r?: unknown; g?: unknown; b?: unknown; tolerance?: unknown };
+        const te = s.transparentEdges as {
+          r?: unknown;
+          g?: unknown;
+          b?: unknown;
+          tolerance?: unknown;
+        };
         if (
           typeof te.r === 'number' &&
           typeof te.g === 'number' &&
@@ -267,7 +281,11 @@ function isReady(frame: HTMLImageElement | HTMLCanvasElement): boolean {
   return frame.width > 0 && frame.height > 0;
 }
 
-export function getAnimatedFrameAt(material: string, elapsedSec: number, startFrame: number = 0): CanvasImageSource | null {
+export function getAnimatedFrameAt(
+  material: string,
+  elapsedSec: number,
+  startFrame: number = 0,
+): CanvasImageSource | null {
   const desc = animations.get(material);
   if (!desc || desc.frames.length === 0) return null;
   const firstFrame = Math.max(0, Math.min(desc.frames.length - 1, Math.floor(startFrame)));

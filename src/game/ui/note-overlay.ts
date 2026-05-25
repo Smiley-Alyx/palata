@@ -21,11 +21,7 @@ export function isNoteOverlayVisible(): boolean {
   return root.style.display !== 'none';
 }
 
-export function showNoteOverlay(
-  title: string,
-  text: string,
-  opts: { document?: boolean } = {},
-) {
+export function showNoteOverlay(title: string, text: string, opts: { document?: boolean } = {}) {
   const root = getRoot();
   if (!root) return;
   const titleEl = getTitleEl();

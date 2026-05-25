@@ -1,7 +1,5 @@
 {
   "fps": 8,
   "loop": true,
-  "frames": [
-    "sprites/enemies/zombie.png"
-  ]
+  "frames": ["sprites/enemies/zombie.png"]
 }

@@ -4,8 +4,6 @@
   "_comment": "Sheet is 724x2172 with 3 vertically stacked frames (closed / open / blood). We only render the top 'closed' frame at 724x724; the engine handles 'open' by making the cell ray-transparent (the slice disappears), so we never need to show the second frame here.",
   "sheet": {
     "src": "textures/doors/medical_door.png",
-    "frames": [
-      { "x": 0, "y": 0, "w": 724, "h": 724 }
-    ]
+    "frames": [{ "x": 0, "y": 0, "w": 724, "h": 724 }]
   }
 }

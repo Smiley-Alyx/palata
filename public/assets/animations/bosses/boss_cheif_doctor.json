@@ -6,17 +6,15 @@
     "src": "sprites/bosses/boss_cheif_doctor.png",
     "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
-      { "x": 118,  "y": 2, "w": 124, "h": 112 },
-      { "x": 268,  "y": 2, "w": 132, "h": 112 },
-      { "x": 430,  "y": 2, "w": 134, "h": 112 },
-      { "x": 580,  "y": 2, "w": 128, "h": 112 },
-      { "x": 744,  "y": 2, "w": 136, "h": 112 },
-      { "x": 900,  "y": 2, "w": 142, "h": 112 },
+      { "x": 118, "y": 2, "w": 124, "h": 112 },
+      { "x": 268, "y": 2, "w": 132, "h": 112 },
+      { "x": 430, "y": 2, "w": 134, "h": 112 },
+      { "x": 580, "y": 2, "w": 128, "h": 112 },
+      { "x": 744, "y": 2, "w": 136, "h": 112 },
+      { "x": 900, "y": 2, "w": 142, "h": 112 },
       { "x": 1060, "y": 2, "w": 132, "h": 112 },
       { "x": 1212, "y": 2, "w": 140, "h": 112 }
     ]
   },
-  "_legacy_frames_compat": [
-    "sprites/bosses/boss_cheif_doctor.png"
-  ]
+  "_legacy_frames_compat": ["sprites/bosses/boss_cheif_doctor.png"]
 }

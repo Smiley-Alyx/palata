@@ -204,7 +204,9 @@ for (const { id, path } of FILES) {
   console.log(
     `  reachable from spawn: ${reachable} / ${totalEmpty + totalDoors} (${reachablePct}%)`,
   );
-  console.log(`  pockets (passable components): ${pockets.length}; largest=${pockets[0]}; isolated <5 cells: ${isolatedSmall}`);
+  console.log(
+    `  pockets (passable components): ${pockets.length}; largest=${pockets[0]}; isolated <5 cells: ${isolatedSmall}`,
+  );
 
   if (issues.length) {
     totalIssues += issues.length;

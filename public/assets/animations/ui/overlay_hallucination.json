@@ -1,7 +1,5 @@
 {
   "fps": 12,
   "loop": true,
-  "frames": [
-    "overlays/overlay_hallucination.png"
-  ]
+  "frames": ["overlays/overlay_hallucination.png"]
 }

@@ -6,7 +6,7 @@
     "src": "sprites/enemies/skeleton_husk.png",
     "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
     "frames": [
-      { "x": 75,  "y": 25, "w": 105, "h": 148 },
+      { "x": 75, "y": 25, "w": 105, "h": 148 },
       { "x": 263, "y": 25, "w": 102, "h": 148 },
       { "x": 440, "y": 25, "w": 100, "h": 148 },
       { "x": 632, "y": 23, "w": 100, "h": 150 },

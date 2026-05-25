@@ -1,7 +1,5 @@
 {
   "fps": 8,
   "loop": true,
-  "frames": [
-    "textures/doors/key_door.png"
-  ]
+  "frames": ["textures/doors/key_door.png"]
 }

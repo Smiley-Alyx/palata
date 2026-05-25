@@ -5,8 +5,6 @@
   "sheet": {
     "src": "sprites/pickups/medication/injector.png",
     "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
-    "frames": [
-      { "x": 162, "y": 58, "w": 288, "h": 658 }
-    ]
+    "frames": [{ "x": 162, "y": 58, "w": 288, "h": 658 }]
   }
 }

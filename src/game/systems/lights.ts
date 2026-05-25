@@ -20,7 +20,13 @@ export type Light = {
 
 function normalizeMode(raw: unknown, flicker: boolean | undefined): LightMode {
   if (typeof raw === 'string') {
-    if (raw === 'steady' || raw === 'flicker' || raw === 'emergency' || raw === 'pulse' || raw === 'organic') {
+    if (
+      raw === 'steady' ||
+      raw === 'flicker' ||
+      raw === 'emergency' ||
+      raw === 'pulse' ||
+      raw === 'organic'
+    ) {
       return raw;
     }
   }
@@ -48,7 +54,10 @@ export function createLightsSystem() {
       ? next
           .filter(
             (l) =>
-              l && typeof l.x === 'number' && typeof l.y === 'number' && typeof l.radius === 'number',
+              l &&
+              typeof l.x === 'number' &&
+              typeof l.y === 'number' &&
+              typeof l.radius === 'number',
           )
           .map((l, i) => ({
             x: l.x,
@@ -82,7 +91,9 @@ export function createLightsSystem() {
       case 'flicker': {
         // Broken fluorescent: mostly on, with rapid dropouts.
         const f =
-          0.72 + 0.28 * Math.sin(timeSec * 18 + phase) + 0.12 * Math.sin(timeSec * 7.3 + phase * 0.7);
+          0.72 +
+          0.28 * Math.sin(timeSec * 18 + phase) +
+          0.12 * Math.sin(timeSec * 7.3 + phase * 0.7);
         return Math.max(0, f);
       }
       case 'emergency': {
