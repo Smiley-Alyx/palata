@@ -493,24 +493,34 @@ function initHpUi() {
   };
   syncKeys();
 
-  function renderPortrait(hpRatio: number) {
+  function pickPortraitFrame(hpRatio: number, stages: ReadonlyArray<string>, now: number): number {
+    const tick = Math.floor(now / 800);
+    const cycle = (frames: number[]) => frames[tick % frames.length];
+
+    if (hpRatio <= 0) return 14;
+    if (stages.includes('predator')) return cycle([11, 12, 13, 6]);
+    if (stages.includes('nightmare')) return cycle([7, 12, 13, 8]);
+    if (hpRatio <= 0.25) return cycle([5, 8, 5, 7]);
+    if (hpRatio <= 0.5) return cycle([4, 5, 4, 8]);
+    if (stages.includes('infected')) return cycle([9, 10, 9, 7]);
+    if (stages.includes('withdrawal')) return cycle([8, 3, 8, 4]);
+    if (hpRatio <= 0.75) return cycle([3, 1, 3, 2]);
+    return cycle([0, 1, 0, 2]);
+  }
+
+  function renderPortrait(hpRatio: number, stages: ReadonlyArray<string>, now: number) {
     if (!hudCtx || !hudCanvas) return;
     if (!spriteImg || spriteImg.naturalWidth <= 0 || spriteImg.naturalHeight <= 0) return;
 
     const cols = 3;
     const rows = 5;
-    const frameW = spriteImg.naturalWidth / cols;
-    const frameH = spriteImg.naturalHeight / rows;
-
-    let frame = 0;
-    if (hpRatio <= 0) frame = 14;
-    else if (hpRatio <= 0.25) frame = 5;
-    else if (hpRatio <= 0.5) frame = 4;
-    else if (hpRatio <= 0.75) frame = 3;
+    const frameW = Math.floor(spriteImg.naturalWidth / cols);
+    const frameH = Math.floor(spriteImg.naturalHeight / rows);
+    const frame = pickPortraitFrame(hpRatio, stages, now);
 
     const sx = (frame % cols) * frameW;
     const sy = Math.floor(frame / cols) * frameH;
-    const faceH = frameH * 0.78;
+    const faceH = Math.floor(frameH * 0.72);
 
     const dw = hudCanvas.width;
     const dh = hudCanvas.height;
@@ -575,8 +585,8 @@ function initHpUi() {
     if (artifactsEl) {
       artifactsEl.textContent = String(inv.artifact);
     }
+    const stages = getPerceptionStages();
     if (overlayEl || vhsEl) {
-      const stages = getPerceptionStages();
       const next = stages.includes('predator')
         ? 'predator'
         : stages.includes('nightmare')
@@ -608,7 +618,7 @@ function initHpUi() {
       }
     }
     syncKeys();
-    renderPortrait(hp / maxHp);
+    renderPortrait(hp / maxHp, stages, now);
     requestAnimationFrame(update);
   }
 
