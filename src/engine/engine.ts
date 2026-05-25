@@ -100,7 +100,7 @@ export function createEngine({
     strafeRight: ['KeyD'],
     turnLeft: ['ArrowLeft'],
     turnRight: ['ArrowRight'],
-    sneak: ['ControlLeft', 'ControlRight'],
+    sneak: ['ShiftLeft', 'ShiftRight'],
     use: ['KeyE'],
     shoot: ['Mouse0', 'Space'],
   };

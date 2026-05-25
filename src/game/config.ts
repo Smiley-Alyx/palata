@@ -77,7 +77,7 @@ export const DEFAULT_CONTROL_BINDINGS: ControlBindings = {
   strafeRight: ['KeyD'],
   turnLeft: ['ArrowLeft'],
   turnRight: ['ArrowRight'],
-  sneak: ['ControlLeft', 'ControlRight'],
+  sneak: ['ShiftLeft', 'ShiftRight'],
   use: ['KeyE'],
   shoot: ['Mouse0', 'Space'],
   weapon1: ['Digit1'],
@@ -117,6 +117,7 @@ export const CREDITS = [
 ];
 
 const STORAGE_KEY = 'palata.config.v1';
+const LEGACY_SNEAK_BINDINGS = ['ControlLeft', 'ControlRight'];
 
 function clamp01(value: unknown, fallback: number) {
   const n = Number(value);
@@ -144,6 +145,13 @@ function normalizeControls(value: unknown): ControlBindings {
     const normalized = bindings.filter((binding): binding is string => {
       return typeof binding === 'string' && binding.length > 0;
     });
+    if (
+      action.id === 'sneak' &&
+      normalized.length === LEGACY_SNEAK_BINDINGS.length &&
+      normalized.every((binding, index) => binding === LEGACY_SNEAK_BINDINGS[index])
+    ) {
+      continue;
+    }
     result[action.id] = normalized.length ? normalized : [...DEFAULT_CONTROL_BINDINGS[action.id]];
   }
 
@@ -164,6 +172,8 @@ export function formatControlBinding(binding: string): string {
     Space: 'Space',
     ControlLeft: 'Left Ctrl',
     ControlRight: 'Right Ctrl',
+    ShiftLeft: 'Left Shift',
+    ShiftRight: 'Right Shift',
   };
 
   if (aliases[binding]) return aliases[binding];
