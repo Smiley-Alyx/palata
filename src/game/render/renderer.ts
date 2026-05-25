@@ -568,7 +568,6 @@ export function createRenderer({
         anchor: 'center' as const,
       };
     });
-    drawSpriteList(zBuffer, enemies);
 
     const spritesRaw = typeof getSprites === 'function' ? getSprites() : [];
     const sprites = spritesRaw.map((s) => ({
@@ -578,7 +577,7 @@ export function createRenderer({
       material: s.material,
       scale: s.scale,
     }));
-    drawSpriteList(zBuffer, sprites);
+    drawSpriteList(zBuffer, [...enemies, ...sprites]);
   }
 
   function drawSenseRings() {
