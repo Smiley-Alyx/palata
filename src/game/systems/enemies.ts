@@ -64,6 +64,7 @@ export function createEnemiesSystem({
   let enemySightLoopKey: string | null = null;
   const enemyRadius = 0.24;
   const playerRadius = 0.22;
+  const attackRange = 1 + enemyRadius + playerRadius;
 
   function ensureEnemyGridForCurrentMap() {
     const map = getMap();
@@ -339,12 +340,9 @@ export function createEnemiesSystem({
     const w = map[0].length;
     const h = map.length;
     if (xMap < 0 || xMap >= w || yMap < 0 || yMap >= h) return true;
-    if (map[yMap][xMap] !== 0) {
-      if (isDoorCell(xMap, yMap) && typeof isDoorBlocking === 'function') {
-        return isDoorBlocking(xMap, yMap);
-      }
-      return true;
-    }
+    // A closed door is a valid movement target: tryStepEnemy opens it and
+    // keeps the enemy waiting until the passage is clear.
+    if (map[yMap][xMap] !== 0 && !isDoorCell(xMap, yMap)) return true;
 
     if (isPlayerBlockingEnemyCell(xMap, yMap)) return true;
 
@@ -365,21 +363,18 @@ export function createEnemiesSystem({
     const cellId = map?.[nextY]?.[nextX];
     if (cellId !== 0) {
       if (isDoorCell(nextX, nextY)) {
-        e.mode = 'wait';
-        e.waitTileX = nextX;
-        e.waitTileY = nextY;
-        e.waitDirX = dirX;
-        e.waitDirY = dirY;
         onRequestOpenDoor(nextX, nextY);
-        e.decisionCooldownMs = 180;
-      }
-
-      if (
-        isDoorCell(nextX, nextY) &&
-        typeof isDoorBlocking === 'function' &&
-        !isDoorBlocking(nextX, nextY)
-      ) {
-        // Door tile is present but currently not blocking: allow stepping through.
+        if (typeof isDoorBlocking === 'function' && !isDoorBlocking(nextX, nextY)) {
+          // Door is fully open: keep the current mode and cross immediately.
+        } else {
+          e.mode = 'wait';
+          e.waitTileX = nextX;
+          e.waitTileY = nextY;
+          e.waitDirX = dirX;
+          e.waitDirY = dirY;
+          e.decisionCooldownMs = 180;
+          return false;
+        }
       } else {
         return false;
       }
@@ -649,7 +644,7 @@ export function createEnemiesSystem({
         if (
           e.mode === 'chase' &&
           e.attackCooldownMs <= 0 &&
-          dist < 1.35 &&
+          dist < attackRange &&
           hasLineOfSight(e.x, e.y, player.x, player.y)
         ) {
           const dmg = rollEnemyDamage(e.kind, getDifficulty());

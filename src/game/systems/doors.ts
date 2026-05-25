@@ -158,6 +158,10 @@ export function createDoorsSystem({
       if (d.action === 'open') {
         d.openHoldMs += stepMs;
         if (d.openHoldMs >= autoCloseMs) {
+          if (typeof isBlocked === 'function' && isBlocked(d.x, d.y)) {
+            d.openHoldMs = 0;
+            continue;
+          }
           d.action = 'closing';
           playDoorCloseSfx?.();
         }
