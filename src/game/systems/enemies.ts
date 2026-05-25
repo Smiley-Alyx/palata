@@ -419,12 +419,20 @@ export function createEnemiesSystem({
     return true;
   }
 
-  function pickChaseStep(selfIndex: number): { x: number; y: number } {
+  function isVisibleToPlayer(e: Enemy, dist: number): boolean {
+    if (dist > 12) return false;
+    const angle = Math.atan2(player.y - e.y, e.x - player.x);
+    let rel = angle - player.rot;
+    rel = Math.atan2(Math.sin(rel), Math.cos(rel));
+    return Math.abs(rel) <= player.fov / 2 && hasLineOfSight(player.x, player.y, e.x, e.y);
+  }
+
+  function pickChaseStep(selfIndex: number, isSeenByPlayer: boolean): { x: number; y: number } {
     const e = enemies[selfIndex];
     let px = Math.floor(player.x);
     let py = Math.floor(player.y);
 
-    if (e.kind === 'skeleton_husk') {
+    if (e.kind === 'skeleton_husk' && !isSeenByPlayer) {
       const stalkDistance = 1;
       const stalkX = Math.floor(player.x - Math.cos(player.rot) * stalkDistance);
       const stalkY = Math.floor(player.y + Math.sin(player.rot) * stalkDistance);
@@ -532,6 +540,7 @@ export function createEnemiesSystem({
       e.attackCooldownMs = Math.max(0, e.attackCooldownMs - dt * 1000);
       e.decisionCooldownMs = Math.max(0, e.decisionCooldownMs - dt * 1000);
       const dist = Math.hypot(player.x - e.x, player.y - e.y);
+      const isSeenByPlayer = isVisibleToPlayer(e, dist);
 
       if (!e.alerted) {
         if (dist > 12) {
@@ -541,23 +550,17 @@ export function createEnemiesSystem({
         }
       }
 
-      {
-        const maxDist = 9;
-        const halfAngle = (10 * Math.PI) / 180;
-        if (dist <= maxDist) {
-          const angle = Math.atan2(player.y - e.y, e.x - player.x);
-          let rel = angle - player.rot;
-          rel = Math.atan2(Math.sin(rel), Math.cos(rel));
-          if (Math.abs(rel) <= halfAngle && hasLineOfSight(player.x, player.y, e.x, e.y)) {
-            if (!nearestVisible || dist < nearestVisible.dist) {
-              nearestVisible = { dist, kind: e.kind };
-            }
-          }
+      if (isSeenByPlayer) {
+        if (!nearestVisible || dist < nearestVisible.dist) {
+          nearestVisible = { dist, kind: e.kind };
         }
       }
 
       if (!e.alerted) {
-        if (dist < 8 && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+        if (
+          (e.kind === 'skeleton_husk' && isSeenByPlayer) ||
+          (dist < 8 && hasLineOfSight(e.x, e.y, player.x, player.y))
+        ) {
           e.alerted = true;
           e.mode = 'chase';
           e.decisionCooldownMs = 0;
@@ -600,7 +603,9 @@ export function createEnemiesSystem({
               }
             } else {
               const step =
-                e.mode === 'chase' ? pickChaseStep(selfIndex) : pickPatrolStep(selfIndex);
+                e.mode === 'chase'
+                  ? pickChaseStep(selfIndex, isSeenByPlayer)
+                  : pickPatrolStep(selfIndex);
               if (step.x !== 0 || step.y !== 0) {
                 const changing = step.x !== e.moveDirX || step.y !== e.moveDirY;
                 if (changing && (e.moveDirX !== 0 || e.moveDirY !== 0)) {
