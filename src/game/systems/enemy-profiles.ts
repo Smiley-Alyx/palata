@@ -6,6 +6,7 @@ export type EnemyProfile = {
   hp: number;
   speedPatrol: number;
   speedChase: number;
+  attackCooldownScale?: number;
   // Render scale relative to a 1-tile-tall sprite. Bosses use >1 for presence.
   scale?: number;
   pull?: {
@@ -23,8 +24,9 @@ export type EnemyProfile = {
 const HUSK: EnemyProfile = {
   material: 'skeleton_husk',
   hp: 1,
-  speedPatrol: 0.8,
-  speedChase: 1.2,
+  speedPatrol: 0.95,
+  speedChase: 1.45,
+  attackCooldownScale: 0.6,
   sightLoop: SFX.enemies.husk.idle,
   attack: SFX.enemies.husk.attack,
   hurt: SFX.enemies.orderly.hurt,
@@ -137,20 +139,21 @@ const BOSS_CHIEF_DOCTOR: EnemyProfile = {
   hp: 18,
   scale: 1.5,
   pull: {
-    range: 5.5,
-    strength: 0.7,
-    minDistance: 1.1,
+    range: 12,
+    strength: 1.6,
+    minDistance: 0.9,
   },
   speedPatrol: 0.6,
   speedChase: 1.0,
+  attackCooldownScale: 1.4,
   sightLoop: SFX.bosses.chiefDoctor.intro,
   attack: SFX.bosses.chiefDoctor.attack,
   hurt: SFX.enemies.orderly.hurt,
   death: SFX.bosses.chiefDoctor.death,
   damage: {
-    lost: { min: 22, max: 30 },
-    trapped: { min: 26, max: 38 },
-    consumed: { min: 32, max: 48 },
+    lost: { min: 30, max: 42 },
+    trapped: { min: 36, max: 50 },
+    consumed: { min: 44, max: 62 },
   },
 };
 

@@ -29,6 +29,7 @@ export type Enemy = {
   alive: boolean;
   alerted: boolean;
   attackFlashMs: number;
+  attackCooldownMs: number;
 };
 
 export function createEnemiesSystem({
@@ -60,7 +61,6 @@ export function createEnemiesSystem({
   let enemyGridH = 0;
   let enemyAt: Int32Array | null = null;
 
-  let enemyDamageCooldownMs = 0;
   let enemySightLoopKey: string | null = null;
   const enemyRadius = 0.24;
   const playerRadius = 0.22;
@@ -132,10 +132,12 @@ export function createEnemiesSystem({
     return r < orderlyW ? 'medical_orderly' : 'skeleton_husk';
   }
 
-  function damageCooldownForDifficulty(difficulty: Difficulty): number {
-    if (difficulty === 'lost') return 670;
-    if (difficulty === 'trapped') return 570;
-    return 520;
+  function damageCooldownForDifficulty(difficulty: Difficulty, kind: EnemyKind): number {
+    let base: number;
+    if (difficulty === 'lost') base = 670;
+    else if (difficulty === 'trapped') base = 570;
+    else base = 520;
+    return base * (getEnemyProfile(kind).attackCooldownScale ?? 1);
   }
 
   function healthMultiplierForDifficulty(difficulty: Difficulty): number {
@@ -184,6 +186,7 @@ export function createEnemiesSystem({
       alive: true,
       alerted,
       attackFlashMs: opts?.attackFlashMs ?? 0,
+      attackCooldownMs: 0,
     };
   }
 
@@ -427,7 +430,7 @@ export function createEnemiesSystem({
     let py = Math.floor(player.y);
 
     if (e.kind === 'skeleton_husk') {
-      const stalkDistance = 2;
+      const stalkDistance = 1;
       const stalkX = Math.floor(player.x - Math.cos(player.rot) * stalkDistance);
       const stalkY = Math.floor(player.y + Math.sin(player.rot) * stalkDistance);
       const reachedStalkTile = stalkX === e.tileX && stalkY === e.tileY;
@@ -525,14 +528,13 @@ export function createEnemiesSystem({
   }
 
   function updateEnemies(dt: number) {
-    enemyDamageCooldownMs = Math.max(0, enemyDamageCooldownMs - dt * 1000);
-
     let nearestVisible: { dist: number; kind: EnemyKind } | null = null;
 
     for (let selfIndex = 0; selfIndex < enemies.length; selfIndex++) {
       const e = enemies[selfIndex];
       if (!e.alive) continue;
       e.attackFlashMs = Math.max(0, e.attackFlashMs - dt * 1000);
+      e.attackCooldownMs = Math.max(0, e.attackCooldownMs - dt * 1000);
       e.decisionCooldownMs = Math.max(0, e.decisionCooldownMs - dt * 1000);
       const dist = Math.hypot(player.x - e.x, player.y - e.y);
 
@@ -646,7 +648,7 @@ export function createEnemiesSystem({
 
         if (
           e.mode === 'chase' &&
-          enemyDamageCooldownMs <= 0 &&
+          e.attackCooldownMs <= 0 &&
           dist < 1.35 &&
           hasLineOfSight(e.x, e.y, player.x, player.y)
         ) {
@@ -656,7 +658,7 @@ export function createEnemiesSystem({
           playSfx(SFX.player.hurtMedium);
           e.attackFlashMs = 220;
           onDamagePulse?.();
-          enemyDamageCooldownMs = damageCooldownForDifficulty(getDifficulty());
+          e.attackCooldownMs = damageCooldownForDifficulty(getDifficulty(), e.kind);
           if (player.hp <= 0) {
             onKillFill?.();
           }
