@@ -93,7 +93,13 @@ export function createPickupsSystem({
   }
 
   function getSprites() {
-    const sprites: Array<{ x: number; y: number; material: string; alive: boolean; scale?: number }> = [];
+    const sprites: Array<{
+      x: number;
+      y: number;
+      material: string;
+      alive: boolean;
+      scale?: number;
+    }> = [];
     for (const p of healthPickups) {
       sprites.push({ x: p.x, y: p.y, material: 'health', alive: p.alive, scale: 0.33 });
     }
@@ -121,6 +127,7 @@ export function createPickupsSystem({
     for (const p of healthPickups) {
       if (!p.alive) continue;
       if (Math.hypot(player.x - p.x, player.y - p.y) > pickupR) continue;
+      if (player.hp >= player.maxHp) continue;
       const tuning = HEALTH_PICKUP_TUNING[getDifficulty()];
       player.hp = Math.min(player.maxHp, player.hp + tuning.healAmount);
       p.alive = false;

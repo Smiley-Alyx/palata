@@ -1,5 +1,5 @@
 import type { Player } from '../../types/game';
-import type { Inventory, InventoryItemId } from './inventory';
+import { AMMO_CAPACITY, type Inventory, type InventoryItemId } from './inventory';
 import { SFX } from '../audio/sfx-config';
 import { addPlayerArmor } from './player-stats';
 
@@ -84,7 +84,7 @@ const AMMO_SPRITE: Record<AmmoSubtype, string> = {
   shotgun: 'ammo_shotgun',
 };
 
-const AMMO_INVENTORY_ID: Record<AmmoSubtype, InventoryItemId> = {
+const AMMO_INVENTORY_ID: Record<AmmoSubtype, keyof typeof AMMO_CAPACITY> = {
   pistol: 'pistol_ammo',
   shotgun: 'shotgun_ammo',
 };
@@ -334,9 +334,11 @@ export function createItemsSystem({
     for (const a of ammo) {
       if (!a.alive) continue;
       if (Math.hypot(player.x - a.x, player.y - a.y) > pickupR) continue;
+      const inventoryId = AMMO_INVENTORY_ID[a.subtype];
+      if (inventory.get(inventoryId) >= AMMO_CAPACITY[inventoryId]) continue;
       a.alive = false;
       if (a.id) onPickup?.(a.id);
-      inventory.add(AMMO_INVENTORY_ID[a.subtype], a.amount);
+      inventory.add(inventoryId, a.amount);
       playSfx(SFX.ui.pickupAmmo);
     }
 
