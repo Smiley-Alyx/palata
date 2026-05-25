@@ -68,6 +68,7 @@ export function createEngine({
   world,
   events,
   getControls,
+  getMouseSensitivity,
 }: {
   getViewWidth: () => number;
   getViewHeight: () => number;
@@ -77,6 +78,7 @@ export function createEngine({
   world: World;
   events?: EngineEvents;
   getControls?: () => Controls;
+  getMouseSensitivity?: () => number;
 }) {
   let started = false;
   let rafId: number | null = null;
@@ -92,7 +94,7 @@ export function createEngine({
 
   let footstepCooldownMs = 0;
   let shootCooldownMs = 0;
-  const mouseSensitivity = 0.0025;
+  const baseMouseSensitivity = 0.0025;
   const defaultControls: Controls = {
     moveForward: ['KeyW', 'ArrowUp'],
     moveBackward: ['KeyS', 'ArrowDown'],
@@ -152,7 +154,8 @@ export function createEngine({
     const forwardStep = (forward / movementLength) * speed;
     const strafeStep = (strafe / movementLength) * speed;
     const keyboardRotStep = player.dir * player.rotSpeed * timeScale;
-    const mouseRotStep = -input.consumeMouseDeltaX() * mouseSensitivity;
+    const mouseRotStep =
+      -input.consumeMouseDeltaX() * baseMouseSensitivity * (getMouseSensitivity?.() ?? 1);
     const rotStep = keyboardRotStep + mouseRotStep;
 
     player.rot = addRotToAngle(rotStep, player.rot);

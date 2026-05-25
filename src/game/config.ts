@@ -14,6 +14,9 @@ export type GameConfig = {
   ui: {
     showFps: boolean;
   };
+  input: {
+    mouseSensitivity: number;
+  };
   controls: ControlBindings;
 };
 
@@ -104,6 +107,9 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   },
   ui: {
     showFps: true,
+  },
+  input: {
+    mouseSensitivity: 1,
   },
   controls: structuredClone(DEFAULT_CONTROL_BINDINGS),
 };
@@ -219,6 +225,14 @@ export function loadGameConfig(): GameConfig {
           typeof parsed.ui?.showFps === 'boolean'
             ? parsed.ui.showFps
             : DEFAULT_GAME_CONFIG.ui.showFps,
+      },
+      input: {
+        mouseSensitivity: clampRange(
+          parsed.input?.mouseSensitivity,
+          DEFAULT_GAME_CONFIG.input.mouseSensitivity,
+          0.1,
+          2,
+        ),
       },
       controls: normalizeControls(parsed.controls),
     };

@@ -69,6 +69,7 @@ let worldStateSystem: ReturnType<typeof createWorldStateSystem> | null = null;
 let portalsSystem: ReturnType<typeof createPortalsSystem> | null = null;
 let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
+let mouseSensitivity = 1;
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
 const footstepNoiseRadius = 5;
@@ -592,6 +593,10 @@ export function setControlBindings(next: ControlBindings) {
   controls = structuredClone(next);
 }
 
+export function setMouseSensitivity(multiplier: number) {
+  mouseSensitivity = multiplier;
+}
+
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.repeat) return;
   if (controls.weapon1.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[0]);
@@ -876,6 +881,7 @@ function ensureEngine() {
     input,
     renderer,
     getControls: () => controls,
+    getMouseSensitivity: () => mouseSensitivity,
     world: createWorldAdapter({
       isSolid: (x: number, y: number) => {
         const playerRadius = 0.22;

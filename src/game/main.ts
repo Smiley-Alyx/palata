@@ -29,6 +29,7 @@ import {
   setLightingMultiplier,
   setMap,
   setMaterialsWall,
+  setMouseSensitivity,
   setLights,
   setGeometryOverrides,
   setEntities,
@@ -363,6 +364,7 @@ function initAudioUi() {
   const musicVolumeEl = document.getElementById('musicVolume');
   const sfxVolumeEl = document.getElementById('sfxVolume');
   const lightingEl = document.getElementById('lightingLevel');
+  const mouseSensitivityEl = document.getElementById('mouseSensitivity');
   const fpsToggleBtn = document.getElementById('fpsToggleBtn');
 
   if (!(musicToggleBtn instanceof HTMLButtonElement)) return;
@@ -370,6 +372,7 @@ function initAudioUi() {
   if (!(musicVolumeEl instanceof HTMLInputElement)) return;
   if (!(sfxVolumeEl instanceof HTMLInputElement)) return;
   if (!(lightingEl instanceof HTMLInputElement)) return;
+  if (!(mouseSensitivityEl instanceof HTMLInputElement)) return;
   if (!(fpsToggleBtn instanceof HTMLButtonElement)) return;
 
   const syncUi = () => {
@@ -379,6 +382,7 @@ function initAudioUi() {
     musicVolumeEl.value = String(state.musicVolume);
     sfxVolumeEl.value = String(state.sfxVolume);
     lightingEl.value = String(gameConfig.video.lighting);
+    mouseSensitivityEl.value = String(gameConfig.input.mouseSensitivity);
     fpsToggleBtn.textContent = gameConfig.ui.showFps ? 'FPS: on' : 'FPS: off';
     syncFpsVisibility();
   };
@@ -422,6 +426,15 @@ function initAudioUi() {
     if (!Number.isFinite(v)) return;
     gameConfig.video.lighting = Math.max(0.7, Math.min(1.4, v));
     setLightingMultiplier(gameConfig.video.lighting);
+    persistGameConfig();
+    syncUi();
+  });
+
+  mouseSensitivityEl.addEventListener('input', () => {
+    const v = Number(mouseSensitivityEl.value);
+    if (!Number.isFinite(v)) return;
+    gameConfig.input.mouseSensitivity = Math.max(0.1, Math.min(2, v));
+    setMouseSensitivity(gameConfig.input.mouseSensitivity);
     persistGameConfig();
     syncUi();
   });
@@ -473,12 +486,10 @@ function initHpUi() {
 
   const syncKeys = () => {
     const ownedKeys = getKeys();
-    if (keyGoldEl instanceof HTMLElement)
-      keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
+    if (keyGoldEl instanceof HTMLElement) keyGoldEl.classList.toggle('is-owned', ownedKeys.gold);
     if (keySilverEl instanceof HTMLElement)
       keySilverEl.classList.toggle('is-owned', ownedKeys.silver);
-    if (keyBloodEl instanceof HTMLElement)
-      keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
+    if (keyBloodEl instanceof HTMLElement) keyBloodEl.classList.toggle('is-owned', ownedKeys.blood);
   };
   syncKeys();
 
@@ -678,6 +689,7 @@ function applyStoredConfig() {
   setSfxEnabled(gameConfig.audio.sfxEnabled);
   setMusicVolume(gameConfig.audio.musicVolume);
   setSfxVolume(gameConfig.audio.sfxVolume);
+  setMouseSensitivity(gameConfig.input.mouseSensitivity);
   setLightingMultiplier(gameConfig.video.lighting);
   setControlBindings(gameConfig.controls);
   setDifficulty(currentDifficulty);
@@ -709,22 +721,10 @@ const DEATH_EPITAPHS: Record<string, string[]> = {
     'The dose was correct. The patient was not.',
     'You drift below the ward, soft and quiet.',
   ],
-  withdrawal: [
-    'The pills wore off a corridor too late.',
-    'Your hands shook. The ward did not.',
-  ],
-  infected: [
-    'Something inside you finished first.',
-    'The walls were never the wet thing.',
-  ],
-  nightmare: [
-    'You woke up. You were still here.',
-    'The dream kept your body for itself.',
-  ],
-  predator: [
-    'The hunter became meat again.',
-    'Even teeth grow tired in this place.',
-  ],
+  withdrawal: ['The pills wore off a corridor too late.', 'Your hands shook. The ward did not.'],
+  infected: ['Something inside you finished first.', 'The walls were never the wet thing.'],
+  nightmare: ['You woke up. You were still here.', 'The dream kept your body for itself.'],
+  predator: ['The hunter became meat again.', 'Even teeth grow tired in this place.'],
 };
 
 function pickEpitaph(stage: string) {
