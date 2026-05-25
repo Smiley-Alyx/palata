@@ -797,11 +797,7 @@ function ensureEngine() {
     onEntityPickup: (id) => consumeEntity(id),
     onKeyPickup: (id) => {
       ownedKeys[id] = true;
-      showNarrativeMessage('note', {
-        title: 'Карточка пациента',
-        text: 'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
-        isDocument: true,
-      });
+      showNarrativeMessage('note');
     },
   });
 
