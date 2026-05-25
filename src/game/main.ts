@@ -520,7 +520,6 @@ function initHpUi() {
 
     const sx = (frame % cols) * frameW;
     const sy = Math.floor(frame / cols) * frameH;
-    const faceH = Math.floor(frameH * 0.72);
 
     const dw = hudCanvas.width;
     const dh = hudCanvas.height;
@@ -529,7 +528,7 @@ function initHpUi() {
     hudCtx.imageSmoothingEnabled = false;
 
     // Letterbox to avoid squishing the face.
-    const srcAspect = frameW / faceH;
+    const srcAspect = frameW / frameH;
     const dstAspect = dw / dh;
     let drawW = dw;
     let drawH = dh;
@@ -542,7 +541,7 @@ function initHpUi() {
     }
     const dx = Math.floor((dw - drawW) / 2);
     const dy = Math.floor((dh - drawH) / 2);
-    hudCtx.drawImage(spriteImg, sx, sy, frameW, faceH, dx, dy, drawW, drawH);
+    hudCtx.drawImage(spriteImg, sx, sy, frameW, frameH, dx, dy, drawW, drawH);
   }
 
   let fpsFrames = 0;
