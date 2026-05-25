@@ -23,6 +23,7 @@ import { createHallucinationsSystem, type HallucinationSpec } from './systems/ha
 import { createInventory, type InventorySnapshot } from './systems/inventory';
 import {
   createItemsSystem,
+  type MessageSpec,
   type MedicationSpec,
   type ArtifactSpec,
   type AmmoSpec,
@@ -117,6 +118,21 @@ function triggerKeyHallucination() {
   audio.playSfx(SFX.hallucinations.burst);
 }
 
+function showNarrativeMessage(
+  messageType: string,
+  fallback?: Pick<MessageSpec, 'title' | 'text' | 'isDocument'>,
+  collectDocument = false,
+) {
+  const assignedMessage = narrativeMessagesSystem.take(messageType);
+  const title = assignedMessage?.title ?? fallback?.title ?? 'Note';
+  const text = assignedMessage?.text ?? fallback?.text ?? '';
+  const isDocument = assignedMessage?.isDocument ?? !!fallback?.isDocument;
+
+  triggerKeyHallucination();
+  showNoteOverlay(title, text, { document: isDocument });
+  if (collectDocument && isDocument) inventory.add('document', 1);
+}
+
 function applyEntityAction(a: LevelTriggerActionJson) {
   if (a.type === 'play_sound') {
     const key = a.sound as Parameters<AudioManager['playSfx']>[0];
@@ -183,25 +199,6 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
   for (const e of activeInteractables) {
     if (Math.floor(e.x) !== xMap || Math.floor(e.y) !== yMap) continue;
 
-    if (e.type === 'note' || e.type === 'message') {
-      const messageType =
-        typeof e.messageType === 'string' && e.messageType ? e.messageType : 'note';
-      const assignedMessage = narrativeMessagesSystem.take(messageType);
-      const title =
-        assignedMessage?.title ??
-        (typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note');
-      const text =
-        assignedMessage?.text ??
-        (typeof (e as any).text === 'string' ? ((e as any).text as string) : '');
-      const isDocument = assignedMessage?.isDocument ?? !!(e as any).isDocument;
-      showNoteOverlay(title, text, { document: isDocument });
-      if (isDocument) inventory.add('document', 1);
-      if (typeof e.id === 'string' && e.id) {
-        consumeEntity(e.id);
-      }
-      return true;
-    }
-
     if (e.type === 'button' || e.type === 'switch') {
       const actions = (e as any).actions;
       if (Array.isArray(actions)) {
@@ -231,12 +228,7 @@ function reapplyEntities() {
   );
 
   activeInteractables = enabled.filter(
-    (e) =>
-      e.type === 'note' ||
-      e.type === 'message' ||
-      e.type === 'button' ||
-      e.type === 'switch' ||
-      e.type === 'door',
+    (e) => e.type === 'button' || e.type === 'switch' || e.type === 'door',
   );
 
   const keyPickupsFromEntities: Array<{
@@ -250,6 +242,7 @@ function reapplyEntities() {
   const enemiesFromEntities: Array<{ id?: string; x: number; y: number; kind?: EnemyKind }> = [];
   const hallucinationsFromEntities: HallucinationSpec[] = [];
   const medicationsFromEntities: MedicationSpec[] = [];
+  const messagesFromEntities: MessageSpec[] = [];
   const artifactsFromEntities: ArtifactSpec[] = [];
   const ammoFromEntities: AmmoSpec[] = [];
   const weaponsFromEntities: WeaponSpec[] = [];
@@ -306,6 +299,19 @@ function reapplyEntities() {
         x: raw.x,
         y: raw.y,
         subtype: raw.subtype,
+      });
+    }
+
+    if (e.type === 'note' || e.type === 'message') {
+      messagesFromEntities.push({
+        id: e.id,
+        x: e.x,
+        y: e.y,
+        messageType: typeof e.messageType === 'string' ? e.messageType : undefined,
+        sprite: typeof e.sprite === 'string' ? e.sprite : undefined,
+        title: typeof e.title === 'string' ? e.title : undefined,
+        text: typeof e.text === 'string' ? e.text : undefined,
+        isDocument: typeof e.isDocument === 'boolean' ? e.isDocument : undefined,
       });
     }
 
@@ -429,6 +435,7 @@ function reapplyEntities() {
   doorsSystem?.setDoorLocks(doorLocksFromEntities);
   hallucinationsSystem?.setHallucinations(hallucinationsFromEntities);
   itemsSystem?.setMedicationPickups(medicationsFromEntities);
+  itemsSystem?.setMessagePickups(messagesFromEntities);
   itemsSystem?.setArtifactPickups(artifactsFromEntities);
   itemsSystem?.setAmmoPickups(ammoFromEntities);
   itemsSystem?.setWeaponPickups(weaponsFromEntities);
@@ -465,18 +472,6 @@ function consumeEntity(id: string) {
   if (!id) return;
   consumedEntityIds.add(id);
   activeInteractables = activeInteractables.filter((e) => e.id !== id);
-}
-
-function getNoteSprites() {
-  return activeInteractables
-    .filter((e) => e.type === 'note' || e.type === 'message')
-    .map((e) => ({
-      x: e.x,
-      y: e.y,
-      material: typeof e.sprite === 'string' ? e.sprite : 'document_archive',
-      alive: true,
-      scale: 0.16,
-    }));
 }
 
 export function setEntities(next: LevelEntityJson[]) {
@@ -802,17 +797,11 @@ function ensureEngine() {
     onEntityPickup: (id) => consumeEntity(id),
     onKeyPickup: (id) => {
       ownedKeys[id] = true;
-      triggerKeyHallucination();
-      const message = narrativeMessagesSystem.take('note');
-      if (message) {
-        showNoteOverlay(message.title, message.text, { document: message.isDocument });
-      } else {
-        showNoteOverlay(
-          'Карточка пациента',
-          'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
-          { document: true },
-        );
-      }
+      showNarrativeMessage('note', {
+        title: 'Карточка пациента',
+        text: 'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
+        isDocument: true,
+      });
     },
   });
 
@@ -889,7 +878,6 @@ function ensureEngine() {
       ...(pickupsSystem?.getSprites() ?? []),
       ...(itemsSystem?.getSprites() ?? []),
       ...(hallucinationsSystem?.getSprites() ?? []),
-      ...getNoteSprites(),
     ],
     getWeapon: () => weaponsSystem.getCurrent(),
     getWeaponDef: () => weaponsSystem.getCurrentDef(),
@@ -907,6 +895,9 @@ function ensureEngine() {
     inventory,
     playSfx: (key) => audio.playSfx(key),
     onPickup: (id) => consumeEntity(id),
+    onMessagePickup: (message) => {
+      showNarrativeMessage(message.messageType ?? 'note', message, true);
+    },
     onWeaponPickup: (id) => weaponsSystem.acquire(id),
     setMedication: (on) => worldStateSystem?.setMedication(on),
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],

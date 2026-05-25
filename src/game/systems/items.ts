@@ -4,11 +4,11 @@ import { SFX } from '../audio/sfx-config';
 import { addPlayerArmor } from './player-stats';
 
 /**
- * Discrete, hand-placed items (medication, documents, ammo, weapons).
+ * Discrete, hand-placed items (medication, messages, ammo, weapons).
  *
  * Distinct from `pickups.ts` because items are entity-driven, don't respawn,
  * and have side effects beyond a simple HP refill (medication flips world
- * state, documents open the note overlay, etc.).
+ * state, messages trigger narrative UI, etc.).
  */
 
 export type MedicationSubtype = 'haloperidol' | 'injector';
@@ -36,6 +36,21 @@ const MEDICATION_SPRITE: Record<MedicationSubtype, string> = {
 const MEDICATION_INVENTORY_ID: Record<MedicationSubtype, InventoryItemId> = {
   haloperidol: 'haloperidol',
   injector: 'injector',
+};
+
+export type MessageSpec = {
+  id?: string;
+  x: number;
+  y: number;
+  messageType?: string;
+  sprite?: string;
+  title?: string;
+  text?: string;
+  isDocument?: boolean;
+};
+
+type MessagePickup = MessageSpec & {
+  alive: boolean;
 };
 
 export type ArtifactSubtype = 'hallucination' | 'vhs';
@@ -160,6 +175,7 @@ export function createItemsSystem({
   inventory,
   playSfx,
   onPickup,
+  onMessagePickup,
   onWeaponPickup,
   setMedication,
   getPerceptionStages,
@@ -169,12 +185,14 @@ export function createItemsSystem({
   inventory: Inventory;
   playSfx: (key: string) => void;
   onPickup?: (id: string) => void;
+  onMessagePickup: (message: MessageSpec) => void;
   onWeaponPickup: (id: WeaponSubtype) => void;
   setMedication: (on: boolean) => void;
   getPerceptionStages: () => ReadonlyArray<string>;
   setWorldState: (state: string, value: boolean) => void;
 }) {
   let medications: MedicationPickup[] = [];
+  let messages: MessagePickup[] = [];
   let artifacts: ArtifactPickup[] = [];
   let ammo: AmmoPickup[] = [];
   let weapons: WeaponPickup[] = [];
@@ -189,6 +207,19 @@ export function createItemsSystem({
             x: m.x,
             y: m.y,
             subtype: m.subtype === 'injector' ? 'injector' : 'haloperidol',
+            alive: true,
+          }))
+      : [];
+  }
+
+  function setMessagePickups(next: MessageSpec[]) {
+    messages = Array.isArray(next)
+      ? next
+          .filter(
+            (message) => message && typeof message.x === 'number' && typeof message.y === 'number',
+          )
+          .map((message) => ({
+            ...message,
             alive: true,
           }))
       : [];
@@ -276,6 +307,7 @@ export function createItemsSystem({
 
   function onMapChanged() {
     medications = [];
+    messages = [];
     artifacts = [];
     ammo = [];
     weapons = [];
@@ -285,6 +317,7 @@ export function createItemsSystem({
   function tick() {
     if (
       !medications.length &&
+      !messages.length &&
       !artifacts.length &&
       !ammo.length &&
       !weapons.length &&
@@ -292,6 +325,15 @@ export function createItemsSystem({
     )
       return;
     const pickupR = 0.42;
+    for (const message of messages) {
+      if (!message.alive) continue;
+      if (Math.hypot(player.x - message.x, player.y - message.y) > pickupR) continue;
+
+      message.alive = false;
+      if (message.id) onPickup?.(message.id);
+      onMessagePickup(message);
+    }
+
     for (const m of medications) {
       if (!m.alive) continue;
       if (Math.hypot(player.x - m.x, player.y - m.y) > pickupR) continue;
@@ -368,12 +410,23 @@ export function createItemsSystem({
       [];
     if (
       !medications.length &&
+      !messages.length &&
       !artifacts.length &&
       !ammo.length &&
       !weapons.length &&
       !armor.length
     )
       return out;
+    for (const message of messages) {
+      if (!message.alive) continue;
+      out.push({
+        x: message.x,
+        y: message.y,
+        material: message.sprite ?? 'document_archive',
+        alive: true,
+        scale: 0.16,
+      });
+    }
     for (const m of medications) {
       if (!m.alive) continue;
       out.push({
@@ -429,6 +482,7 @@ export function createItemsSystem({
 
   return {
     setMedicationPickups,
+    setMessagePickups,
     setArtifactPickups,
     setAmmoPickups,
     setWeaponPickups,
