@@ -28,6 +28,7 @@
     {
       "id": "l6_hunt_order",
       "type": "note",
+      "messageType": "note",
       "sprite": "document_archive",
       "x": 17.5,
       "y": 9.5,
@@ -38,6 +39,7 @@
     {
       "id": "l6_medical_card_final",
       "type": "note",
+      "messageType": "card",
       "sprite": "document_medical_card",
       "x": 65.5,
       "y": 33.5,
@@ -48,6 +50,7 @@
     {
       "id": "l6_diary_page",
       "type": "note",
+      "messageType": "photo",
       "sprite": "document_photo",
       "x": 33.5,
       "y": 65.5,
@@ -58,6 +61,7 @@
     {
       "id": "l6_wall_phrase",
       "type": "note",
+      "messageType": "inscription",
       "sprite": "document_brochure",
       "x": 89.5,
       "y": 89.5,

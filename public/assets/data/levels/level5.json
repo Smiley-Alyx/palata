@@ -28,6 +28,7 @@
     {
       "id": "l5_city_notice",
       "type": "note",
+      "messageType": "inscription",
       "sprite": "document_brochure",
       "x": 25.5,
       "y": 9.5,
@@ -38,6 +39,7 @@
     {
       "id": "l5_school_record",
       "type": "note",
+      "messageType": "note",
       "sprite": "document_archive",
       "x": 81.5,
       "y": 25.5,
@@ -48,6 +50,7 @@
     {
       "id": "l5_diary_page",
       "type": "note",
+      "messageType": "photo",
       "sprite": "document_photo",
       "x": 49.5,
       "y": 49.5,
@@ -58,6 +61,7 @@
     {
       "id": "l5_bus_stop",
       "type": "note",
+      "messageType": "inscription",
       "sprite": "document_brochure",
       "x": 17.5,
       "y": 81.5,

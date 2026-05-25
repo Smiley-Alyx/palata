@@ -1,5 +1,6 @@
 import type { Legend, Spawn } from '../../types/game';
 import { assetUrl, loadJson } from '../content/content';
+import type { NarrativeMessagePools } from '../content/narrative-messages';
 import type { KeyId } from '../systems/doors';
 
 type LevelAudioConfig = {
@@ -41,6 +42,7 @@ type LevelJson = {
   geometry?: unknown;
   materialsWall?: unknown;
   spawn?: unknown;
+  messagePools?: unknown;
   keyPickups?: unknown;
   doorLocks?: unknown;
 };
@@ -49,6 +51,7 @@ export type LevelEntityJson = {
   id?: string;
   type: string;
   subtype?: string;
+  messageType?: string;
   x: number;
   y: number;
   enabledInStates?: string[];
@@ -56,6 +59,34 @@ export type LevelEntityJson = {
   enabledIfFlags?: Record<string, boolean>;
   [k: string]: unknown;
 };
+
+function parseMessagePools(raw: unknown): NarrativeMessagePools {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+
+  const pools: NarrativeMessagePools = {};
+  for (const [messageType, rawMessages] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(rawMessages)) continue;
+
+    const messages = rawMessages.flatMap((rawMessage) => {
+      if (!rawMessage || typeof rawMessage !== 'object') return [];
+      const message = rawMessage as {
+        title?: unknown;
+        text?: unknown;
+        isDocument?: unknown;
+      };
+      if (typeof message.title !== 'string' || typeof message.text !== 'string') return [];
+      return [
+        {
+          title: message.title,
+          text: message.text,
+          isDocument: typeof message.isDocument === 'boolean' ? message.isDocument : undefined,
+        },
+      ];
+    });
+    if (messages.length) pools[messageType] = messages;
+  }
+  return pools;
+}
 
 export type LevelWorldStatesJson = {
   initialStates?: string[];
@@ -620,6 +651,8 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const messagePools = parseMessagePools(data.messagePools);
+
   return {
     id: data.id,
     name: data.name,
@@ -635,6 +668,7 @@ export async function loadLevel(levelUrl: string) {
     triggers,
     lights,
     geometryOverrides,
+    messagePools,
     keyPickups,
     doorLocks,
   };

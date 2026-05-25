@@ -28,6 +28,7 @@ import {
   setLegend,
   setLightingMultiplier,
   setMap,
+  setMessagePools,
   setMaterialsWall,
   setMouseSensitivity,
   setLights,
@@ -1006,6 +1007,7 @@ async function startLevelById(
   setTriggers(level.triggers ?? []);
   setLights(level.lights ?? []);
   setGeometryOverrides(level.geometryOverrides ?? []);
+  setMessagePools(level.messagePools ?? {});
 
   resetKeys();
 

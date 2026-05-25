@@ -28,6 +28,7 @@
     {
       "id": "l4_map_fragment",
       "type": "note",
+      "messageType": "note",
       "sprite": "document_archive",
       "x": 17.5,
       "y": 17.5,
@@ -38,6 +39,7 @@
     {
       "id": "l4_ect_afterimage",
       "type": "note",
+      "messageType": "card",
       "sprite": "document_medical_card",
       "x": 57.5,
       "y": 33.5,
@@ -48,6 +50,7 @@
     {
       "id": "l4_diary_page",
       "type": "note",
+      "messageType": "photo",
       "sprite": "document_photo",
       "x": 73.5,
       "y": 57.5,
@@ -58,6 +61,7 @@
     {
       "id": "l4_exit_notice",
       "type": "note",
+      "messageType": "inscription",
       "sprite": "document_brochure",
       "x": 41.5,
       "y": 81.5,

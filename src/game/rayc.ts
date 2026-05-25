@@ -45,6 +45,10 @@ import type { LevelEntityJson } from './levels/level-loader';
 import type { LevelTriggerActionJson } from './levels/level-loader';
 import { showNoteOverlay } from './ui/note-overlay';
 import { DEFAULT_CONTROL_BINDINGS, type ControlBindings } from './config';
+import {
+  createNarrativeMessagesSystem,
+  type NarrativeMessagePools,
+} from './content/narrative-messages';
 
 type EngineInstance = ReturnType<typeof createEngine>;
 
@@ -71,6 +75,7 @@ let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
 let mouseSensitivity = 1;
 const inventory = createInventory();
+const narrativeMessagesSystem = createNarrativeMessagesSystem();
 const weaponsSystem = createWeaponsSystem({ inventory });
 const footstepNoiseRadius = 5;
 const enemyHearingRadiusMultiplier = 1.5;
@@ -178,10 +183,17 @@ function interactWithEntities(xWorld: number, yWorld: number): boolean {
   for (const e of activeInteractables) {
     if (Math.floor(e.x) !== xMap || Math.floor(e.y) !== yMap) continue;
 
-    if (e.type === 'note') {
-      const title = typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note';
-      const text = typeof (e as any).text === 'string' ? ((e as any).text as string) : '';
-      const isDocument = !!(e as any).isDocument;
+    if (e.type === 'note' || e.type === 'message') {
+      const messageType =
+        typeof e.messageType === 'string' && e.messageType ? e.messageType : 'note';
+      const assignedMessage = narrativeMessagesSystem.take(messageType);
+      const title =
+        assignedMessage?.title ??
+        (typeof (e as any).title === 'string' ? ((e as any).title as string) : 'Note');
+      const text =
+        assignedMessage?.text ??
+        (typeof (e as any).text === 'string' ? ((e as any).text as string) : '');
+      const isDocument = assignedMessage?.isDocument ?? !!(e as any).isDocument;
       showNoteOverlay(title, text, { document: isDocument });
       if (isDocument) inventory.add('document', 1);
       if (typeof e.id === 'string' && e.id) {
@@ -219,7 +231,12 @@ function reapplyEntities() {
   );
 
   activeInteractables = enabled.filter(
-    (e) => e.type === 'note' || e.type === 'button' || e.type === 'switch' || e.type === 'door',
+    (e) =>
+      e.type === 'note' ||
+      e.type === 'message' ||
+      e.type === 'button' ||
+      e.type === 'switch' ||
+      e.type === 'door',
   );
 
   const keyPickupsFromEntities: Array<{
@@ -452,7 +469,7 @@ function consumeEntity(id: string) {
 
 function getNoteSprites() {
   return activeInteractables
-    .filter((e) => e.type === 'note')
+    .filter((e) => e.type === 'note' || e.type === 'message')
     .map((e) => ({
       x: e.x,
       y: e.y,
@@ -472,6 +489,10 @@ export function setEntities(next: LevelEntityJson[]) {
       }))
     : [];
   reapplyEntities();
+}
+
+export function setMessagePools(next: NarrativeMessagePools) {
+  narrativeMessagesSystem.setPools(next);
 }
 
 let currentDifficulty: Difficulty = 'lost';
@@ -782,11 +803,16 @@ function ensureEngine() {
     onKeyPickup: (id) => {
       ownedKeys[id] = true;
       triggerKeyHallucination();
-      showNoteOverlay(
-        'Карточка пациента',
-        'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
-        { document: true },
-      );
+      const message = narrativeMessagesSystem.take('note');
+      if (message) {
+        showNoteOverlay(message.title, message.text, { document: message.isDocument });
+      } else {
+        showNoteOverlay(
+          'Карточка пациента',
+          'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
+          { document: true },
+        );
+      }
     },
   });
 

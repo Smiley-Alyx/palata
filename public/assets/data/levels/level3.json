@@ -28,6 +28,7 @@
     {
       "id": "l3_medical_card_a",
       "type": "note",
+      "messageType": "card",
       "sprite": "document_medical_card",
       "x": 9.5,
       "y": 9.5,
@@ -38,6 +39,7 @@
     {
       "id": "l3_diary_page",
       "type": "note",
+      "messageType": "photo",
       "sprite": "document_photo",
       "x": 65.5,
       "y": 23.5,
@@ -48,6 +50,7 @@
     {
       "id": "l3_lab_note",
       "type": "note",
+      "messageType": "note",
       "sprite": "document_archive",
       "x": 33.5,
       "y": 49.5,
@@ -58,6 +61,7 @@
     {
       "id": "l3_wall_warning",
       "type": "note",
+      "messageType": "inscription",
       "sprite": "document_brochure",
       "x": 81.5,
       "y": 73.5,

@@ -28,6 +28,7 @@
     {
       "id": "l2_guard_notice",
       "type": "note",
+      "messageType": "note",
       "sprite": "document_archive",
       "x": 17.5,
       "y": 9.5,
@@ -38,6 +39,7 @@
     {
       "id": "l2_ect_schedule",
       "type": "note",
+      "messageType": "card",
       "sprite": "document_medical_card",
       "x": 57.5,
       "y": 25.5,
@@ -48,6 +50,7 @@
     {
       "id": "l2_diary_page",
       "type": "note",
+      "messageType": "photo",
       "sprite": "document_photo",
       "x": 89.5,
       "y": 41.5,
@@ -58,6 +61,7 @@
     {
       "id": "l2_server_label",
       "type": "note",
+      "messageType": "cassette",
       "sprite": "document_cassette",
       "x": 33.5,
       "y": 73.5,
