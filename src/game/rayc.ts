@@ -71,6 +71,7 @@ let predatorSystem: ReturnType<typeof createPredatorSystem> | null = null;
 let controls: ControlBindings = structuredClone(DEFAULT_CONTROL_BINDINGS);
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
+const footstepNoiseRadius = 5;
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -646,7 +647,6 @@ const player: PlayerInstance = {
   armor: 0,
   maxArmor: 100,
   speed: 0.05,
-  moving: false,
   sneaking: false,
   sneakFactor: 0.55,
   rotSpeed: (2 * Math.PI) / 180,
@@ -903,6 +903,8 @@ function ensureEngine() {
     events: {
       onFootstep: () => {
         audio.playSfx(SFX.footsteps.concrete);
+        const noiseMul = predatorSystem?.getNoiseMultiplier() ?? 1;
+        enemiesSystem?.alertFromNoise(player.x, player.y, footstepNoiseRadius * noiseMul);
       },
       onShoot: () => {
         const result = weaponsSystem.tryFire();
@@ -1082,7 +1084,6 @@ export function stopRayc() {
 export function resetPlayerState() {
   player.mov = 0;
   player.dir = 0;
-  player.moving = false;
   player.sneaking = false;
   player.flatmap = 0;
   player.hp = player.maxHp;

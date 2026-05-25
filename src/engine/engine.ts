@@ -207,7 +207,6 @@ export function createEngine({
 
     const moving = forward !== 0 || strafe !== 0;
     const actuallyMoved = moved && (oldX !== player.x || oldY !== player.y);
-    player.moving = moving && actuallyMoved;
 
     footstepCooldownMs = Math.max(0, footstepCooldownMs - dt * 1000);
     shootCooldownMs = Math.max(0, shootCooldownMs - dt * 1000);

@@ -19,7 +19,6 @@ export interface Player {
   armor: number;
   maxArmor: number;
   speed: number;
-  moving: boolean;
   sneaking: boolean;
   sneakFactor: number;
   rotSpeed: number;
