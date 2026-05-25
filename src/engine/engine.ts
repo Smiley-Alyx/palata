@@ -147,7 +147,7 @@ export function createEngine({
 
     const timeScale = dt * 60;
 
-    const speed = player.speed * (player.sprint + 1) * player.sprintFactor * timeScale;
+    const speed = player.speed * (player.sprint ? player.sprintFactor : 1) * timeScale;
     const movementLength = Math.hypot(forward, strafe) || 1;
     const forwardStep = (forward / movementLength) * speed;
     const strafeStep = (strafe / movementLength) * speed;
