@@ -423,8 +423,20 @@ export function createEnemiesSystem({
 
   function pickChaseStep(selfIndex: number): { x: number; y: number } {
     const e = enemies[selfIndex];
-    const px = Math.floor(player.x);
-    const py = Math.floor(player.y);
+    let px = Math.floor(player.x);
+    let py = Math.floor(player.y);
+
+    if (e.kind === 'skeleton_husk') {
+      const stalkDistance = 2;
+      const stalkX = Math.floor(player.x - Math.cos(player.rot) * stalkDistance);
+      const stalkY = Math.floor(player.y + Math.sin(player.rot) * stalkDistance);
+      const reachedStalkTile = stalkX === e.tileX && stalkY === e.tileY;
+      if (!reachedStalkTile && !hitSolid(stalkX + 0.5, stalkY + 0.5)) {
+        px = stalkX;
+        py = stalkY;
+      }
+    }
+
     const dx = px - e.tileX;
     const dy = py - e.tileY;
 

@@ -23,8 +23,8 @@ export type EnemyProfile = {
 const HUSK: EnemyProfile = {
   material: 'skeleton_husk',
   hp: 1,
-  speedPatrol: 0.65,
-  speedChase: 0.95,
+  speedPatrol: 0.8,
+  speedChase: 1.2,
   sightLoop: SFX.enemies.husk.idle,
   attack: SFX.enemies.husk.attack,
   hurt: SFX.enemies.orderly.hurt,

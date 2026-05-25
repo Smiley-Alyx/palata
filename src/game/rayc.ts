@@ -73,6 +73,7 @@ let mouseSensitivity = 1;
 const inventory = createInventory();
 const weaponsSystem = createWeaponsSystem({ inventory });
 const footstepNoiseRadius = 5;
+const enemyHearingRadiusMultiplier = 1.5;
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
@@ -911,7 +912,11 @@ function ensureEngine() {
       onFootstep: () => {
         audio.playSfx(SFX.footsteps.concrete);
         const noiseMul = predatorSystem?.getNoiseMultiplier() ?? 1;
-        enemiesSystem?.alertFromNoise(player.x, player.y, footstepNoiseRadius * noiseMul);
+        enemiesSystem?.alertFromNoise(
+          player.x,
+          player.y,
+          footstepNoiseRadius * enemyHearingRadiusMultiplier * noiseMul,
+        );
       },
       onShoot: () => {
         const result = weaponsSystem.tryFire();
@@ -925,7 +930,11 @@ function ensureEngine() {
         renderer?.triggerWeaponAction();
         if (def.flash) renderer?.triggerFlash();
         const noiseMul = predatorSystem?.getNoiseMultiplier() ?? 1;
-        enemiesSystem?.alertFromNoise(player.x, player.y, def.noiseRadius * noiseMul);
+        enemiesSystem?.alertFromNoise(
+          player.x,
+          player.y,
+          def.noiseRadius * enemyHearingRadiusMultiplier * noiseMul,
+        );
         const dmgMul = predatorSystem?.getDamageMultiplier() ?? 1;
         const scaledDamage = def.damage * dmgMul;
         if (result.kind === 'melee') {
