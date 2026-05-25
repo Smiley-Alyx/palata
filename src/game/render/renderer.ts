@@ -645,8 +645,8 @@ export function createRenderer({
     const h = getVisibleViewHeight();
     const { w: texW, h: texH } = getSourceSize(frame);
     const aspect = texW / Math.max(1, texH);
-    const isScalpel = weapon === 'skalpel';
-    let drawH = h * (isScalpel ? 0.6 : 0.88);
+    const usesHandheldPose = weapon === 'skalpel' || weapon === 'pistol';
+    let drawH = h * (usesHandheldPose ? 0.6 : 0.88);
     let drawW = drawH * aspect;
     const maxW = w * 0.72;
     if (drawW > maxW) {
@@ -656,7 +656,7 @@ export function createRenderer({
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    if (isScalpel) {
+    if (usesHandheldPose) {
       ctx.translate(Math.floor(w * 0.8), Math.floor(h * 1.13));
       ctx.rotate(-Math.PI * 0.075);
       ctx.drawImage(frame, -drawW * 0.5, -drawH, drawW, drawH);
