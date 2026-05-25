@@ -603,6 +603,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   else if (controls.weapon2.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[1]);
   else if (controls.weapon3.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[2]);
   else if (controls.weapon4.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[3]);
+  else if (controls.weapon5.includes(e.code)) weaponsSystem.setWeapon(WEAPON_IDS[4]);
   else if (controls.cycleWeapon.includes(e.code)) weaponsSystem.cycleWeapon(1);
   else if (controls.predatorDash.includes(e.code)) tryPredatorDash();
 });

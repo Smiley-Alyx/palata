@@ -39,6 +39,7 @@ export type ControlAction =
   | 'weapon2'
   | 'weapon3'
   | 'weapon4'
+  | 'weapon5'
   | 'cycleWeapon'
   | 'predatorDash'
   | 'toggleMap'
@@ -66,6 +67,7 @@ export const CONTROL_ACTIONS: ControlActionMeta[] = [
   { id: 'weapon2', action: 'труба' },
   { id: 'weapon3', action: 'пистолет' },
   { id: 'weapon4', action: 'дробовик' },
+  { id: 'weapon5', action: 'револьвер' },
   { id: 'cycleWeapon', action: 'циклически переключать оружие' },
   { id: 'predatorDash', action: 'рывок (predator)' },
   { id: 'toggleMap', action: 'карта' },
@@ -87,6 +89,7 @@ export const DEFAULT_CONTROL_BINDINGS: ControlBindings = {
   weapon2: ['Digit2'],
   weapon3: ['Digit3'],
   weapon4: ['Digit4'],
+  weapon5: ['Digit5'],
   cycleWeapon: ['KeyQ'],
   predatorDash: ['KeyV'],
   toggleMap: ['KeyM'],
