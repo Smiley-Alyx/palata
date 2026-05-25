@@ -45,6 +45,15 @@
     mix-blend-mode screen
     filter saturate(1.4)
 
+  &.is-key-glitch
+    z-index 31
+    opacity 0.9
+    background-image url('/assets/overlays/overlay_hallucination.png')
+    background-position center
+    background-size cover
+    mix-blend-mode screen
+    animation key-hallucination-flash 0.9s steps(5) both
+
 @keyframes perception-jitter
   0%
     transform translate(0, 0)
@@ -96,6 +105,11 @@
   &[data-state='predator']
     opacity 0.55
 
+  &.is-key-glitch
+    z-index 31
+    opacity 0.95
+    animation key-vhs-glitch 0.9s steps(6) both
+
 @keyframes vhs-noise-pan
   0%
     background-position 0 0
@@ -107,6 +121,31 @@
     background-position 12px -28px
   100%
     background-position 0 0
+
+@keyframes key-hallucination-flash
+  0%
+    opacity 0
+    filter contrast(2) saturate(2)
+  16%, 48%
+    opacity 0.95
+    transform translate(-2px, 1px)
+  32%, 70%
+    opacity 0.45
+    transform translate(2px, -1px)
+  100%
+    opacity 0
+    transform translate(0, 0)
+
+@keyframes key-vhs-glitch
+  0%, 100%
+    opacity 0
+    transform translate(0, 0)
+  12%, 60%
+    opacity 0.95
+    transform translate(3px, 0)
+  34%, 82%
+    opacity 0.55
+    transform translate(-3px, 1px)
 
 @keyframes vhs-chroma-shift
   0%

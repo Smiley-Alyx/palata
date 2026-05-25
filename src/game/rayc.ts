@@ -83,6 +83,7 @@ let rawGeometryOverrides: LevelGeometryOverrideJson[] = [];
 let entityIdSeq = 1;
 let entityDrivenEnemies = false;
 const consumedEntityIds = new Set<string>();
+let keyHallucinationTimer: number | null = null;
 
 let activeInteractables: Array<{
   id?: string;
@@ -91,6 +92,25 @@ let activeInteractables: Array<{
   y: number;
   [k: string]: unknown;
 }> = [];
+
+function triggerKeyHallucination() {
+  const overlays = ['perceptionOverlay', 'vhsOverlay']
+    .map((id) => document.getElementById(id))
+    .filter((el): el is HTMLElement => el instanceof HTMLElement);
+  for (const overlay of overlays) {
+    overlay.classList.remove('is-key-glitch');
+    void overlay.offsetWidth;
+    overlay.classList.add('is-key-glitch');
+  }
+  if (keyHallucinationTimer !== null) window.clearTimeout(keyHallucinationTimer);
+  keyHallucinationTimer = window.setTimeout(() => {
+    for (const overlay of overlays) overlay.classList.remove('is-key-glitch');
+    keyHallucinationTimer = null;
+  }, 900);
+
+  audio.playSfx(SFX.hallucinations.vhsGlitch);
+  audio.playSfx(SFX.hallucinations.burst);
+}
 
 function applyEntityAction(a: LevelTriggerActionJson) {
   if (a.type === 'play_sound') {
@@ -761,6 +781,12 @@ function ensureEngine() {
     onEntityPickup: (id) => consumeEntity(id),
     onKeyPickup: (id) => {
       ownedKeys[id] = true;
+      triggerKeyHallucination();
+      showNoteOverlay(
+        'Карточка пациента',
+        'Пациент №14.\nПоступил без сопровождения.\nДокументы не сохранились.\nРодственники не установлены.\n\nВ нижней графе чужой почерк:\n"и не будут."',
+        { document: true },
+      );
     },
   });
 
