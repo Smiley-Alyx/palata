@@ -13,7 +13,15 @@ type LevelJson = Record<string, unknown> & {
   triggers?: unknown;
 };
 
-type EditorTool = 'cell' | 'spawn' | 'material' | 'entity' | 'light' | 'trigger' | 'erase';
+type EditorTool =
+  | 'cell'
+  | 'spawn'
+  | 'material'
+  | 'entity'
+  | 'light'
+  | 'trigger'
+  | 'erase'
+  | 'inspect';
 
 type TileTool = {
   value: number;
@@ -618,6 +626,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   let selectedEntity = ENTITY_TOOLS[0];
   let painting = false;
   let cellSize = 16;
+  let selectedCell: { x: number; y: number } | null = null;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
 
@@ -673,12 +682,14 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const lightButton = makeButton('L Light', 'level-editor__tool');
   const triggerButton = makeButton('T Sound zone', 'level-editor__tool');
   const eraseButton = makeButton('X Erase object', 'level-editor__tool');
+  const inspectButton = makeButton('I Inspect', 'level-editor__tool');
   spawnButton.title = 'Move player spawn';
   materialButton.title = 'Paint wall material overrides';
   entityButton.title = 'Place selected entity';
   lightButton.title = 'Place light source';
   triggerButton.title = 'Place one-tile enter_zone sound trigger';
   eraseButton.title = 'Remove objects/materials from a cell';
+  inspectButton.title = 'Select a map element and view its properties';
   toolList.append(
     spawnButton,
     materialButton,
@@ -686,6 +697,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     lightButton,
     triggerButton,
     eraseButton,
+    inspectButton,
   );
 
   const tileButtons = TILE_TOOLS.map((tool) => {
@@ -738,7 +750,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const hint = document.createElement('p');
   hint.className = 'level-editor__hint';
   hint.textContent =
-    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Use +/- to zoom. Save writes into the level file.';
+    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X/I for modes. Use +/- to zoom. Save writes into the level file.';
   sidebar.appendChild(hint);
 
   const stage = document.createElement('div');
@@ -763,6 +775,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     lightButton.classList.toggle('is-selected', selectedTool === 'light');
     triggerButton.classList.toggle('is-selected', selectedTool === 'trigger');
     eraseButton.classList.toggle('is-selected', selectedTool === 'erase');
+    inspectButton.classList.toggle('is-selected', selectedTool === 'inspect');
     for (const { tool, button } of tileButtons) {
       button.classList.toggle(
         'is-selected',
@@ -817,6 +830,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     cell.classList.toggle('has-entity', objects.ent.length > 0);
     cell.classList.toggle('has-light', objects.light.length > 0);
     cell.classList.toggle('has-trigger', objects.trigger.length > 0);
+    cell.classList.toggle('is-selected', selectedCell?.x === x && selectedCell.y === y);
     cell.title = cellTitle(x, y);
     cell.replaceChildren();
     if (materials[y][x]) {
@@ -925,6 +939,15 @@ function mountLevelEditor(path: string, level: LevelJson) {
     syncCell(x, y);
   };
 
+  const selectCell = (x: number, y: number) => {
+    if (!grid[y] || grid[y][x] === undefined) return;
+    const prev = selectedCell;
+    selectedCell = { x, y };
+    if (prev) syncCell(prev.x, prev.y);
+    syncCell(x, y);
+    buildInspector();
+  };
+
   const serializeLevel = () => {
     const next = structuredClone(level) as LevelJson;
     next[sourceKey] = gridToRows(grid);
@@ -977,6 +1000,8 @@ function mountLevelEditor(path: string, level: LevelJson) {
       cell.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         painting = true;
+        selectCell(x, y);
+        if (selectedTool === 'inspect') return;
         applyAt(x, y);
       });
       cell.addEventListener('pointerenter', () => {
@@ -1015,6 +1040,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   lightButton.addEventListener('click', () => setTool('light'));
   triggerButton.addEventListener('click', () => setTool('trigger'));
   eraseButton.addEventListener('click', () => setTool('erase'));
+  inspectButton.addEventListener('click', () => setTool('inspect'));
 
   for (const { tool, button } of tileButtons) {
     button.addEventListener('click', () => selectTile(tool.value));
@@ -1027,8 +1053,48 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const buildInspector = () => {
     inspector.replaceChildren();
 
+    const selectionTitle = document.createElement('div');
+    selectionTitle.className = 'level-editor__section-title';
+    selectionTitle.textContent = 'Selection';
+    inspector.appendChild(selectionTitle);
+
+    const selectionPanel = document.createElement('div');
+    selectionPanel.className = 'level-editor__selection';
+    inspector.appendChild(selectionPanel);
+
+    if (!selectedCell) {
+      selectionPanel.textContent = 'No cell selected';
+    } else {
+      const { x, y } = selectedCell;
+      const objects = objectsAt(x, y);
+      const entries: Array<{ title: string; value: unknown }> = [
+        { title: 'Cell', value: { x, y, value: grid[y][x] } },
+      ];
+      if (materials[y][x]) entries.push({ title: 'Material', value: materials[y][x] });
+      if (Math.floor(spawn.x) === x && Math.floor(spawn.y) === y) {
+        entries.push({ title: 'Spawn', value: spawn });
+      }
+      for (const entity of objects.ent) entries.push({ title: 'Entity', value: entity });
+      for (const light of objects.light) entries.push({ title: 'Light', value: light });
+      for (const trigger of objects.trigger) entries.push({ title: 'Trigger', value: trigger });
+
+      for (const entry of entries) {
+        const item = document.createElement('section');
+        item.className = 'level-editor__selection-item';
+        const title = document.createElement('div');
+        title.className = 'level-editor__selection-title';
+        title.textContent = entry.title;
+        const value = document.createElement('pre');
+        value.className = 'level-editor__selection-value';
+        value.textContent =
+          typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value, null, 2);
+        item.append(title, value);
+        selectionPanel.appendChild(item);
+      }
+    }
+
     const materialTitle = document.createElement('div');
-    materialTitle.className = 'level-editor__section-title';
+    materialTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     materialTitle.textContent = 'Materials';
     inspector.appendChild(materialTitle);
 
@@ -1192,6 +1258,11 @@ function mountLevelEditor(path: string, level: LevelJson) {
     if (e.code === 'KeyX') {
       e.preventDefault();
       setTool('erase');
+      return;
+    }
+    if (e.code === 'KeyI') {
+      e.preventDefault();
+      setTool('inspect');
       return;
     }
     if (e.key === '+' || e.code === 'Equal') {

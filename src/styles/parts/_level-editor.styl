@@ -199,6 +199,36 @@
   display grid
   gap 8px
 
+.level-editor__selection
+  display grid
+  gap 8px
+  color rgba(216, 216, 216, 0.64)
+  font-size 11px
+  line-height 1.35
+
+.level-editor__selection-item
+  border 1px solid rgba(107, 74, 43, 0.9)
+  background #0b0b0b
+
+.level-editor__selection-title
+  padding 6px 7px
+  border-bottom 1px solid rgba(107, 74, 43, 0.55)
+  color $accent
+  font-size 11px
+  font-weight 700
+
+.level-editor__selection-value
+  max-height 160px
+  margin 0
+  overflow auto
+  padding 7px
+  color rgba(216, 216, 216, 0.86)
+  font inherit
+  font-size 10px
+  line-height 1.35
+  white-space pre-wrap
+  word-break break-word
+
 .level-editor__field
   display grid
   grid-template-columns 72px minmax(0, 1fr)
@@ -254,6 +284,10 @@
 
 .level-editor__cell:hover
   outline 2px solid $accent
+  outline-offset -2px
+
+.level-editor__cell.is-selected
+  outline 2px solid #fff
   outline-offset -2px
 
 .level-editor__cell[data-value='0']
