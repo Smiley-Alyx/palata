@@ -617,6 +617,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   let selectedMaterial: string = MATERIAL_TOOLS[0];
   let selectedEntity = ENTITY_TOOLS[0];
   let painting = false;
+  let cellSize = 16;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
 
@@ -714,10 +715,30 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const sourceInfo = addInfo('Source', sourceKey);
   sourceInfo.title = sourceKey === 'geometry' ? 'Editing geometry array' : 'Editing rows array';
 
+  const zoomTitle = document.createElement('div');
+  zoomTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+  zoomTitle.textContent = 'Zoom';
+  sidebar.appendChild(zoomTitle);
+
+  const zoomControls = document.createElement('div');
+  zoomControls.className = 'level-editor__zoom';
+  const zoomOutButton = makeButton('-', 'level-editor__zoom-button');
+  const zoomValue = document.createElement('span');
+  zoomValue.className = 'level-editor__zoom-value';
+  const zoomInButton = makeButton('+', 'level-editor__zoom-button');
+  const zoomRange = document.createElement('input');
+  zoomRange.type = 'range';
+  zoomRange.min = '10';
+  zoomRange.max = '40';
+  zoomRange.step = '2';
+  zoomRange.value = String(cellSize);
+  zoomControls.append(zoomOutButton, zoomValue, zoomInButton, zoomRange);
+  sidebar.appendChild(zoomControls);
+
   const hint = document.createElement('p');
   hint.className = 'level-editor__hint';
   hint.textContent =
-    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Save writes into the level file.';
+    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Use +/- to zoom. Save writes into the level file.';
   sidebar.appendChild(hint);
 
   const stage = document.createElement('div');
@@ -725,6 +746,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const gridEl = document.createElement('div');
   gridEl.className = 'level-editor__grid';
   gridEl.style.setProperty('--level-editor-cols', String(grid[0]?.length ?? 1));
+  gridEl.style.setProperty('--level-editor-cell', `${cellSize}px`);
   stage.appendChild(gridEl);
 
   layout.append(sidebar, stage, inspector);
@@ -756,6 +778,13 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const syncCounts = () => {
     const materialCount = compactMaterials(materials).length;
     countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat`;
+  };
+
+  const setZoom = (next: number) => {
+    cellSize = Math.max(10, Math.min(40, Math.round(next / 2) * 2));
+    gridEl.style.setProperty('--level-editor-cell', `${cellSize}px`);
+    zoomRange.value = String(cellSize);
+    zoomValue.textContent = `${cellSize}px`;
   };
 
   const objectsAt = (x: number, y: number) => {
@@ -991,6 +1020,10 @@ function mountLevelEditor(path: string, level: LevelJson) {
     button.addEventListener('click', () => selectTile(tool.value));
   }
 
+  zoomOutButton.addEventListener('click', () => setZoom(cellSize - 2));
+  zoomInButton.addEventListener('click', () => setZoom(cellSize + 2));
+  zoomRange.addEventListener('input', () => setZoom(Number(zoomRange.value)));
+
   const buildInspector = () => {
     inspector.replaceChildren();
 
@@ -1161,6 +1194,16 @@ function mountLevelEditor(path: string, level: LevelJson) {
       setTool('erase');
       return;
     }
+    if (e.key === '+' || e.code === 'Equal') {
+      e.preventDefault();
+      setZoom(cellSize + 2);
+      return;
+    }
+    if (e.key === '-' || e.code === 'Minus') {
+      e.preventDefault();
+      setZoom(cellSize - 2);
+      return;
+    }
     const found = TILE_TOOLS.find((tool) => tool.key === e.code || e.key === String(tool.value));
     if (found) {
       e.preventDefault();
@@ -1178,6 +1221,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   );
 
   sizeInfo.textContent = `${grid[0]?.length ?? 0} x ${grid.length}`;
+  setZoom(cellSize);
   buildInspector();
   syncToolButtons();
   syncAllCells();

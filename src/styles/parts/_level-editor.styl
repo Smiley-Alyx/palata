@@ -86,6 +86,37 @@
 .level-editor__section-title--spaced
   margin-top 18px
 
+.level-editor__zoom
+  display grid
+  grid-template-columns 34px minmax(46px, 1fr) 34px
+  gap 6px
+  align-items center
+
+.level-editor__zoom-button
+  height 30px
+  border 2px solid $wood
+  background #23170f
+  color $text
+  font inherit
+  font-size 16px
+  line-height 1
+  cursor pointer
+
+.level-editor__zoom-button:hover
+  border-color $accent
+  color $accent
+  background #2a2117
+
+.level-editor__zoom-value
+  color rgba(216, 216, 216, 0.82)
+  font-size 12px
+  text-align center
+
+.level-editor__zoom input
+  grid-column 1 / -1
+  width 100%
+  accent-color $accent
+
 .level-editor__tools
   display grid
   gap 7px
