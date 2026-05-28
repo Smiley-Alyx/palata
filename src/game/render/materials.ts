@@ -87,8 +87,20 @@ const materialToDomId = new Map<string, string>([
 
   // --- Decorative prop sprites ---
   ['prop_medical_iv', 'prop_medical_iv'],
+  ['prop_medical_cabinet', 'prop_medical_cabinet'],
+  ['prop_body_bag', 'prop_body_bag'],
+  ['prop_wheel_chair', 'prop_wheel_chair'],
+  ['prop_organic_flesh', 'prop_organic_flesh'],
+  ['prop_ceiling_light', 'prop_ceiling_light'],
+  ['prop_treatment_chair', 'prop_treatment_chair'],
+  ['prop_terminal', 'prop_terminal'],
+  ['prop_child', 'prop_child'],
+  ['prop_camera', 'prop_camera'],
+  ['prop_ceiling_valve', 'prop_ceiling_valve'],
   ['prop_tv', 'prop_tv'],
+  ['prop_medical_gurney', 'prop_medical_gurney'],
   ['prop_patient_corpse', 'prop_patient_corpse'],
+  ['prop_windowman', 'prop_windowman'],
 
   // --- Artifact pickups ---
   ['artifact_hallucination', 'artifact_hallucination'],

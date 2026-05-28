@@ -79,8 +79,20 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
 
   // Props
   prop_medical_iv: 'assets/sprites/props/prop_medical_iv.png',
+  prop_medical_cabinet: 'assets/sprites/props/prop_medical_cabinet.png',
+  prop_body_bag: 'assets/sprites/props/prop_body_bag.png',
+  prop_wheel_chair: 'assets/sprites/props/prop_whell_chair.png',
+  prop_organic_flesh: 'assets/sprites/props/prop_organic_flesh.png',
+  prop_ceiling_light: 'assets/sprites/props/prop_ceiling_light.png',
+  prop_treatment_chair: 'assets/sprites/props/prop_treatment_chair.png',
+  prop_terminal: 'assets/sprites/props/sprite_terminal.png',
+  prop_child: 'assets/sprites/props/sprite_child.png',
+  prop_camera: 'assets/sprites/props/sprite_camera.png',
+  prop_ceiling_valve: 'assets/sprites/props/prop_ceiling_valve.png',
   prop_tv: 'assets/sprites/props/prop_tv.png',
+  prop_medical_gurney: 'assets/sprites/props/prop_medical_gurney.png',
   prop_patient_corpse: 'assets/sprites/props/prop_patient_corpse.png',
+  prop_windowman: 'assets/sprites/props/sprite_windowman.png',
 
   // Hallucinations
   hallucination_entity: 'assets/sprites/enemies/hallucination_entity.png',

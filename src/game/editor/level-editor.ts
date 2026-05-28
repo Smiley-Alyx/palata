@@ -75,6 +75,58 @@ const MATERIAL_TOOLS = [
   'false_window',
 ] as const;
 
+function makeLockTool(keyId: 'gold' | 'silver' | 'blood'): PaletteItem {
+  return {
+    id: `lock_${keyId}`,
+    label: `${keyId} lock`,
+    group: 'Keys',
+    create: (x, y) => ({
+      id: makeEntityId(`${keyId}_lock`, x, y),
+      type: 'door_lock',
+      keyId,
+      x: Math.floor(x),
+      y: Math.floor(y),
+    }),
+  };
+}
+
+function makeWeaponTool(subtype: string, label: string, preview: string): PaletteItem {
+  return {
+    id: `weapon_${subtype}`,
+    label,
+    group: 'Weapons',
+    preview,
+    create: (x, y) => ({ id: makeEntityId(subtype, x, y), type: 'weapon', subtype, x, y }),
+  };
+}
+
+function makeEnemyTool(kind: string, label: string, preview: string): PaletteItem {
+  return {
+    id: `enemy_${kind}`,
+    label,
+    group: 'Enemies',
+    preview,
+    create: (x, y) => ({ id: makeEntityId(kind, x, y), type: 'enemy_spawn', kind, x, y }),
+  };
+}
+
+function makePropTool(sprite: string, label: string, scale = 0.55): PaletteItem {
+  return {
+    id: sprite,
+    label,
+    group: 'Props',
+    preview: sprite,
+    create: (x, y) => ({
+      id: makeEntityId(sprite, x, y),
+      type: 'prop',
+      sprite,
+      x,
+      y,
+      scale,
+    }),
+  };
+}
+
 const ENTITY_TOOLS: PaletteItem[] = [
   {
     id: 'note_archive',
@@ -137,18 +189,9 @@ const ENTITY_TOOLS: PaletteItem[] = [
       y,
     }),
   },
-  {
-    id: 'lock_gold',
-    label: 'Gold lock',
-    group: 'Keys',
-    create: (x, y) => ({
-      id: makeEntityId('gold_lock', x, y),
-      type: 'door_lock',
-      keyId: 'gold',
-      x: Math.floor(x),
-      y: Math.floor(y),
-    }),
-  },
+  makeLockTool('gold'),
+  makeLockTool('silver'),
+  makeLockTool('blood'),
   {
     id: 'health',
     label: 'Health',
@@ -170,6 +213,19 @@ const ENTITY_TOOLS: PaletteItem[] = [
     }),
   },
   {
+    id: 'injector',
+    label: 'Injector',
+    group: 'Pickups',
+    preview: 'injector',
+    create: (x, y) => ({
+      id: makeEntityId('injector', x, y),
+      type: 'medication',
+      subtype: 'injector',
+      x,
+      y,
+    }),
+  },
+  {
     id: 'ammo_pistol',
     label: 'Pistol ammo',
     group: 'Pickups',
@@ -183,27 +239,53 @@ const ENTITY_TOOLS: PaletteItem[] = [
     }),
   },
   {
-    id: 'weapon_pistol',
-    label: 'Pistol',
-    group: 'Weapons',
-    preview: 'weapon_pickup_pistol',
+    id: 'ammo_shotgun',
+    label: 'Shotgun ammo',
+    group: 'Pickups',
+    preview: 'ammo_shotgun',
     create: (x, y) => ({
-      id: makeEntityId('pistol', x, y),
-      type: 'weapon',
-      subtype: 'pistol',
+      id: makeEntityId('ammo_shotgun', x, y),
+      type: 'ammo',
+      subtype: 'shotgun',
       x,
       y,
     }),
   },
   {
-    id: 'weapon_shotgun',
-    label: 'Shotgun',
-    group: 'Weapons',
-    preview: 'weapon_pickup_shotgun',
+    id: 'artifact_hallucination',
+    label: 'Hallucination artifact',
+    group: 'Pickups',
+    preview: 'artifact_hallucination',
     create: (x, y) => ({
-      id: makeEntityId('shotgun', x, y),
-      type: 'weapon',
-      subtype: 'shotgun',
+      id: makeEntityId('artifact_hallucination', x, y),
+      type: 'artifact',
+      subtype: 'hallucination',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'artifact_vhs',
+    label: 'VHS artifact',
+    group: 'Pickups',
+    preview: 'artifact_vhs',
+    create: (x, y) => ({
+      id: makeEntityId('artifact_vhs', x, y),
+      type: 'artifact',
+      subtype: 'vhs',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'armor_blue',
+    label: 'Blue armor',
+    group: 'Pickups',
+    preview: 'armor_blue',
+    create: (x, y) => ({
+      id: makeEntityId('armor_blue', x, y),
+      type: 'armor',
+      subtype: 'blue',
       x,
       y,
     }),
@@ -222,31 +304,30 @@ const ENTITY_TOOLS: PaletteItem[] = [
     }),
   },
   {
-    id: 'enemy_husk',
-    label: 'Husk',
-    group: 'Enemies',
-    preview: 'skeleton_husk',
+    id: 'armor_red',
+    label: 'Red armor',
+    group: 'Pickups',
+    preview: 'armor_red',
     create: (x, y) => ({
-      id: makeEntityId('husk', x, y),
-      type: 'enemy_spawn',
-      kind: 'skeleton_husk',
+      id: makeEntityId('armor_red', x, y),
+      type: 'armor',
+      subtype: 'red',
       x,
       y,
     }),
   },
-  {
-    id: 'enemy_orderly',
-    label: 'Orderly',
-    group: 'Enemies',
-    preview: 'medical_orderly',
-    create: (x, y) => ({
-      id: makeEntityId('orderly', x, y),
-      type: 'enemy_spawn',
-      kind: 'medical_orderly',
-      x,
-      y,
-    }),
-  },
+  makeWeaponTool('skalpel', 'Skalpel', 'weapon_pickup_skalpel'),
+  makeWeaponTool('pipe', 'Pipe', 'weapon_pickup_pipe'),
+  makeWeaponTool('pistol', 'Pistol', 'weapon_pickup_pistol'),
+  makeWeaponTool('revolver', 'Revolver', 'weapon_pickup_revolver'),
+  makeWeaponTool('shotgun', 'Shotgun', 'weapon_pickup_shotgun'),
+  makeEnemyTool('skeleton_husk', 'Husk', 'skeleton_husk'),
+  makeEnemyTool('medical_orderly', 'Orderly', 'medical_orderly'),
+  makeEnemyTool('deformed_patient', 'Patient', 'deformed_patient'),
+  makeEnemyTool('flesh_watcher', 'Flesh watcher', 'flesh_watcher'),
+  makeEnemyTool('flesh_eye', 'Flesh eye', 'flesh_eye'),
+  makeEnemyTool('flesh_machine', 'Flesh machine', 'flesh_machine'),
+  makeEnemyTool('doppelganger', 'Doppelganger', 'doppelganger'),
   {
     id: 'hallucination',
     label: 'Hallucination',
@@ -302,48 +383,21 @@ const ENTITY_TOOLS: PaletteItem[] = [
       volume: 0.42,
     }),
   },
-  {
-    id: 'prop_iv',
-    label: 'IV prop',
-    group: 'Props',
-    preview: 'prop_medical_iv',
-    create: (x, y) => ({
-      id: makeEntityId('prop_iv', x, y),
-      type: 'prop',
-      sprite: 'prop_medical_iv',
-      x,
-      y,
-      scale: 0.55,
-    }),
-  },
-  {
-    id: 'prop_tv',
-    label: 'TV prop',
-    group: 'Props',
-    preview: 'prop_tv',
-    create: (x, y) => ({
-      id: makeEntityId('prop_tv', x, y),
-      type: 'prop',
-      sprite: 'prop_tv',
-      x,
-      y,
-      scale: 0.52,
-    }),
-  },
-  {
-    id: 'prop_corpse',
-    label: 'Corpse prop',
-    group: 'Props',
-    preview: 'prop_patient_corpse',
-    create: (x, y) => ({
-      id: makeEntityId('prop_corpse', x, y),
-      type: 'prop',
-      sprite: 'prop_patient_corpse',
-      x,
-      y,
-      scale: 0.58,
-    }),
-  },
+  makePropTool('prop_medical_iv', 'IV stand'),
+  makePropTool('prop_medical_cabinet', 'Cabinet'),
+  makePropTool('prop_body_bag', 'Body bag', 0.6),
+  makePropTool('prop_wheel_chair', 'Wheel chair'),
+  makePropTool('prop_organic_flesh', 'Organic flesh', 0.62),
+  makePropTool('prop_ceiling_light', 'Ceiling light', 0.42),
+  makePropTool('prop_treatment_chair', 'Treatment chair'),
+  makePropTool('prop_terminal', 'Terminal', 0.54),
+  makePropTool('prop_child', 'Child sprite', 0.5),
+  makePropTool('prop_camera', 'Camera', 0.38),
+  makePropTool('prop_ceiling_valve', 'Ceiling valve', 0.44),
+  makePropTool('prop_tv', 'TV prop', 0.52),
+  makePropTool('prop_medical_gurney', 'Gurney', 0.6),
+  makePropTool('prop_patient_corpse', 'Corpse prop', 0.58),
+  makePropTool('prop_windowman', 'Window man', 0.55),
 ];
 
 const TRIGGER_SOUNDS = [
