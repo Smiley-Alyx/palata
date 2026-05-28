@@ -47,6 +47,7 @@ import {
 } from './rayc';
 import { bindNoteOverlayControls, isNoteOverlayVisible } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
+import { openBlankLevelEditor, openLevelEditor } from './editor/level-editor';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import { applyPlayerDamage } from './systems/player-stats';
 import {
@@ -1088,6 +1089,22 @@ async function switchLevelFromConsole(level: string | number) {
 }
 
 function installConsoleCommands() {
+  async function openEditorFromConsole(levelFile?: string | number) {
+    stopRayc();
+    running = false;
+    paused = false;
+    setHudVisible(false);
+    hideMenu();
+    hideDeathScreen();
+    hideEndingScreen();
+    hideBloodOverlay();
+    if (levelFile === undefined || levelFile === null || String(levelFile).trim() === '') {
+      openBlankLevelEditor();
+      return { path: 'level.json' };
+    }
+    return openLevelEditor(levelFile);
+  }
+
   const api = {
     help() {
       return [
@@ -1095,11 +1112,15 @@ function installConsoleCommands() {
         'palata.level(3) - load level by number',
         'palata.loadLevel("level3") - alias for palata.level',
         'palata.levels() - list available levels',
+        'palata.editor("/assets/data/levels/level1.json") - open level editor',
+        'palata.editor("level1") - open level editor by level file shortcut',
       ];
     },
     levels: listConsoleLevels,
     level: switchLevelFromConsole,
     loadLevel: switchLevelFromConsole,
+    editor: openEditorFromConsole,
+    editLevel: openEditorFromConsole,
   };
 
   (window as Window & { palata?: typeof api }).palata = api;
