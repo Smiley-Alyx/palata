@@ -84,6 +84,13 @@ const enemyHearingRadiusMultiplier = 1.5;
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
+let decorativeSprites: Array<{
+  x: number;
+  y: number;
+  material: string;
+  alive: boolean;
+  scale: number;
+}> = [];
 let baseGrid: number[][] | null = null;
 let rawGeometryOverrides: LevelGeometryOverrideJson[] = [];
 let entityIdSeq = 1;
@@ -249,6 +256,13 @@ function reapplyEntities() {
   const armorFromEntities: ArmorSpec[] = [];
   const portalsFromEntities: PortalSpec[] = [];
   const emittersFromEntities: AmbientEmitterSpec[] = [];
+  const propsFromEntities: Array<{
+    x: number;
+    y: number;
+    material: string;
+    alive: boolean;
+    scale: number;
+  }> = [];
 
   for (const e of enabled) {
     if (!e || typeof e !== 'object') continue;
@@ -381,6 +395,21 @@ function reapplyEntities() {
       });
     }
 
+    if (e.type === 'prop' || e.type === 'sprite') {
+      const sprite = (e as { sprite?: unknown; material?: unknown }).sprite;
+      const material = typeof sprite === 'string' ? sprite : (e as { material?: unknown }).material;
+      if (typeof material === 'string') {
+        const scale = (e as { scale?: unknown }).scale;
+        propsFromEntities.push({
+          x: e.x,
+          y: e.y,
+          material,
+          alive: true,
+          scale: typeof scale === 'number' && scale > 0 ? scale : 0.5,
+        });
+      }
+    }
+
     if (e.type === 'hallucination') {
       const raw = e as unknown as {
         id?: string;
@@ -442,6 +471,7 @@ function reapplyEntities() {
   itemsSystem?.setArmorPickups(armorFromEntities);
   portalsSystem?.setPortals(portalsFromEntities);
   ambienceSystem?.setEmitters(emittersFromEntities);
+  decorativeSprites = propsFromEntities;
   if (rawEntities.some((e) => e?.type === 'enemy_spawn')) {
     entityDrivenEnemies = true;
   }
@@ -673,7 +703,7 @@ export function getPredatorDashCooldownRatio(): number {
 
 export function getSprites() {
   ensureEngine();
-  return pickupsSystem?.getSprites() ?? [];
+  return [...(pickupsSystem?.getSprites() ?? []), ...decorativeSprites];
 }
 
 const audio = new AudioManager();
@@ -874,6 +904,7 @@ function ensureEngine() {
       ...(pickupsSystem?.getSprites() ?? []),
       ...(itemsSystem?.getSprites() ?? []),
       ...(hallucinationsSystem?.getSprites() ?? []),
+      ...decorativeSprites,
     ],
     getWeapon: () => weaponsSystem.getCurrent(),
     getWeaponDef: () => weaponsSystem.getCurrentDef(),

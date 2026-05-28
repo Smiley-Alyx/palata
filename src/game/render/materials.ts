@@ -85,6 +85,11 @@ const materialToDomId = new Map<string, string>([
   ['document_photo', 'document_photo'],
   ['document_cassette', 'document_cassette'],
 
+  // --- Decorative prop sprites ---
+  ['prop_medical_iv', 'prop_medical_iv'],
+  ['prop_tv', 'prop_tv'],
+  ['prop_patient_corpse', 'prop_patient_corpse'],
+
   // --- Artifact pickups ---
   ['artifact_hallucination', 'artifact_hallucination'],
   ['artifact_vhs', 'artifact_vhs'],

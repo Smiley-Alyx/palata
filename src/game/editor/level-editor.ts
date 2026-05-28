@@ -1,12 +1,17 @@
+import { ASSET_MANIFEST } from '../assets/manifest';
 import { assetUrl } from '../content/content';
 
 type LevelJson = Record<string, unknown> & {
   geometry?: unknown;
   rows?: unknown;
   spawn?: unknown;
+  materialsWall?: unknown;
+  entities?: unknown;
+  lights?: unknown;
+  triggers?: unknown;
 };
 
-type EditorTool = 'cell' | 'spawn';
+type EditorTool = 'cell' | 'spawn' | 'material' | 'entity' | 'light' | 'trigger' | 'erase';
 
 type TileTool = {
   value: number;
@@ -15,13 +20,340 @@ type TileTool = {
   key: string;
 };
 
+type PaletteItem = {
+  id: string;
+  label: string;
+  group: string;
+  preview?: string;
+  create: (x: number, y: number) => Record<string, unknown>;
+};
+
+type LightMode = 'steady' | 'flicker' | 'emergency' | 'pulse' | 'organic';
+
+type LightDraft = {
+  radius: number;
+  intensity: number;
+  color: string;
+  mode: LightMode;
+};
+
+type TriggerDraft = {
+  sound: string;
+  volume: number;
+  once: boolean;
+};
+
 const TILE_TOOLS: TileTool[] = [
   { value: 0, label: '0 Empty', hint: 'Empty floor', key: 'Digit0' },
   { value: 1, label: '1 Wall', hint: 'Solid wall', key: 'Digit1' },
+  { value: 2, label: '2 Alt wall', hint: 'Alternative wall', key: 'Digit2' },
   { value: 3, label: '3 Window', hint: 'Window cell', key: 'Digit3' },
+  { value: 4, label: '4 Stand A', hint: 'Legend slot 4', key: 'Digit4' },
+  { value: 5, label: '5 Stand B', hint: 'Legend slot 5', key: 'Digit5' },
   { value: 6, label: '6 Door', hint: 'Door cell', key: 'Digit6' },
-  { value: 7, label: '7 Exit', hint: 'Exit trigger cell', key: 'Digit7' },
+  { value: 7, label: '7 Exit / gate', hint: 'Exit or legend slot 7', key: 'Digit7' },
+  { value: 8, label: '8 Stand C', hint: 'Legend slot 8', key: 'Digit8' },
+  { value: 9, label: '9 Stand D', hint: 'Legend slot 9', key: 'Digit9' },
 ];
+
+const MATERIAL_TOOLS = [
+  'hospital_wall_stripe',
+  'medical_tiles',
+  'concrete_tunnel',
+  'metal_panels',
+  'metal_emergency',
+  'organic_wall',
+  'ventilation_shaft',
+  'flesh_wall',
+  'medical_door',
+  'archive_door',
+  'ward_door',
+  'shower_door',
+  'blast_door',
+  'reinforced_window',
+  'ward_window',
+  'false_window',
+] as const;
+
+const ENTITY_TOOLS: PaletteItem[] = [
+  {
+    id: 'note_archive',
+    label: 'Note',
+    group: 'Documents',
+    preview: 'document_archive',
+    create: (x, y) => ({
+      id: makeEntityId('note', x, y),
+      type: 'note',
+      messageType: 'note',
+      sprite: 'document_archive',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'note_card',
+    label: 'Medical card',
+    group: 'Documents',
+    preview: 'document_medical_card',
+    create: (x, y) => ({
+      id: makeEntityId('card', x, y),
+      type: 'note',
+      messageType: 'card',
+      sprite: 'document_medical_card',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'key_gold',
+    label: 'Gold key',
+    group: 'Keys',
+    preview: 'keyGold',
+    create: (x, y) => ({ id: makeEntityId('gold_key', x, y), type: 'key', subtype: 'gold', x, y }),
+  },
+  {
+    id: 'key_silver',
+    label: 'Silver key',
+    group: 'Keys',
+    preview: 'keySilver',
+    create: (x, y) => ({
+      id: makeEntityId('silver_key', x, y),
+      type: 'key',
+      subtype: 'silver',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'key_blood',
+    label: 'Blood key',
+    group: 'Keys',
+    preview: 'keyBlood',
+    create: (x, y) => ({
+      id: makeEntityId('blood_key', x, y),
+      type: 'key',
+      subtype: 'blood',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'lock_gold',
+    label: 'Gold lock',
+    group: 'Keys',
+    create: (x, y) => ({
+      id: makeEntityId('gold_lock', x, y),
+      type: 'door_lock',
+      keyId: 'gold',
+      x: Math.floor(x),
+      y: Math.floor(y),
+    }),
+  },
+  {
+    id: 'health',
+    label: 'Health',
+    group: 'Pickups',
+    preview: 'health',
+    create: (x, y) => ({ id: makeEntityId('health', x, y), type: 'health_pickup', x, y }),
+  },
+  {
+    id: 'haloperidol',
+    label: 'Haloperidol',
+    group: 'Pickups',
+    preview: 'haloperidol',
+    create: (x, y) => ({
+      id: makeEntityId('haloperidol', x, y),
+      type: 'medication',
+      subtype: 'haloperidol',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'ammo_pistol',
+    label: 'Pistol ammo',
+    group: 'Pickups',
+    preview: 'ammo_pistol',
+    create: (x, y) => ({
+      id: makeEntityId('ammo_pistol', x, y),
+      type: 'ammo',
+      subtype: 'pistol',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'weapon_pistol',
+    label: 'Pistol',
+    group: 'Weapons',
+    preview: 'weapon_pickup_pistol',
+    create: (x, y) => ({
+      id: makeEntityId('pistol', x, y),
+      type: 'weapon',
+      subtype: 'pistol',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'weapon_shotgun',
+    label: 'Shotgun',
+    group: 'Weapons',
+    preview: 'weapon_pickup_shotgun',
+    create: (x, y) => ({
+      id: makeEntityId('shotgun', x, y),
+      type: 'weapon',
+      subtype: 'shotgun',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'armor_green',
+    label: 'Green armor',
+    group: 'Pickups',
+    preview: 'armor_green',
+    create: (x, y) => ({
+      id: makeEntityId('armor', x, y),
+      type: 'armor',
+      subtype: 'green',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'enemy_husk',
+    label: 'Husk',
+    group: 'Enemies',
+    preview: 'skeleton_husk',
+    create: (x, y) => ({
+      id: makeEntityId('husk', x, y),
+      type: 'enemy_spawn',
+      kind: 'skeleton_husk',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'enemy_orderly',
+    label: 'Orderly',
+    group: 'Enemies',
+    preview: 'medical_orderly',
+    create: (x, y) => ({
+      id: makeEntityId('orderly', x, y),
+      type: 'enemy_spawn',
+      kind: 'medical_orderly',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'hallucination',
+    label: 'Hallucination',
+    group: 'Enemies',
+    preview: 'hallucination_entity',
+    create: (x, y) => ({
+      id: makeEntityId('hallucination', x, y),
+      type: 'hallucination',
+      subtype: 'hallucination_entity',
+      x,
+      y,
+    }),
+  },
+  {
+    id: 'amb_buzz',
+    label: 'Fluorescent buzz',
+    group: 'Audio',
+    create: (x, y) => ({
+      id: makeEntityId('amb_buzz', x, y),
+      type: 'ambient_loop',
+      subtype: 'fluorescent_buzz',
+      x,
+      y,
+      radius: 8,
+      volume: 0.38,
+    }),
+  },
+  {
+    id: 'amb_heart',
+    label: 'Heartbeat',
+    group: 'Audio',
+    create: (x, y) => ({
+      id: makeEntityId('amb_heart', x, y),
+      type: 'ambient_loop',
+      subtype: 'heartbeat_wall',
+      x,
+      y,
+      radius: 7,
+      volume: 0.42,
+    }),
+  },
+  {
+    id: 'amb_machine',
+    label: 'Machine hum',
+    group: 'Audio',
+    create: (x, y) => ({
+      id: makeEntityId('amb_machine', x, y),
+      type: 'ambient_loop',
+      subtype: 'machine_hum',
+      x,
+      y,
+      radius: 8,
+      volume: 0.42,
+    }),
+  },
+  {
+    id: 'prop_iv',
+    label: 'IV prop',
+    group: 'Props',
+    preview: 'prop_medical_iv',
+    create: (x, y) => ({
+      id: makeEntityId('prop_iv', x, y),
+      type: 'prop',
+      sprite: 'prop_medical_iv',
+      x,
+      y,
+      scale: 0.55,
+    }),
+  },
+  {
+    id: 'prop_tv',
+    label: 'TV prop',
+    group: 'Props',
+    preview: 'prop_tv',
+    create: (x, y) => ({
+      id: makeEntityId('prop_tv', x, y),
+      type: 'prop',
+      sprite: 'prop_tv',
+      x,
+      y,
+      scale: 0.52,
+    }),
+  },
+  {
+    id: 'prop_corpse',
+    label: 'Corpse prop',
+    group: 'Props',
+    preview: 'prop_patient_corpse',
+    create: (x, y) => ({
+      id: makeEntityId('prop_corpse', x, y),
+      type: 'prop',
+      sprite: 'prop_patient_corpse',
+      x,
+      y,
+      scale: 0.58,
+    }),
+  },
+];
+
+const TRIGGER_SOUNDS = [
+  'ambient.distant.scream',
+  'ambient.heartbeat.wall',
+  'hallucination.burst',
+  'hallucination.vhs.glitch',
+  'transition.predator.growl',
+  'machinery.pipe.steam',
+] as const;
 
 const DEFAULT_LEVEL: LevelJson = {
   id: 'edited-level',
@@ -35,6 +367,9 @@ const DEFAULT_LEVEL: LevelJson = {
   },
   spawn: { x: 1.5, y: 1.5, rot: 0 },
   rows: ['11111111', '10000001', '10000001', '10000001', '11111111'],
+  entities: [],
+  lights: [],
+  triggers: [],
 };
 
 function normalizeLevelPath(levelFile: string | number) {
@@ -96,6 +431,54 @@ function readSpawn(level: LevelJson) {
   };
 }
 
+function readMaterials(level: LevelJson, grid: number[][]) {
+  const width = grid[0]?.length ?? 0;
+  const materials = Array.from({ length: grid.length }, () =>
+    Array.from({ length: width }, () => ''),
+  );
+  const raw = level.materialsWall;
+  if (!Array.isArray(raw)) return materials;
+
+  if (raw.every((row) => typeof row === 'string')) {
+    for (let y = 0; y < materials.length; y++) {
+      const row = raw[y] as string | undefined;
+      for (let x = 0; x < width; x++) materials[y][x] = row?.[x] ?? '';
+    }
+    return materials;
+  }
+
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const item = entry as {
+      x?: unknown;
+      y?: unknown;
+      w?: unknown;
+      h?: unknown;
+      material?: unknown;
+    };
+    if (typeof item.x !== 'number' || typeof item.y !== 'number') continue;
+    if (typeof item.material !== 'string') continue;
+    const x = Math.floor(item.x);
+    const y = Math.floor(item.y);
+    const w = typeof item.w === 'number' ? Math.max(1, Math.floor(item.w)) : 1;
+    const h = typeof item.h === 'number' ? Math.max(1, Math.floor(item.h)) : 1;
+    for (let yy = y; yy < y + h; yy++) {
+      for (let xx = x; xx < x + w; xx++) {
+        if (materials[yy]?.[xx] !== undefined) materials[yy][xx] = item.material;
+      }
+    }
+  }
+  return materials;
+}
+
+function readObjects<T extends Record<string, unknown>>(raw: unknown) {
+  return Array.isArray(raw)
+    ? raw
+        .filter((item): item is T => !!item && typeof item === 'object')
+        .map((item) => ({ ...item }))
+    : [];
+}
+
 function makeButton(label: string, className = 'level-editor__button') {
   const button = document.createElement('button');
   button.type = 'button';
@@ -127,6 +510,35 @@ function showStatus(el: HTMLElement, message: string) {
   }, 2400);
 }
 
+function makeEntityId(prefix: string, x: number, y: number) {
+  return `${prefix}_${Math.floor(x)}_${Math.floor(y)}_${Date.now().toString(36).slice(-4)}`;
+}
+
+function assetPreviewUrl(assetId: string | undefined) {
+  if (!assetId) return '';
+  const path = ASSET_MANIFEST[assetId as keyof typeof ASSET_MANIFEST];
+  return path ? assetUrl(`/${path}`) : '';
+}
+
+function cellCenter(x: number, y: number) {
+  return { x: x + 0.5, y: y + 0.5 };
+}
+
+function objectCell(value: unknown) {
+  return typeof value === 'number' ? Math.floor(value) : null;
+}
+
+function compactMaterials(materials: string[][]) {
+  const out: Array<{ x: number; y: number; material: string }> = [];
+  for (let y = 0; y < materials.length; y++) {
+    for (let x = 0; x < (materials[y]?.length ?? 0); x++) {
+      const material = materials[y][x];
+      if (material) out.push({ x, y, material });
+    }
+  }
+  return out;
+}
+
 export async function openLevelEditor(levelFile: string | number) {
   const existing = document.getElementById('levelEditorRoot');
   if (existing) existing.remove();
@@ -150,10 +562,23 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const host = document.getElementById('canvas1') ?? document.body;
   const { sourceKey, rows } = readRows(level);
   const grid = rowsToGrid(rows);
+  const materials = readMaterials(level, grid);
+  const entities = readObjects<Record<string, unknown>>(level.entities);
+  const lights = readObjects<Record<string, unknown>>(level.lights);
+  const triggers = readObjects<Record<string, unknown>>(level.triggers);
   const spawn = readSpawn(level);
+  const hadMaterials = Array.isArray(level.materialsWall);
+  const hadEntities = Array.isArray(level.entities);
+  const hadLights = Array.isArray(level.lights);
+  const hadTriggers = Array.isArray(level.triggers);
+
   let selectedTool: EditorTool = 'cell';
   let selectedValue = 1;
+  let selectedMaterial: string = MATERIAL_TOOLS[0];
+  let selectedEntity = ENTITY_TOOLS[0];
   let painting = false;
+  const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
+  const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
 
   const root = document.createElement('section');
   root.id = 'levelEditorRoot';
@@ -190,6 +615,8 @@ function mountLevelEditor(path: string, level: LevelJson) {
 
   const sidebar = document.createElement('aside');
   sidebar.className = 'level-editor__sidebar';
+  const inspector = document.createElement('aside');
+  inspector.className = 'level-editor__inspector';
 
   const toolsTitle = document.createElement('div');
   toolsTitle.className = 'level-editor__section-title';
@@ -201,8 +628,25 @@ function mountLevelEditor(path: string, level: LevelJson) {
   sidebar.appendChild(toolList);
 
   const spawnButton = makeButton('S Spawn', 'level-editor__tool');
+  const materialButton = makeButton('M Material', 'level-editor__tool');
+  const entityButton = makeButton('E Entity', 'level-editor__tool');
+  const lightButton = makeButton('L Light', 'level-editor__tool');
+  const triggerButton = makeButton('T Sound zone', 'level-editor__tool');
+  const eraseButton = makeButton('X Erase object', 'level-editor__tool');
   spawnButton.title = 'Move player spawn';
-  toolList.appendChild(spawnButton);
+  materialButton.title = 'Paint wall material overrides';
+  entityButton.title = 'Place selected entity';
+  lightButton.title = 'Place light source';
+  triggerButton.title = 'Place one-tile enter_zone sound trigger';
+  eraseButton.title = 'Remove objects/materials from a cell';
+  toolList.append(
+    spawnButton,
+    materialButton,
+    entityButton,
+    lightButton,
+    triggerButton,
+    eraseButton,
+  );
 
   const tileButtons = TILE_TOOLS.map((tool) => {
     const button = makeButton(tool.label, 'level-editor__tool');
@@ -227,13 +671,14 @@ function mountLevelEditor(path: string, level: LevelJson) {
 
   const sizeInfo = addInfo('Size', `${grid[0]?.length ?? 0} x ${grid.length}`);
   const spawnInfo = addInfo('Spawn', '');
+  const countsInfo = addInfo('Objects', '');
   const sourceInfo = addInfo('Source', sourceKey);
   sourceInfo.title = sourceKey === 'geometry' ? 'Editing geometry array' : 'Editing rows array';
 
   const hint = document.createElement('p');
   hint.className = 'level-editor__hint';
   hint.textContent =
-    'Paint cells with the mouse. Use 0/1/3/6/7 and S shortcuts. Export writes a full level JSON.';
+    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Export writes full level JSON.';
   sidebar.appendChild(hint);
 
   const stage = document.createElement('div');
@@ -243,14 +688,20 @@ function mountLevelEditor(path: string, level: LevelJson) {
   gridEl.style.setProperty('--level-editor-cols', String(grid[0]?.length ?? 1));
   stage.appendChild(gridEl);
 
-  layout.append(sidebar, stage);
+  layout.append(sidebar, stage, inspector);
   root.append(header, layout);
   host.appendChild(root);
 
   const cells: HTMLElement[][] = [];
+  const paletteButtons: HTMLButtonElement[] = [];
 
   const syncToolButtons = () => {
     spawnButton.classList.toggle('is-selected', selectedTool === 'spawn');
+    materialButton.classList.toggle('is-selected', selectedTool === 'material');
+    entityButton.classList.toggle('is-selected', selectedTool === 'entity');
+    lightButton.classList.toggle('is-selected', selectedTool === 'light');
+    triggerButton.classList.toggle('is-selected', selectedTool === 'trigger');
+    eraseButton.classList.toggle('is-selected', selectedTool === 'erase');
     for (const { tool, button } of tileButtons) {
       button.classList.toggle(
         'is-selected',
@@ -263,14 +714,67 @@ function mountLevelEditor(path: string, level: LevelJson) {
     spawnInfo.textContent = `${spawn.x.toFixed(1)}, ${spawn.y.toFixed(1)}, rot ${spawn.rot.toFixed(2)}`;
   };
 
-  const cellTitle = (x: number, y: number) => `${x},${y}: ${grid[y][x]}`;
+  const syncCounts = () => {
+    const materialCount = compactMaterials(materials).length;
+    countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat`;
+  };
+
+  const objectsAt = (x: number, y: number) => {
+    const ent = entities.filter((e) => objectCell(e.x) === x && objectCell(e.y) === y);
+    const light = lights.filter((l) => objectCell(l.x) === x && objectCell(l.y) === y);
+    const trigger = triggers.filter((t) => {
+      const zone = t.trigger as { x?: unknown; y?: unknown } | undefined;
+      return objectCell(zone?.x) === x && objectCell(zone?.y) === y;
+    });
+    return { ent, light, trigger };
+  };
+
+  const cellTitle = (x: number, y: number) => {
+    const objects = objectsAt(x, y);
+    const parts = [`${x},${y}: ${grid[y][x]}`];
+    if (materials[y][x]) parts.push(`mat ${materials[y][x]}`);
+    if (objects.ent.length) parts.push(`${objects.ent.length} entities`);
+    if (objects.light.length) parts.push(`${objects.light.length} lights`);
+    if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
+    return parts.join(' | ');
+  };
 
   const syncCell = (x: number, y: number) => {
     const cell = cells[y]?.[x];
     if (!cell) return;
+    const objects = objectsAt(x, y);
     cell.dataset.value = String(grid[y][x]);
+    cell.dataset.material = materials[y][x] ? '1' : '0';
     cell.classList.toggle('has-spawn', Math.floor(spawn.x) === x && Math.floor(spawn.y) === y);
+    cell.classList.toggle('has-entity', objects.ent.length > 0);
+    cell.classList.toggle('has-light', objects.light.length > 0);
+    cell.classList.toggle('has-trigger', objects.trigger.length > 0);
     cell.title = cellTitle(x, y);
+    cell.replaceChildren();
+    if (materials[y][x]) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--material';
+      marker.textContent = 'M';
+      cell.appendChild(marker);
+    }
+    if (objects.ent.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--entity';
+      marker.textContent = String(objects.ent.length);
+      cell.appendChild(marker);
+    }
+    if (objects.light.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--light';
+      marker.textContent = 'L';
+      cell.appendChild(marker);
+    }
+    if (objects.trigger.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--trigger';
+      marker.textContent = 'T';
+      cell.appendChild(marker);
+    }
   };
 
   const syncAllCells = () => {
@@ -278,18 +782,75 @@ function mountLevelEditor(path: string, level: LevelJson) {
       for (let x = 0; x < grid[y].length; x++) syncCell(x, y);
     }
     syncSpawnInfo();
+    syncCounts();
+  };
+
+  const removeAt = (x: number, y: number) => {
+    materials[y][x] = '';
+    for (let i = entities.length - 1; i >= 0; i--) {
+      if (objectCell(entities[i].x) === x && objectCell(entities[i].y) === y) entities.splice(i, 1);
+    }
+    for (let i = lights.length - 1; i >= 0; i--) {
+      if (objectCell(lights[i].x) === x && objectCell(lights[i].y) === y) lights.splice(i, 1);
+    }
+    for (let i = triggers.length - 1; i >= 0; i--) {
+      const zone = triggers[i].trigger as { x?: unknown; y?: unknown } | undefined;
+      if (objectCell(zone?.x) === x && objectCell(zone?.y) === y) triggers.splice(i, 1);
+    }
+    syncCell(x, y);
+    syncCounts();
   };
 
   const applyAt = (x: number, y: number) => {
     if (!grid[y] || grid[y][x] === undefined) return;
+    const center = cellCenter(x, y);
     if (selectedTool === 'spawn') {
       const oldX = Math.floor(spawn.x);
       const oldY = Math.floor(spawn.y);
-      spawn.x = x + 0.5;
-      spawn.y = y + 0.5;
+      spawn.x = center.x;
+      spawn.y = center.y;
       syncCell(oldX, oldY);
       syncCell(x, y);
       syncSpawnInfo();
+      return;
+    }
+    if (selectedTool === 'material') {
+      materials[y][x] = selectedMaterial;
+      syncCell(x, y);
+      syncCounts();
+      return;
+    }
+    if (selectedTool === 'entity') {
+      entities.push(selectedEntity.create(center.x, center.y));
+      syncCell(x, y);
+      syncCounts();
+      return;
+    }
+    if (selectedTool === 'light') {
+      lights.push({
+        x: center.x,
+        y: center.y,
+        radius: lightDraft.radius,
+        intensity: lightDraft.intensity,
+        color: lightDraft.color,
+        mode: lightDraft.mode,
+      });
+      syncCell(x, y);
+      syncCounts();
+      return;
+    }
+    if (selectedTool === 'trigger') {
+      triggers.push({
+        id: makeEntityId('sound_trigger', x, y),
+        trigger: { type: 'enter_zone', x, y, w: 1, h: 1, once: triggerDraft.once },
+        actions: [{ type: 'play_sound', sound: triggerDraft.sound, volume: triggerDraft.volume }],
+      });
+      syncCell(x, y);
+      syncCounts();
+      return;
+    }
+    if (selectedTool === 'erase') {
+      removeAt(x, y);
       return;
     }
     grid[y][x] = selectedValue;
@@ -308,6 +869,20 @@ function mountLevelEditor(path: string, level: LevelJson) {
       y: spawn.y,
       rot: spawn.rot,
     };
+
+    const compactedMaterials = compactMaterials(materials);
+    if (compactedMaterials.length || hadMaterials) next.materialsWall = compactedMaterials;
+    else delete next.materialsWall;
+
+    if (entities.length || hadEntities) next.entities = entities;
+    else delete next.entities;
+
+    if (lights.length || hadLights) next.lights = lights;
+    else delete next.lights;
+
+    if (triggers.length || hadTriggers) next.triggers = triggers;
+    else delete next.triggers;
+
     return `${JSON.stringify(next, null, 2)}\n`;
   };
 
@@ -325,7 +900,12 @@ function mountLevelEditor(path: string, level: LevelJson) {
         applyAt(x, y);
       });
       cell.addEventListener('pointerenter', () => {
-        if (painting) applyAt(x, y);
+        if (
+          painting &&
+          (selectedTool === 'cell' || selectedTool === 'material' || selectedTool === 'erase')
+        ) {
+          applyAt(x, y);
+        }
       });
       cell.addEventListener('pointerup', () => {
         painting = false;
@@ -344,14 +924,137 @@ function mountLevelEditor(path: string, level: LevelJson) {
     syncToolButtons();
   };
 
-  spawnButton.addEventListener('click', () => {
-    selectedTool = 'spawn';
+  const setTool = (tool: EditorTool) => {
+    selectedTool = tool;
     syncToolButtons();
-  });
+  };
+
+  spawnButton.addEventListener('click', () => setTool('spawn'));
+  materialButton.addEventListener('click', () => setTool('material'));
+  entityButton.addEventListener('click', () => setTool('entity'));
+  lightButton.addEventListener('click', () => setTool('light'));
+  triggerButton.addEventListener('click', () => setTool('trigger'));
+  eraseButton.addEventListener('click', () => setTool('erase'));
 
   for (const { tool, button } of tileButtons) {
     button.addEventListener('click', () => selectTile(tool.value));
   }
+
+  const buildInspector = () => {
+    inspector.replaceChildren();
+
+    const materialTitle = document.createElement('div');
+    materialTitle.className = 'level-editor__section-title';
+    materialTitle.textContent = 'Materials';
+    inspector.appendChild(materialTitle);
+
+    const materialList = document.createElement('div');
+    materialList.className = 'level-editor__palette';
+    inspector.appendChild(materialList);
+    for (const material of MATERIAL_TOOLS) {
+      const button = makeButton(material, 'level-editor__palette-button') as HTMLButtonElement;
+      button.classList.toggle('is-selected', selectedMaterial === material);
+      const previewUrl = assetPreviewUrl(material);
+      if (previewUrl) button.style.setProperty('--preview-image', `url("${previewUrl}")`);
+      button.addEventListener('click', () => {
+        selectedMaterial = material;
+        selectedTool = 'material';
+        buildInspector();
+        syncToolButtons();
+      });
+      materialList.appendChild(button);
+    }
+
+    const entityTitle = document.createElement('div');
+    entityTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+    entityTitle.textContent = 'Entities';
+    inspector.appendChild(entityTitle);
+
+    const entityList = document.createElement('div');
+    entityList.className = 'level-editor__palette';
+    inspector.appendChild(entityList);
+    let lastGroup = '';
+    for (const item of ENTITY_TOOLS) {
+      if (item.group !== lastGroup) {
+        const group = document.createElement('div');
+        group.className = 'level-editor__palette-group';
+        group.textContent = item.group;
+        entityList.appendChild(group);
+        lastGroup = item.group;
+      }
+      const button = makeButton(item.label, 'level-editor__palette-button') as HTMLButtonElement;
+      button.classList.toggle('is-selected', selectedEntity.id === item.id);
+      const previewUrl = assetPreviewUrl(item.preview);
+      if (previewUrl) button.style.setProperty('--preview-image', `url("${previewUrl}")`);
+      button.addEventListener('click', () => {
+        selectedEntity = item;
+        selectedTool = 'entity';
+        buildInspector();
+        syncToolButtons();
+      });
+      entityList.appendChild(button);
+      paletteButtons.push(button);
+    }
+
+    const lightTitle = document.createElement('div');
+    lightTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+    lightTitle.textContent = 'Light';
+    inspector.appendChild(lightTitle);
+
+    const lightForm = document.createElement('div');
+    lightForm.className = 'level-editor__form';
+    inspector.appendChild(lightForm);
+    addNumberInput(lightForm, 'Radius', lightDraft.radius, 1, 16, 0.5, (value) => {
+      lightDraft.radius = value;
+      selectedTool = 'light';
+      syncToolButtons();
+    });
+    addNumberInput(lightForm, 'Intensity', lightDraft.intensity, 0.05, 2, 0.05, (value) => {
+      lightDraft.intensity = value;
+      selectedTool = 'light';
+      syncToolButtons();
+    });
+    addColorInput(lightForm, 'Color', lightDraft.color, (value) => {
+      lightDraft.color = value;
+      selectedTool = 'light';
+      syncToolButtons();
+    });
+    addSelectInput(
+      lightForm,
+      'Mode',
+      ['steady', 'flicker', 'emergency', 'pulse', 'organic'],
+      lightDraft.mode,
+      (value) => {
+        lightDraft.mode = value as LightMode;
+        selectedTool = 'light';
+        syncToolButtons();
+      },
+    );
+
+    const triggerTitle = document.createElement('div');
+    triggerTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+    triggerTitle.textContent = 'Sound Trigger';
+    inspector.appendChild(triggerTitle);
+
+    const triggerForm = document.createElement('div');
+    triggerForm.className = 'level-editor__form';
+    inspector.appendChild(triggerForm);
+    addSelectInput(triggerForm, 'Sound', [...TRIGGER_SOUNDS], triggerDraft.sound, (value) => {
+      triggerDraft.sound = value;
+      selectedTool = 'trigger';
+      syncToolButtons();
+    });
+    addNumberInput(triggerForm, 'Volume', triggerDraft.volume, 0, 1, 0.05, (value) => {
+      triggerDraft.volume = value;
+      selectedTool = 'trigger';
+      syncToolButtons();
+    });
+    addCheckboxInput(triggerForm, 'Once', triggerDraft.once, (value) => {
+      triggerDraft.once = value;
+      selectedTool = 'trigger';
+      syncToolButtons();
+    });
+  };
 
   closeButton.addEventListener('click', closeEditor, { signal: controller.signal });
   downloadButton.addEventListener('click', () => {
@@ -385,8 +1088,32 @@ function mountLevelEditor(path: string, level: LevelJson) {
     }
     if (e.code === 'KeyS') {
       e.preventDefault();
-      selectedTool = 'spawn';
-      syncToolButtons();
+      setTool('spawn');
+      return;
+    }
+    if (e.code === 'KeyM') {
+      e.preventDefault();
+      setTool('material');
+      return;
+    }
+    if (e.code === 'KeyE') {
+      e.preventDefault();
+      setTool('entity');
+      return;
+    }
+    if (e.code === 'KeyL') {
+      e.preventDefault();
+      setTool('light');
+      return;
+    }
+    if (e.code === 'KeyT') {
+      e.preventDefault();
+      setTool('trigger');
+      return;
+    }
+    if (e.code === 'KeyX') {
+      e.preventDefault();
+      setTool('erase');
       return;
     }
     const found = TILE_TOOLS.find((tool) => tool.key === e.code || e.key === String(tool.value));
@@ -406,8 +1133,96 @@ function mountLevelEditor(path: string, level: LevelJson) {
   );
 
   sizeInfo.textContent = `${grid[0]?.length ?? 0} x ${grid.length}`;
+  buildInspector();
   syncToolButtons();
   syncAllCells();
 
   return closeEditor;
+}
+
+function addNumberInput(
+  parent: HTMLElement,
+  label: string,
+  value: number,
+  min: number,
+  max: number,
+  step: number,
+  onInput: (value: number) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = String(min);
+  input.max = String(max);
+  input.step = String(step);
+  input.value = String(value);
+  input.addEventListener('input', () => {
+    const next = Number(input.value);
+    if (Number.isFinite(next)) onInput(Math.max(min, Math.min(max, next)));
+  });
+  row.append(caption, input);
+  parent.appendChild(row);
+}
+
+function addColorInput(
+  parent: HTMLElement,
+  label: string,
+  value: string,
+  onInput: (value: string) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.value = value;
+  input.addEventListener('input', () => onInput(input.value));
+  row.append(caption, input);
+  parent.appendChild(row);
+}
+
+function addSelectInput(
+  parent: HTMLElement,
+  label: string,
+  options: string[],
+  value: string,
+  onInput: (value: string) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('select');
+  for (const option of options) {
+    const el = document.createElement('option');
+    el.value = option;
+    el.textContent = option;
+    input.appendChild(el);
+  }
+  input.value = value;
+  input.addEventListener('input', () => onInput(input.value));
+  row.append(caption, input);
+  parent.appendChild(row);
+}
+
+function addCheckboxInput(
+  parent: HTMLElement,
+  label: string,
+  value: boolean,
+  onInput: (value: boolean) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field level-editor__field--checkbox';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = value;
+  input.addEventListener('input', () => onInput(input.checked));
+  row.append(caption, input);
+  parent.appendChild(row);
 }

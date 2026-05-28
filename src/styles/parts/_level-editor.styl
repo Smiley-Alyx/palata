@@ -61,14 +61,20 @@
 .level-editor__layout
   min-height 0
   display grid
-  grid-template-columns 190px minmax(0, 1fr)
+  grid-template-columns 190px minmax(0, 1fr) 280px
 
-.level-editor__sidebar
+.level-editor__sidebar,
+.level-editor__inspector
   min-height 0
   overflow auto
   padding 12px
-  border-right 2px solid rgba(107, 74, 43, 0.7)
   background #111
+
+.level-editor__sidebar
+  border-right 2px solid rgba(107, 74, 43, 0.7)
+
+.level-editor__inspector
+  border-left 2px solid rgba(107, 74, 43, 0.7)
 
 .level-editor__section-title
   margin-bottom 8px
@@ -76,6 +82,9 @@
   font-size 12px
   letter-spacing 1px
   text-transform uppercase
+
+.level-editor__section-title--spaced
+  margin-top 18px
 
 .level-editor__tools
   display grid
@@ -109,6 +118,82 @@
   font-size 11px
   line-height 1.45
 
+.level-editor__palette
+  display grid
+  gap 7px
+
+.level-editor__palette-group
+  margin 6px 0 0
+  color rgba(216, 216, 216, 0.55)
+  font-size 11px
+  letter-spacing 1px
+  text-transform uppercase
+
+.level-editor__palette-button
+  --preview-image none
+  min-height 34px
+  border 2px solid rgba(107, 74, 43, 0.9)
+  background #1a1511
+  color $text
+  font inherit
+  font-size 11px
+  line-height 1.15
+  padding 7px 8px 7px 38px
+  position relative
+  text-align left
+  cursor pointer
+
+.level-editor__palette-button::before
+  content ''
+  position absolute
+  left 7px
+  top 50%
+  width 22px
+  height 22px
+  transform translateY(-50%)
+  border 1px solid rgba(243, 210, 122, 0.24)
+  background-color #090909
+  background-image var(--preview-image)
+  background-position center
+  background-repeat no-repeat
+  background-size cover
+
+.level-editor__palette-button:hover,
+.level-editor__palette-button.is-selected
+  border-color $accent
+  color $accent
+  background #241d15
+
+.level-editor__form
+  display grid
+  gap 8px
+
+.level-editor__field
+  display grid
+  grid-template-columns 72px minmax(0, 1fr)
+  gap 8px
+  align-items center
+  color rgba(216, 216, 216, 0.72)
+  font-size 11px
+
+.level-editor__field input,
+.level-editor__field select
+  min-width 0
+  border 1px solid rgba(107, 74, 43, 0.9)
+  background #090909
+  color $text
+  font inherit
+  font-size 11px
+  padding 5px 6px
+
+.level-editor__field input[type='color']
+  min-height 28px
+  padding 2px
+
+.level-editor__field--checkbox
+  grid-template-columns 72px auto
+  justify-content start
+
 .level-editor__stage
   min-width 0
   min-height 0
@@ -134,6 +219,7 @@
   background #161616
   padding 0
   cursor crosshair
+  overflow hidden
 
 .level-editor__cell:hover
   outline 2px solid $accent
@@ -153,6 +239,50 @@
 
 .level-editor__cell[data-value='7']
   background #2e8c45
+
+.level-editor__cell[data-value='8']
+  background #57602a
+
+.level-editor__cell[data-value='9']
+  background #74505b
+
+.level-editor__cell[data-material='1']
+  box-shadow inset 0 0 0 2px rgba(243, 210, 122, 0.42)
+
+.level-editor__marker
+  position absolute
+  display flex
+  align-items center
+  justify-content center
+  width 8px
+  height 8px
+  border-radius 1px
+  color #fff
+  font-size 7px
+  font-weight 700
+  line-height 1
+  pointer-events none
+
+.level-editor__marker--material
+  left 1px
+  top 1px
+  background #b88f2d
+
+.level-editor__marker--entity
+  right 1px
+  top 1px
+  background #b51f5b
+
+.level-editor__marker--light
+  left 1px
+  bottom 1px
+  background #f0c64a
+  color #111
+
+.level-editor__marker--trigger
+  right 1px
+  bottom 1px
+  background #3f84d8
 
 .level-editor__cell.has-spawn::after
   content 'S'
@@ -177,11 +307,15 @@
 
   .level-editor__layout
     grid-template-columns 1fr
-    grid-template-rows auto minmax(0, 1fr)
+    grid-template-rows auto minmax(0, 1fr) auto
 
   .level-editor__sidebar
     border-right 0
     border-bottom 2px solid rgba(107, 74, 43, 0.7)
+
+  .level-editor__inspector
+    border-left 0
+    border-top 2px solid rgba(107, 74, 43, 0.7)
 
   .level-editor__tools
     grid-template-columns repeat(3, minmax(0, 1fr))

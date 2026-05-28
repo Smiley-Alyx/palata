@@ -77,6 +77,11 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   document_photo: 'assets/sprites/pickups/documents/documents_sheet.png',
   document_cassette: 'assets/sprites/pickups/documents/documents_sheet.png',
 
+  // Props
+  prop_medical_iv: 'assets/sprites/props/prop_medical_iv.png',
+  prop_tv: 'assets/sprites/props/prop_tv.png',
+  prop_patient_corpse: 'assets/sprites/props/prop_patient_corpse.png',
+
   // Hallucinations
   hallucination_entity: 'assets/sprites/enemies/hallucination_entity.png',
   hallucination_white_observer: 'assets/sprites/enemies/white_observer.png',
