@@ -1,6 +1,8 @@
 import { ASSET_MANIFEST } from '../assets/manifest';
 import { assetUrl } from '../content/content';
 
+const LEVEL_SAVE_ROUTE = '/__palata/level-editor/save';
+
 type LevelJson = Record<string, unknown> & {
   geometry?: unknown;
   rows?: unknown;
@@ -541,22 +543,6 @@ function makeButton(label: string, className = 'level-editor__button') {
   return button;
 }
 
-function downloadText(filename: string, text: string) {
-  const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function filenameFromPath(path: string) {
-  return path.split('/').pop() || 'level.json';
-}
-
 function showStatus(el: HTMLElement, message: string) {
   el.textContent = message;
   window.setTimeout(() => {
@@ -609,7 +595,7 @@ export async function openLevelEditor(levelFile: string | number) {
 export function openBlankLevelEditor() {
   const existing = document.getElementById('levelEditorRoot');
   if (existing) existing.remove();
-  return mountLevelEditor('level.json', structuredClone(DEFAULT_LEVEL));
+  return mountLevelEditor('/assets/data/levels/level.json', structuredClone(DEFAULT_LEVEL));
 }
 
 function mountLevelEditor(path: string, level: LevelJson) {
@@ -658,10 +644,9 @@ function mountLevelEditor(path: string, level: LevelJson) {
   status.className = 'level-editor__status';
   headerActions.appendChild(status);
 
-  const copyButton = makeButton('Copy JSON');
-  const downloadButton = makeButton('Download JSON');
+  const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
-  headerActions.append(copyButton, downloadButton, closeButton);
+  headerActions.append(saveButton, closeButton);
   header.appendChild(headerActions);
 
   const layout = document.createElement('div');
@@ -732,7 +717,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const hint = document.createElement('p');
   hint.className = 'level-editor__hint';
   hint.textContent =
-    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Export writes full level JSON.';
+    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X for modes. Save writes into the level file.';
   sidebar.appendChild(hint);
 
   const stage = document.createElement('div');
@@ -940,6 +925,18 @@ function mountLevelEditor(path: string, level: LevelJson) {
     return `${JSON.stringify(next, null, 2)}\n`;
   };
 
+  const saveLevel = async () => {
+    const res = await fetch(LEVEL_SAVE_ROUTE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path, json: serializeLevel() }),
+    });
+    if (!res.ok) {
+      const message = await res.text().catch(() => '');
+      throw new Error(message || `Failed to save level (${res.status})`);
+    }
+  };
+
   for (let y = 0; y < grid.length; y++) {
     cells[y] = [];
     for (let x = 0; x < grid[y].length; x++) {
@@ -1111,15 +1108,10 @@ function mountLevelEditor(path: string, level: LevelJson) {
   };
 
   closeButton.addEventListener('click', closeEditor, { signal: controller.signal });
-  downloadButton.addEventListener('click', () => {
-    downloadText(filenameFromPath(path), serializeLevel());
-    showStatus(status, 'Downloaded');
-  });
-  copyButton.addEventListener('click', () => {
-    void navigator.clipboard
-      .writeText(serializeLevel())
-      .then(() => showStatus(status, 'Copied'))
-      .catch(() => showStatus(status, 'Clipboard unavailable'));
+  saveButton.addEventListener('click', () => {
+    void saveLevel()
+      .then(() => showStatus(status, 'Saved'))
+      .catch((err) => showStatus(status, err instanceof Error ? err.message : 'Save failed'));
   });
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -1134,10 +1126,9 @@ function mountLevelEditor(path: string, level: LevelJson) {
     }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
       e.preventDefault();
-      void navigator.clipboard
-        .writeText(serializeLevel())
-        .then(() => showStatus(status, 'Copied'))
-        .catch(() => showStatus(status, 'Clipboard unavailable'));
+      void saveLevel()
+        .then(() => showStatus(status, 'Saved'))
+        .catch((err) => showStatus(status, err instanceof Error ? err.message : 'Save failed'));
       return;
     }
     if (e.code === 'KeyS') {

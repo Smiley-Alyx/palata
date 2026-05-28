@@ -47,7 +47,6 @@ import {
 } from './rayc';
 import { bindNoteOverlayControls, isNoteOverlayVisible } from './ui/note-overlay';
 import { loadLevel, loadLevelsIndex } from './levels/level-loader';
-import { openBlankLevelEditor, openLevelEditor } from './editor/level-editor';
 import { DEFAULT_SFX } from './audio/sfx-config';
 import { applyPlayerDamage } from './systems/player-stats';
 import {
@@ -1090,6 +1089,14 @@ async function switchLevelFromConsole(level: string | number) {
 
 function installConsoleCommands() {
   async function openEditorFromConsole(levelFile?: string | number) {
+    if (!__LEVEL_EDITOR_ENABLED__) {
+      return {
+        error:
+          'Level editor is disabled in the GitHub Pages build. Edit levels locally and publish changes through Git.',
+      };
+    }
+
+    const { openBlankLevelEditor, openLevelEditor } = await import('./editor/level-editor');
     stopRayc();
     running = false;
     paused = false;
@@ -1112,8 +1119,12 @@ function installConsoleCommands() {
         'palata.level(3) - load level by number',
         'palata.loadLevel("level3") - alias for palata.level',
         'palata.levels() - list available levels',
-        'palata.editor("/assets/data/levels/level1.json") - open level editor',
-        'palata.editor("level1") - open level editor by level file shortcut',
+        __LEVEL_EDITOR_ENABLED__
+          ? 'palata.editor("/assets/data/levels/level1.json") - open local level editor'
+          : 'palata.editor(...) - disabled in GitHub Pages build',
+        __LEVEL_EDITOR_ENABLED__
+          ? 'palata.editor("level1") - open local level editor by level file shortcut'
+          : 'Edit levels locally, commit, then publish to GitHub Pages',
       ];
     },
     levels: listConsoleLevels,

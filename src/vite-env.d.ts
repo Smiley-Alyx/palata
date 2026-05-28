@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare const __LEVEL_EDITOR_ENABLED__: boolean;
+
 declare module '*.pug?raw' {
   const src: string;
   export default src;
