@@ -968,7 +968,7 @@ async function transitionToNextLevel(levelId?: string, message?: string) {
 async function startLevelById(
   levelId: string,
   difficulty: Difficulty,
-  opts: { resetPlayer?: boolean } = {},
+  opts: { resetPlayer?: boolean; fresh?: boolean } = {},
 ) {
   unlockAudio();
 
@@ -989,7 +989,8 @@ async function startLevelById(
   hideMenu();
   const loadingDone = showLoadingScreen({ levelName: levelEntry.name ?? levelEntry.id });
 
-  const level = await loadLevel(levelEntry.file);
+  const levelPath = opts.fresh ? `${levelEntry.file}?editor=${Date.now()}` : levelEntry.file;
+  const level = await loadLevel(levelPath);
   stripEnemyCellsFromGrid(level.grid, level.legend);
   setLegend(level.legend);
   setMap(level.grid);
@@ -1088,6 +1089,41 @@ async function switchLevelFromConsole(level: string | number) {
 }
 
 function installConsoleCommands() {
+  let playtestReturnButton: HTMLButtonElement | null = null;
+
+  const removePlaytestReturnButton = () => {
+    playtestReturnButton?.remove();
+    playtestReturnButton = null;
+  };
+
+  const openPlaytestReturnButton = (levelPath: string) => {
+    removePlaytestReturnButton();
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'level-editor-playtest-return';
+    button.textContent = 'Back to editor';
+    button.addEventListener('click', () => {
+      removePlaytestReturnButton();
+      void openEditorFromConsole(levelPath);
+    });
+    (document.getElementById('canvas1') ?? document.body).appendChild(button);
+    playtestReturnButton = button;
+  };
+
+  const startEditorPlaytest = async (levelPath: string) => {
+    const levelsIndex = await loadLevelsIndex('/assets/data/levels/index.json');
+    const normalizedPath = levelPath.replace(/^\/+/, '');
+    const levelEntry = levelsIndex.levels.find(
+      (entry) => entry.file.replace(/^\/+/, '') === normalizedPath,
+    );
+    if (!levelEntry) {
+      throw new Error('Add this level to assets/data/levels/index.json before playtesting');
+    }
+    setDifficulty(currentDifficulty);
+    await startLevelById(levelEntry.id, currentDifficulty, { fresh: true });
+    openPlaytestReturnButton(levelPath);
+  };
+
   async function openEditorFromConsole(levelFile?: string | number) {
     if (!__LEVEL_EDITOR_ENABLED__) {
       return {
@@ -1096,6 +1132,7 @@ function installConsoleCommands() {
       };
     }
 
+    removePlaytestReturnButton();
     const { openBlankLevelEditor, openLevelEditor } = await import('./editor/level-editor');
     stopRayc();
     running = false;
@@ -1106,10 +1143,10 @@ function installConsoleCommands() {
     hideEndingScreen();
     hideBloodOverlay();
     if (levelFile === undefined || levelFile === null || String(levelFile).trim() === '') {
-      openBlankLevelEditor();
+      openBlankLevelEditor({ onPlaytest: startEditorPlaytest });
       return { path: 'level.json' };
     }
-    return openLevelEditor(levelFile);
+    return openLevelEditor(levelFile, { onPlaytest: startEditorPlaytest });
   }
 
   const api = {

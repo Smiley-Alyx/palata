@@ -63,6 +63,10 @@ type EditorSnapshot = {
   triggers: Record<string, unknown>[];
 };
 
+type LevelEditorOptions = {
+  onPlaytest?: (path: string) => Promise<void> | void;
+};
+
 const TILE_TOOLS: TileTool[] = [
   { value: 0, label: '0 Empty', hint: 'Empty floor', key: 'Digit0' },
   { value: 1, label: '1 Wall', hint: 'Solid wall', key: 'Digit1' },
@@ -457,7 +461,7 @@ function normalizeLevelPath(levelFile: string | number) {
 
 async function loadLevelJson(levelFile: string | number) {
   const path = normalizeLevelPath(levelFile);
-  const res = await fetch(assetUrl(path));
+  const res = await fetch(assetUrl(path), { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Failed to load level: ${path} (${res.status})`);
   }
@@ -597,12 +601,15 @@ function compactMaterials(materials: string[][]) {
   return out;
 }
 
-export async function openLevelEditor(levelFile: string | number) {
+export async function openLevelEditor(
+  levelFile: string | number,
+  options: LevelEditorOptions = {},
+) {
   const existing = document.getElementById('levelEditorRoot');
   if (existing) existing.remove();
 
   const { path, data } = await loadLevelJson(levelFile);
-  const closeEditor = mountLevelEditor(path, data);
+  const closeEditor = mountLevelEditor(path, data, options);
 
   return {
     path,
@@ -610,13 +617,17 @@ export async function openLevelEditor(levelFile: string | number) {
   };
 }
 
-export function openBlankLevelEditor() {
+export function openBlankLevelEditor(options: LevelEditorOptions = {}) {
   const existing = document.getElementById('levelEditorRoot');
   if (existing) existing.remove();
-  return mountLevelEditor('/assets/data/levels/level.json', structuredClone(DEFAULT_LEVEL));
+  return mountLevelEditor(
+    '/assets/data/levels/level.json',
+    structuredClone(DEFAULT_LEVEL),
+    options,
+  );
 }
 
-function mountLevelEditor(path: string, level: LevelJson) {
+function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOptions) {
   const host = document.getElementById('canvas1') ?? document.body;
   const { sourceKey, rows } = readRows(level);
   const grid = rowsToGrid(rows);
@@ -669,9 +680,14 @@ function mountLevelEditor(path: string, level: LevelJson) {
 
   const undoButton = makeButton('Undo');
   const redoButton = makeButton('Redo');
+  const playtestButton = makeButton('Playtest');
   const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
-  headerActions.append(undoButton, redoButton, saveButton, closeButton);
+  playtestButton.disabled = !options.onPlaytest;
+  playtestButton.title = options.onPlaytest
+    ? 'Save changes and play the level'
+    : 'Playtest is unavailable';
+  headerActions.append(undoButton, redoButton, playtestButton, saveButton, closeButton);
   header.appendChild(headerActions);
 
   const layout = document.createElement('div');
@@ -1409,6 +1425,18 @@ function mountLevelEditor(path: string, level: LevelJson) {
     void saveLevel()
       .then(() => showStatus(status, 'Saved'))
       .catch((err) => showStatus(status, err instanceof Error ? err.message : 'Save failed'));
+  });
+  playtestButton.addEventListener('click', () => {
+    if (!options.onPlaytest) return;
+    playtestButton.disabled = true;
+    showStatus(status, 'Saving level...');
+    void saveLevel()
+      .then(() => options.onPlaytest?.(path))
+      .then(() => closeEditor())
+      .catch((err) => {
+        playtestButton.disabled = false;
+        showStatus(status, err instanceof Error ? err.message : 'Playtest failed');
+      });
   });
 
   const onKeyDown = (e: KeyboardEvent) => {
