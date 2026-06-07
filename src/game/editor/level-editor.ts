@@ -21,6 +21,7 @@ type EditorTool =
   | 'light'
   | 'trigger'
   | 'erase'
+  | 'fill'
   | 'inspect';
 
 type TileTool = {
@@ -696,6 +697,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const lightButton = makeButton('L Light', 'level-editor__tool');
   const triggerButton = makeButton('T Sound zone', 'level-editor__tool');
   const eraseButton = makeButton('X Erase object', 'level-editor__tool');
+  const fillButton = makeButton('F Fill area', 'level-editor__tool');
   const inspectButton = makeButton('I Inspect', 'level-editor__tool');
   spawnButton.title = 'Move player spawn';
   materialButton.title = 'Paint wall material overrides';
@@ -703,6 +705,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   lightButton.title = 'Place light source';
   triggerButton.title = 'Place one-tile enter_zone sound trigger';
   eraseButton.title = 'Remove objects/materials from a cell';
+  fillButton.title = 'Fill connected geometry area with selected cell value';
   inspectButton.title = 'Select a map element and view its properties';
   toolList.append(
     spawnButton,
@@ -711,6 +714,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     lightButton,
     triggerButton,
     eraseButton,
+    fillButton,
     inspectButton,
   );
 
@@ -787,7 +791,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const hint = document.createElement('p');
   hint.className = 'level-editor__hint';
   hint.textContent =
-    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X/I for modes. Use +/- to zoom. Save writes into the level file.';
+    'Paint cells with mouse. Use digits for geometry, S/M/E/L/T/X/F/I for modes. Use +/- to zoom. Save writes into the level file.';
   sidebar.appendChild(hint);
 
   const stage = document.createElement('div');
@@ -812,6 +816,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     lightButton.classList.toggle('is-selected', selectedTool === 'light');
     triggerButton.classList.toggle('is-selected', selectedTool === 'trigger');
     eraseButton.classList.toggle('is-selected', selectedTool === 'erase');
+    fillButton.classList.toggle('is-selected', selectedTool === 'fill');
     inspectButton.classList.toggle('is-selected', selectedTool === 'inspect');
     for (const { tool, button } of tileButtons) {
       button.classList.toggle(
@@ -1033,6 +1038,25 @@ function mountLevelEditor(path: string, level: LevelJson) {
       recordHistory();
       return;
     }
+    if (selectedTool === 'fill') {
+      const replacedValue = grid[y][x];
+      if (replacedValue === selectedValue) return;
+      const pending = [{ x, y }];
+      while (pending.length) {
+        const next = pending.pop()!;
+        if (grid[next.y]?.[next.x] !== replacedValue) continue;
+        grid[next.y][next.x] = selectedValue;
+        syncCell(next.x, next.y);
+        pending.push(
+          { x: next.x + 1, y: next.y },
+          { x: next.x - 1, y: next.y },
+          { x: next.x, y: next.y + 1 },
+          { x: next.x, y: next.y - 1 },
+        );
+      }
+      recordHistory();
+      return;
+    }
     grid[y][x] = selectedValue;
     syncCell(x, y);
     recordHistory();
@@ -1208,6 +1232,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   lightButton.addEventListener('click', () => setTool('light'));
   triggerButton.addEventListener('click', () => setTool('trigger'));
   eraseButton.addEventListener('click', () => setTool('erase'));
+  fillButton.addEventListener('click', () => setTool('fill'));
   inspectButton.addEventListener('click', () => setTool('inspect'));
 
   for (const { tool, button } of tileButtons) {
@@ -1450,6 +1475,11 @@ function mountLevelEditor(path: string, level: LevelJson) {
     if (e.code === 'KeyX') {
       e.preventDefault();
       setTool('erase');
+      return;
+    }
+    if (e.code === 'KeyF') {
+      e.preventDefault();
+      setTool('fill');
       return;
     }
     if (e.code === 'KeyI') {
