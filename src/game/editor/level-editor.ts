@@ -1699,6 +1699,37 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const editForm = document.createElement('div');
       editForm.className = 'level-editor__form level-editor__selection-form';
       selectionPanel.appendChild(editForm);
+      const deleteCellButton = makeButton(
+        'Delete everything from cell',
+        'level-editor__button level-editor__button--danger',
+      );
+      deleteCellButton.title =
+        'Set geometry to Empty and remove the material, entities, lights and triggers';
+      deleteCellButton.addEventListener('click', () => {
+        const hadSpawn = Math.floor(spawn.x) === x && Math.floor(spawn.y) === y;
+        grid[y][x] = 0;
+        removeAt(x, y);
+        let spawnMoved = false;
+        if (hadSpawn) {
+          for (let yy = 0; yy < grid.length && !spawnMoved; yy++) {
+            for (let xx = 0; xx < grid[yy].length; xx++) {
+              if (grid[yy][xx] !== 0 || (xx === x && yy === y)) continue;
+              Object.assign(spawn, cellCenter(xx, yy));
+              spawnMoved = true;
+              break;
+            }
+          }
+        }
+        selectedValue = 0;
+        selectedMaterial = '';
+        setPreviewAsset('', '');
+        syncAllCells();
+        recordHistory();
+        buildInspector();
+        syncToolButtons();
+        showStatus(status, spawnMoved ? 'Cell cleared; spawn moved' : 'Cell cleared');
+      });
+      editForm.appendChild(deleteCellButton);
 
       addChoiceInput(
         editForm,
