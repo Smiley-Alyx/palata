@@ -39,6 +39,8 @@ npm run format
 `npm run build:gh-pages` консольная команда `palata.editor(...)` отключена, поэтому
 на GitHub Pages нельзя менять или экспортировать уровни через браузер.
 
+Полная инструкция: [`docs/level-editor.md`](docs/level-editor.md).
+
 Рабочий процесс:
 
 1. Запустить проект локально через `npm run dev`.
