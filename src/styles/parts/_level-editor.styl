@@ -362,14 +362,35 @@
   outline 2px solid #fff
   outline-offset -2px
 
+.level-editor__cell::before
+  content attr(data-value)
+  position absolute
+  inset 0
+  display flex
+  align-items center
+  justify-content center
+  color rgba(255, 255, 255, 0.28)
+  font-size 8px
+  font-weight 700
+  pointer-events none
+
 .level-editor__cell[data-value='0']
-  background #151515
+  background #080a0b
 
 .level-editor__cell[data-value='1']
   background #6a6c70
 
+.level-editor__cell[data-value='2']
+  background #805f54
+
 .level-editor__cell[data-value='3']
   background #2c8aa0
+
+.level-editor__cell[data-value='4']
+  background #66624a
+
+.level-editor__cell[data-value='5']
+  background #514f66
 
 .level-editor__cell[data-value='6']
   background #9b6a22

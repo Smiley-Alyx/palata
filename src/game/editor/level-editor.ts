@@ -1281,7 +1281,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     return assetPreviewUrl(legendValue) ? legendValue : (LEGEND_MATERIALS[legendValue] ?? '');
   };
 
-  const effectiveMaterialAt = (x: number, y: number) => materials[y]?.[x] || legendMaterialAt(x, y);
+  const effectiveMaterialAt = (x: number, y: number) => {
+    if (grid[y]?.[x] === 0) return '';
+    return materials[y]?.[x] || legendMaterialAt(x, y);
+  };
 
   const cellTitle = (x: number, y: number) => {
     const objects = objectsAt(x, y);
@@ -1299,7 +1302,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     if (!cell) return;
     const objects = objectsAt(x, y);
     cell.dataset.value = String(grid[y][x]);
-    cell.dataset.material = materials[y][x] ? '1' : '0';
+    cell.dataset.material = grid[y][x] !== 0 && materials[y][x] ? '1' : '0';
     cell.classList.toggle('has-spawn', Math.floor(spawn.x) === x && Math.floor(spawn.y) === y);
     cell.classList.toggle('has-entity', objects.ent.length > 0);
     cell.classList.toggle('has-light', objects.light.length > 0);
@@ -1307,7 +1310,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     cell.classList.toggle('is-selected', selectedCell?.x === x && selectedCell.y === y);
     cell.title = cellTitle(x, y);
     cell.replaceChildren();
-    if (materials[y][x]) {
+    if (grid[y][x] !== 0 && materials[y][x]) {
       const marker = document.createElement('span');
       marker.className = 'level-editor__marker level-editor__marker--material';
       marker.textContent = 'M';
@@ -1423,6 +1426,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         const next = pending.pop()!;
         if (grid[next.y]?.[next.x] !== replacedValue) continue;
         grid[next.y][next.x] = selectedValue;
+        if (selectedValue === 0) materials[next.y][next.x] = '';
         syncCell(next.x, next.y);
         pending.push(
           { x: next.x + 1, y: next.y },
@@ -1431,11 +1435,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
           { x: next.x, y: next.y - 1 },
         );
       }
+      syncCounts();
       recordHistory();
       return;
     }
     grid[y][x] = selectedValue;
+    if (selectedValue === 0) materials[y][x] = '';
     syncCell(x, y);
+    syncCounts();
     recordHistory();
   };
 
@@ -1449,9 +1456,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const entityTool = entity ? paletteItemForEntity(entity) : undefined;
     const material = effectiveMaterialAt(x, y);
     if (entityTool) selectedEntity = entityTool;
-    if (material && MATERIAL_TOOLS.some((item) => item === material)) {
-      selectedMaterial = material;
-    }
+    selectedMaterial = material && MATERIAL_TOOLS.some((item) => item === material) ? material : '';
     if (entity && entityAsset) {
       const label =
         typeof entity.id === 'string'
@@ -1622,8 +1627,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const setTool = (tool: EditorTool) => {
     selectedTool = tool;
-    if (tool === 'material') setPreviewAsset(selectedMaterial, `Material ${selectedMaterial}`);
-    else if (tool === 'entity') {
+    if (tool === 'material') {
+      selectedMaterial ||= MATERIAL_TOOLS[0];
+      setPreviewAsset(selectedMaterial, `Material ${selectedMaterial}`);
+    } else if (tool === 'entity') {
       setPreviewAsset(
         selectedEntity.preview ?? '',
         `${selectedEntity.group} / ${selectedEntity.label}`,
@@ -1700,13 +1707,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         String(grid[y][x]),
         (value) => {
           grid[y][x] = Number(value);
+          if (grid[y][x] === 0) materials[y][x] = '';
           selectedValue = grid[y][x];
           const material = effectiveMaterialAt(x, y);
-          if (material && MATERIAL_TOOLS.some((item) => item === material)) {
-            selectedMaterial = material;
-          }
+          selectedMaterial =
+            material && MATERIAL_TOOLS.some((item) => item === material) ? material : '';
           setPreviewAsset(material, material ? `Material ${material}` : '');
           syncCell(x, y);
+          syncCounts();
           recordHistory();
           buildInspector();
           syncToolButtons();
@@ -1728,9 +1736,8 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         (value) => {
           materials[y][x] = value;
           const material = effectiveMaterialAt(x, y);
-          if (material && MATERIAL_TOOLS.some((item) => item === material)) {
-            selectedMaterial = material;
-          }
+          selectedMaterial =
+            material && MATERIAL_TOOLS.some((item) => item === material) ? material : '';
           setPreviewAsset(material, material ? `Material ${material}` : '');
           syncCell(x, y);
           syncCounts();
