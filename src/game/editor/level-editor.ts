@@ -629,6 +629,33 @@ function assetPreviewUrl(assetId: string | undefined) {
   return path ? assetUrl(`/${path}`) : '';
 }
 
+function entityPreviewId(entity: Record<string, unknown>) {
+  const candidates: unknown[] = [entity.sprite, entity.kind];
+  if (entity.type === 'key' && typeof entity.subtype === 'string') {
+    candidates.push(`${entity.subtype}Key`);
+  }
+  if (entity.type === 'health_pickup') candidates.push('health');
+  if (entity.type === 'medication' && typeof entity.subtype === 'string') {
+    candidates.push(entity.subtype);
+  }
+  if (entity.type === 'ammo' && typeof entity.subtype === 'string') {
+    candidates.push(`ammo_${entity.subtype}`);
+  }
+  if (entity.type === 'armor' && typeof entity.subtype === 'string') {
+    candidates.push(`armor_${entity.subtype}`);
+  }
+  if (entity.type === 'artifact' && typeof entity.subtype === 'string') {
+    candidates.push(`artifact_${entity.subtype}`);
+  }
+  if (entity.type === 'weapon' && typeof entity.subtype === 'string') {
+    candidates.push(`weapon_pickup_${entity.subtype}`);
+  }
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && assetPreviewUrl(candidate)) return candidate;
+  }
+  return '';
+}
+
 function cellCenter(x: number, y: number) {
   return { x: x + 0.5, y: y + 0.5 };
 }
@@ -695,6 +722,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let painting = false;
   let cellSize = 16;
   let selectedCell: { x: number; y: number } | null = null;
+  let previewAsset: { id: string; label: string } | null = null;
   let historyIndex = 0;
   let savedHistoryIndex = 0;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
@@ -727,18 +755,21 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const undoButton = makeButton('Undo');
   const redoButton = makeButton('Redo');
+  const viewButton = makeButton('View');
   const playtestButton = makeButton('Playtest');
   const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
   undoButton.title = 'Undo the last map change (Ctrl/Cmd+Z)';
   redoButton.title = 'Repeat the last undone map change (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)';
+  viewButton.title = 'Select a material, entity or occupied cell to preview its asset';
+  viewButton.disabled = true;
   saveButton.title = 'Write the current map to its JSON file (Ctrl/Cmd+S)';
   closeButton.title = 'Close the editor without additional saving';
   playtestButton.disabled = !options.onPlaytest;
   playtestButton.title = options.onPlaytest
     ? 'Save changes and play the level'
     : 'Playtest is unavailable';
-  headerActions.append(undoButton, redoButton, playtestButton, saveButton, closeButton);
+  headerActions.append(undoButton, redoButton, viewButton, playtestButton, saveButton, closeButton);
   header.appendChild(headerActions);
 
   const layout = document.createElement('div');
@@ -888,6 +919,49 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   layout.append(sidebar, stage, inspector);
   root.append(header, layout);
   host.appendChild(root);
+
+  const assetViewer = document.createElement('section');
+  assetViewer.className = 'level-editor__asset-viewer';
+  assetViewer.hidden = true;
+  const assetViewerHeader = document.createElement('header');
+  assetViewerHeader.className = 'level-editor__asset-viewer-header';
+  const assetViewerTitle = document.createElement('strong');
+  assetViewerTitle.className = 'level-editor__asset-viewer-title';
+  const assetViewerClose = makeButton('Close');
+  assetViewerClose.title = 'Close asset preview (Escape)';
+  assetViewerHeader.append(assetViewerTitle, assetViewerClose);
+  const assetViewerImage = document.createElement('img');
+  assetViewerImage.className = 'level-editor__asset-viewer-image';
+  assetViewerImage.alt = '';
+  const assetViewerPath = document.createElement('code');
+  assetViewerPath.className = 'level-editor__asset-viewer-path';
+  assetViewer.append(assetViewerHeader, assetViewerImage, assetViewerPath);
+  root.appendChild(assetViewer);
+
+  const setPreviewAsset = (id: string, label: string) => {
+    const url = assetPreviewUrl(id);
+    previewAsset = url ? { id, label } : null;
+    viewButton.disabled = !previewAsset;
+    viewButton.title = previewAsset
+      ? `View ${previewAsset.label} (${previewAsset.id})`
+      : 'Select a material, entity or occupied cell to preview its asset';
+  };
+
+  const closeAssetViewer = () => {
+    assetViewer.hidden = true;
+    assetViewerImage.removeAttribute('src');
+  };
+
+  const openAssetViewer = () => {
+    if (!previewAsset) return;
+    const url = assetPreviewUrl(previewAsset.id);
+    if (!url) return;
+    assetViewerTitle.textContent = previewAsset.label;
+    assetViewerImage.src = url;
+    assetViewerImage.alt = previewAsset.label;
+    assetViewerPath.textContent = `${previewAsset.id} · ${ASSET_MANIFEST[previewAsset.id]}`;
+    assetViewer.hidden = false;
+  };
 
   let cells: HTMLElement[][] = [];
   const paletteButtons: HTMLButtonElement[] = [];
@@ -1203,6 +1277,20 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     if (!grid[y] || grid[y][x] === undefined) return;
     const prev = selectedCell;
     selectedCell = { x, y };
+    const objects = objectsAt(x, y);
+    const entity = objects.ent.find((item) => entityPreviewId(item));
+    const entityAsset = entity ? entityPreviewId(entity) : '';
+    if (entity && entityAsset) {
+      const label =
+        typeof entity.id === 'string'
+          ? `Entity ${entity.id}`
+          : `Entity ${String(entity.type ?? entityAsset)}`;
+      setPreviewAsset(entityAsset, label);
+    } else if (materials[y][x]) {
+      setPreviewAsset(materials[y][x], `Material ${materials[y][x]}`);
+    } else {
+      setPreviewAsset('', '');
+    }
     if (prev) syncCell(prev.x, prev.y);
     syncCell(x, y);
     syncCurrentTool();
@@ -1356,11 +1444,19 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const selectTile = (value: number) => {
     selectedTool = 'cell';
     selectedValue = value;
+    setPreviewAsset('', '');
     syncToolButtons();
   };
 
   const setTool = (tool: EditorTool) => {
     selectedTool = tool;
+    if (tool === 'material') setPreviewAsset(selectedMaterial, `Material ${selectedMaterial}`);
+    else if (tool === 'entity') {
+      setPreviewAsset(
+        selectedEntity.preview ?? '',
+        `${selectedEntity.group} / ${selectedEntity.label}`,
+      );
+    } else if (tool !== 'inspect') setPreviewAsset('', '');
     syncToolButtons();
   };
 
@@ -1385,6 +1481,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   );
   undoButton.addEventListener('click', () => stepHistory(-1));
   redoButton.addEventListener('click', () => stepHistory(1));
+  viewButton.addEventListener('click', openAssetViewer);
+  assetViewerClose.addEventListener('click', closeAssetViewer);
+  assetViewer.addEventListener('click', (e) => {
+    if (e.target === assetViewer) closeAssetViewer();
+  });
 
   const buildInspector = () => {
     inspector.replaceChildren();
@@ -1447,6 +1548,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       button.addEventListener('click', () => {
         selectedMaterial = material;
         selectedTool = 'material';
+        setPreviewAsset(material, `Material ${material}`);
         buildInspector();
         syncToolButtons();
       });
@@ -1480,6 +1582,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       button.addEventListener('click', () => {
         selectedEntity = item;
         selectedTool = 'entity';
+        setPreviewAsset(item.preview ?? '', `${item.group} / ${item.label}`);
         buildInspector();
         syncToolButtons();
       });
@@ -1575,6 +1678,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     }
     if (e.code === 'Escape') {
       e.preventDefault();
+      if (!assetViewer.hidden) {
+        closeAssetViewer();
+        return;
+      }
       closeEditor();
       return;
     }
