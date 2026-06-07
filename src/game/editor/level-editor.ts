@@ -107,6 +107,20 @@ const MATERIAL_TOOLS = [
   'false_window',
 ] as const;
 
+const LEGEND_MATERIALS: Readonly<Record<string, string>> = {
+  wall: 'medical_tiles',
+  window: 'reinforced_window',
+  door: 'medical_door',
+  exit: 'blast_door',
+  stand: 'hospital_wall_stripe',
+  stand1: 'hospital_wall_stripe',
+  stand2: 'hospital_wall_stripe',
+  stand3: 'hospital_wall_stripe',
+  gstand1: 'metal_panels',
+  gstand2: 'metal_panels',
+  brick: 'concrete_tunnel',
+};
+
 const PALETTE_GROUP_HINTS: Record<string, string> = {
   Documents: 'Collectible narrative items. Their text comes from the matching message pool.',
   Keys: 'Collectible keys and locks that restrict matching doors.',
@@ -663,6 +677,14 @@ function entityPreviewId(entity: Record<string, unknown>) {
   return '';
 }
 
+function paletteItemForEntity(entity: Record<string, unknown>) {
+  const comparedKeys = ['type', 'subtype', 'kind', 'sprite', 'keyId', 'messageType'] as const;
+  return ENTITY_TOOLS.find((item) => {
+    const sample = item.create(0.5, 0.5);
+    return comparedKeys.every((key) => sample[key] === undefined || sample[key] === entity[key]);
+  });
+}
+
 async function loadAssetFrames(assetId: string): Promise<AssetFrame[]> {
   const fallback = assetPreviewUrl(assetId);
   if (!fallback) return [];
@@ -783,6 +805,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const hadEntities = Array.isArray(level.entities);
   const hadLights = Array.isArray(level.lights);
   const hadTriggers = Array.isArray(level.triggers);
+  const legend =
+    level.legend && typeof level.legend === 'object'
+      ? (level.legend as Record<string, unknown>)
+      : {};
 
   let selectedTool: EditorTool = 'cell';
   let selectedValue = 1;
@@ -1249,10 +1275,19 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     return { ent, light, trigger };
   };
 
+  const legendMaterialAt = (x: number, y: number) => {
+    const legendValue = legend[String(grid[y]?.[x])];
+    if (typeof legendValue !== 'string') return '';
+    return assetPreviewUrl(legendValue) ? legendValue : (LEGEND_MATERIALS[legendValue] ?? '');
+  };
+
+  const effectiveMaterialAt = (x: number, y: number) => materials[y]?.[x] || legendMaterialAt(x, y);
+
   const cellTitle = (x: number, y: number) => {
     const objects = objectsAt(x, y);
     const parts = [`${x},${y}: ${grid[y][x]}`];
-    if (materials[y][x]) parts.push(`mat ${materials[y][x]}`);
+    const material = effectiveMaterialAt(x, y);
+    if (material) parts.push(`mat ${material}`);
     if (objects.ent.length) parts.push(`${objects.ent.length} entities`);
     if (objects.light.length) parts.push(`${objects.light.length} lights`);
     if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
@@ -1411,14 +1446,20 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const objects = objectsAt(x, y);
     const entity = objects.ent.find((item) => entityPreviewId(item));
     const entityAsset = entity ? entityPreviewId(entity) : '';
+    const entityTool = entity ? paletteItemForEntity(entity) : undefined;
+    const material = effectiveMaterialAt(x, y);
+    if (entityTool) selectedEntity = entityTool;
+    if (material && MATERIAL_TOOLS.some((item) => item === material)) {
+      selectedMaterial = material;
+    }
     if (entity && entityAsset) {
       const label =
         typeof entity.id === 'string'
           ? `Entity ${entity.id}`
           : `Entity ${String(entity.type ?? entityAsset)}`;
       setPreviewAsset(entityAsset, label);
-    } else if (materials[y][x]) {
-      setPreviewAsset(materials[y][x], `Material ${materials[y][x]}`);
+    } else if (material) {
+      setPreviewAsset(material, `Material ${material}`);
     } else {
       setPreviewAsset('', '');
     }
@@ -1647,7 +1688,17 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const entries: Array<{ title: string; value: unknown }> = [
         { title: 'Cell', value: { x, y, value: grid[y][x] } },
       ];
-      if (materials[y][x]) entries.push({ title: 'Material', value: materials[y][x] });
+      const material = effectiveMaterialAt(x, y);
+      if (material) {
+        entries.push({
+          title: 'Material',
+          value: {
+            effective: material,
+            override: materials[y][x] || null,
+            legend: legend[String(grid[y][x])] ?? null,
+          },
+        });
+      }
       if (Math.floor(spawn.x) === x && Math.floor(spawn.y) === y) {
         entries.push({ title: 'Spawn', value: spawn });
       }
