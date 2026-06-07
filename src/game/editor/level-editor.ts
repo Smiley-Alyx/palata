@@ -1685,6 +1685,125 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     } else {
       const { x, y } = selectedCell;
       const objects = objectsAt(x, y);
+      const editTitle = document.createElement('div');
+      editTitle.className = 'level-editor__selection-subtitle';
+      editTitle.textContent = 'Edit selected cell';
+      selectionPanel.appendChild(editTitle);
+      const editForm = document.createElement('div');
+      editForm.className = 'level-editor__form level-editor__selection-form';
+      selectionPanel.appendChild(editForm);
+
+      addChoiceInput(
+        editForm,
+        'Geometry',
+        TILE_TOOLS.map((tool) => ({ value: String(tool.value), label: tool.label })),
+        String(grid[y][x]),
+        (value) => {
+          grid[y][x] = Number(value);
+          selectedValue = grid[y][x];
+          const material = effectiveMaterialAt(x, y);
+          if (material && MATERIAL_TOOLS.some((item) => item === material)) {
+            selectedMaterial = material;
+          }
+          setPreviewAsset(material, material ? `Material ${material}` : '');
+          syncCell(x, y);
+          recordHistory();
+          buildInspector();
+          syncToolButtons();
+        },
+      );
+
+      const legendMaterial = legendMaterialAt(x, y);
+      addChoiceInput(
+        editForm,
+        'Material',
+        [
+          {
+            value: '',
+            label: legendMaterial ? `Default (${legendMaterial})` : 'Default (none)',
+          },
+          ...MATERIAL_TOOLS.map((material) => ({ value: material, label: material })),
+        ],
+        materials[y][x],
+        (value) => {
+          materials[y][x] = value;
+          const material = effectiveMaterialAt(x, y);
+          if (material && MATERIAL_TOOLS.some((item) => item === material)) {
+            selectedMaterial = material;
+          }
+          setPreviewAsset(material, material ? `Material ${material}` : '');
+          syncCell(x, y);
+          syncCounts();
+          recordHistory();
+          buildInspector();
+          syncToolButtons();
+        },
+      );
+
+      objects.ent.forEach((entity, entityIndex) => {
+        const matchedTool = paletteItemForEntity(entity);
+        const entityOptions = ENTITY_TOOLS.map((item) => ({
+          value: item.id,
+          label: `${item.group} / ${item.label}`,
+        }));
+        if (!matchedTool) {
+          entityOptions.unshift({
+            value: '',
+            label: `Current (${String(entity.type ?? 'unknown')})`,
+          });
+        }
+        addChoiceInput(
+          editForm,
+          `Entity ${entityIndex + 1}`,
+          entityOptions,
+          matchedTool?.id ?? '',
+          (value) => {
+            const tool = ENTITY_TOOLS.find((item) => item.id === value);
+            const index = entities.indexOf(entity);
+            if (!tool || index < 0) return;
+            const center = cellCenter(x, y);
+            const replacement = tool.create(
+              typeof entity.x === 'number' ? entity.x : center.x,
+              typeof entity.y === 'number' ? entity.y : center.y,
+            );
+            for (const key of ['enabledInStates', 'disabledInStates', 'enabledIfFlags']) {
+              if (entity[key] !== undefined) replacement[key] = structuredClone(entity[key]);
+            }
+            replacement.id = entity.id ?? replacement.id;
+            entities[index] = replacement;
+            selectedEntity = tool;
+            setPreviewAsset(tool.preview ?? '', `${tool.group} / ${tool.label}`);
+            syncCell(x, y);
+            syncCounts();
+            recordHistory();
+            buildInspector();
+            syncToolButtons();
+          },
+        );
+
+        if (typeof entity.sprite === 'string') {
+          const spriteOptions = Object.entries(ASSET_MANIFEST)
+            .filter(([, assetPath]) => assetPath.includes('/sprites/'))
+            .map(([id]) => ({ value: id, label: id }));
+          if (!spriteOptions.some((option) => option.value === entity.sprite)) {
+            spriteOptions.unshift({ value: entity.sprite, label: entity.sprite });
+          }
+          addChoiceInput(
+            editForm,
+            `Sprite ${entityIndex + 1}`,
+            spriteOptions,
+            entity.sprite,
+            (value) => {
+              entity.sprite = value;
+              setPreviewAsset(value, `Entity sprite ${value}`);
+              syncCell(x, y);
+              recordHistory();
+              buildInspector();
+            },
+          );
+        }
+      });
+
       const entries: Array<{ title: string; value: unknown }> = [
         { title: 'Cell', value: { x, y, value: grid[y][x] } },
       ];
@@ -2047,6 +2166,30 @@ function addSelectInput(
     const el = document.createElement('option');
     el.value = option;
     el.textContent = option;
+    input.appendChild(el);
+  }
+  input.value = value;
+  input.addEventListener('input', () => onInput(input.value));
+  row.append(caption, input);
+  parent.appendChild(row);
+}
+
+function addChoiceInput(
+  parent: HTMLElement,
+  label: string,
+  options: Array<{ value: string; label: string }>,
+  value: string,
+  onInput: (value: string) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = document.createElement('select');
+  for (const option of options) {
+    const el = document.createElement('option');
+    el.value = option.value;
+    el.textContent = option.label;
     input.appendChild(el);
   }
   input.value = value;
