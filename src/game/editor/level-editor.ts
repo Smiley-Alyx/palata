@@ -53,6 +53,15 @@ type TriggerDraft = {
   once: boolean;
 };
 
+type EditorSnapshot = {
+  grid: number[][];
+  materials: string[][];
+  spawn: { x: number; y: number; rot: number };
+  entities: Record<string, unknown>[];
+  lights: Record<string, unknown>[];
+  triggers: Record<string, unknown>[];
+};
+
 const TILE_TOOLS: TileTool[] = [
   { value: 0, label: '0 Empty', hint: 'Empty floor', key: 'Digit0' },
   { value: 1, label: '1 Wall', hint: 'Solid wall', key: 'Digit1' },
@@ -627,8 +636,11 @@ function mountLevelEditor(path: string, level: LevelJson) {
   let painting = false;
   let cellSize = 16;
   let selectedCell: { x: number; y: number } | null = null;
+  let historyIndex = 0;
+  let savedHistoryIndex = 0;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
+  const history: EditorSnapshot[] = [];
 
   const root = document.createElement('section');
   root.id = 'levelEditorRoot';
@@ -654,9 +666,11 @@ function mountLevelEditor(path: string, level: LevelJson) {
   status.className = 'level-editor__status';
   headerActions.appendChild(status);
 
+  const undoButton = makeButton('Undo');
+  const redoButton = makeButton('Redo');
   const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
-  headerActions.append(saveButton, closeButton);
+  headerActions.append(undoButton, redoButton, saveButton, closeButton);
   header.appendChild(headerActions);
 
   const layout = document.createElement('div');
@@ -793,6 +807,60 @@ function mountLevelEditor(path: string, level: LevelJson) {
     countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat`;
   };
 
+  const captureSnapshot = (): EditorSnapshot => ({
+    grid: structuredClone(grid),
+    materials: structuredClone(materials),
+    spawn: { ...spawn },
+    entities: structuredClone(entities),
+    lights: structuredClone(lights),
+    triggers: structuredClone(triggers),
+  });
+
+  const syncHistory = () => {
+    undoButton.disabled = historyIndex === 0;
+    redoButton.disabled = historyIndex === history.length - 1;
+    const dirty = historyIndex !== savedHistoryIndex;
+    title.textContent = `${dirty ? '* ' : ''}Level editor: ${path}`;
+  };
+
+  const recordHistory = () => {
+    const snapshot = captureSnapshot();
+    if (JSON.stringify(snapshot) === JSON.stringify(history[historyIndex])) return;
+    if (savedHistoryIndex > historyIndex) savedHistoryIndex = -1;
+    history.splice(historyIndex + 1);
+    history.push(snapshot);
+    if (history.length > 100) {
+      history.shift();
+      savedHistoryIndex--;
+    } else {
+      historyIndex++;
+    }
+    syncHistory();
+  };
+
+  const replaceArray = <T,>(target: T[], source: T[]) => {
+    target.splice(0, target.length, ...structuredClone(source));
+  };
+
+  const restoreSnapshot = (snapshot: EditorSnapshot) => {
+    replaceArray(grid, snapshot.grid);
+    replaceArray(materials, snapshot.materials);
+    Object.assign(spawn, snapshot.spawn);
+    replaceArray(entities, snapshot.entities);
+    replaceArray(lights, snapshot.lights);
+    replaceArray(triggers, snapshot.triggers);
+    syncAllCells();
+    buildInspector();
+  };
+
+  const stepHistory = (offset: -1 | 1) => {
+    const next = historyIndex + offset;
+    if (!history[next]) return;
+    historyIndex = next;
+    restoreSnapshot(history[historyIndex]);
+    syncHistory();
+  };
+
   const setZoom = (next: number) => {
     cellSize = Math.max(10, Math.min(40, Math.round(next / 2) * 2));
     gridEl.style.setProperty('--level-editor-cell', `${cellSize}px`);
@@ -894,18 +962,21 @@ function mountLevelEditor(path: string, level: LevelJson) {
       syncCell(oldX, oldY);
       syncCell(x, y);
       syncSpawnInfo();
+      recordHistory();
       return;
     }
     if (selectedTool === 'material') {
       materials[y][x] = selectedMaterial;
       syncCell(x, y);
       syncCounts();
+      recordHistory();
       return;
     }
     if (selectedTool === 'entity') {
       entities.push(selectedEntity.create(center.x, center.y));
       syncCell(x, y);
       syncCounts();
+      recordHistory();
       return;
     }
     if (selectedTool === 'light') {
@@ -919,6 +990,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
       });
       syncCell(x, y);
       syncCounts();
+      recordHistory();
       return;
     }
     if (selectedTool === 'trigger') {
@@ -929,14 +1001,17 @@ function mountLevelEditor(path: string, level: LevelJson) {
       });
       syncCell(x, y);
       syncCounts();
+      recordHistory();
       return;
     }
     if (selectedTool === 'erase') {
       removeAt(x, y);
+      recordHistory();
       return;
     }
     grid[y][x] = selectedValue;
     syncCell(x, y);
+    recordHistory();
   };
 
   const selectCell = (x: number, y: number) => {
@@ -987,6 +1062,8 @@ function mountLevelEditor(path: string, level: LevelJson) {
       const message = await res.text().catch(() => '');
       throw new Error(message || `Failed to save level (${res.status})`);
     }
+    savedHistoryIndex = historyIndex;
+    syncHistory();
   };
 
   for (let y = 0; y < grid.length; y++) {
@@ -1049,6 +1126,8 @@ function mountLevelEditor(path: string, level: LevelJson) {
   zoomOutButton.addEventListener('click', () => setZoom(cellSize - 2));
   zoomInButton.addEventListener('click', () => setZoom(cellSize + 2));
   zoomRange.addEventListener('input', () => setZoom(Number(zoomRange.value)));
+  undoButton.addEventListener('click', () => stepHistory(-1));
+  redoButton.addEventListener('click', () => stepHistory(1));
 
   const buildInspector = () => {
     inspector.replaceChildren();
@@ -1230,6 +1309,16 @@ function mountLevelEditor(path: string, level: LevelJson) {
         .catch((err) => showStatus(status, err instanceof Error ? err.message : 'Save failed'));
       return;
     }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
+      e.preventDefault();
+      stepHistory(e.shiftKey ? 1 : -1);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') {
+      e.preventDefault();
+      stepHistory(1);
+      return;
+    }
     if (e.code === 'KeyS') {
       e.preventDefault();
       setTool('spawn');
@@ -1292,10 +1381,12 @@ function mountLevelEditor(path: string, level: LevelJson) {
   );
 
   sizeInfo.textContent = `${grid[0]?.length ?? 0} x ${grid.length}`;
+  history.push(captureSnapshot());
   setZoom(cellSize);
   buildInspector();
   syncToolButtons();
   syncAllCells();
+  syncHistory();
 
   return closeEditor;
 }
