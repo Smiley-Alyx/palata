@@ -1403,6 +1403,15 @@ function mountLevelEditor(path: string, level: LevelJson) {
         .catch((err) => showStatus(status, err instanceof Error ? err.message : 'Save failed'));
       return;
     }
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    ) {
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
       e.preventDefault();
       stepHistory(e.shiftKey ? 1 : -1);
