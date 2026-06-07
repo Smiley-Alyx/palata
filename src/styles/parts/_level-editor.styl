@@ -121,6 +121,23 @@
   width 100%
   accent-color $accent
 
+.level-editor__resize
+  display grid
+  grid-template-columns minmax(0, 1fr) minmax(0, 1fr)
+  gap 6px
+
+.level-editor__resize input
+  min-width 0
+  border 1px solid rgba(107, 74, 43, 0.9)
+  background #090909
+  color $text
+  font inherit
+  font-size 11px
+  padding 5px 6px
+
+.level-editor__resize .level-editor__button
+  grid-column 1 / -1
+
 .level-editor__tools
   display grid
   gap 7px

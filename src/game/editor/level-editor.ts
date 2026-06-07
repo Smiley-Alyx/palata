@@ -741,6 +741,29 @@ function mountLevelEditor(path: string, level: LevelJson) {
   const sourceInfo = addInfo('Source', sourceKey);
   sourceInfo.title = sourceKey === 'geometry' ? 'Editing geometry array' : 'Editing rows array';
 
+  const sizeTitle = document.createElement('div');
+  sizeTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+  sizeTitle.textContent = 'Map size';
+  sidebar.appendChild(sizeTitle);
+
+  const sizeForm = document.createElement('div');
+  sizeForm.className = 'level-editor__resize';
+  const widthInput = document.createElement('input');
+  widthInput.type = 'number';
+  widthInput.min = '3';
+  widthInput.max = '128';
+  widthInput.value = String(grid[0]?.length ?? 3);
+  widthInput.title = 'Map width';
+  const heightInput = document.createElement('input');
+  heightInput.type = 'number';
+  heightInput.min = '3';
+  heightInput.max = '128';
+  heightInput.value = String(grid.length);
+  heightInput.title = 'Map height';
+  const resizeButton = makeButton('Resize');
+  sizeForm.append(widthInput, heightInput, resizeButton);
+  sidebar.appendChild(sizeForm);
+
   const zoomTitle = document.createElement('div');
   zoomTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
   zoomTitle.textContent = 'Zoom';
@@ -779,7 +802,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
   root.append(header, layout);
   host.appendChild(root);
 
-  const cells: HTMLElement[][] = [];
+  let cells: HTMLElement[][] = [];
   const paletteButtons: HTMLButtonElement[] = [];
 
   const syncToolButtons = () => {
@@ -838,7 +861,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     syncHistory();
   };
 
-  const replaceArray = <T,>(target: T[], source: T[]) => {
+  const replaceArray = <T>(target: T[], source: T[]) => {
     target.splice(0, target.length, ...structuredClone(source));
   };
 
@@ -849,6 +872,7 @@ function mountLevelEditor(path: string, level: LevelJson) {
     replaceArray(entities, snapshot.entities);
     replaceArray(lights, snapshot.lights);
     replaceArray(triggers, snapshot.triggers);
+    rebuildGrid();
     syncAllCells();
     buildInspector();
   };
@@ -1066,39 +1090,106 @@ function mountLevelEditor(path: string, level: LevelJson) {
     syncHistory();
   };
 
-  for (let y = 0; y < grid.length; y++) {
-    cells[y] = [];
-    for (let x = 0; x < grid[y].length; x++) {
-      const cell = document.createElement('button');
-      cell.type = 'button';
-      cell.className = 'level-editor__cell';
-      cell.dataset.x = String(x);
-      cell.dataset.y = String(y);
-      cell.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        painting = true;
-        selectCell(x, y);
-        if (selectedTool === 'inspect') return;
-        applyAt(x, y);
-      });
-      cell.addEventListener('pointerenter', () => {
-        if (
-          painting &&
-          (selectedTool === 'cell' || selectedTool === 'material' || selectedTool === 'erase')
-        ) {
+  const rebuildGrid = () => {
+    cells = [];
+    gridEl.replaceChildren();
+    gridEl.style.setProperty('--level-editor-cols', String(grid[0]?.length ?? 1));
+    for (let y = 0; y < grid.length; y++) {
+      cells[y] = [];
+      for (let x = 0; x < grid[y].length; x++) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'level-editor__cell';
+        cell.dataset.x = String(x);
+        cell.dataset.y = String(y);
+        cell.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          painting = true;
+          selectCell(x, y);
+          if (selectedTool === 'inspect') return;
           applyAt(x, y);
-        }
-      });
-      cell.addEventListener('pointerup', () => {
-        painting = false;
-      });
-      cell.addEventListener('pointercancel', () => {
-        painting = false;
-      });
-      cells[y][x] = cell;
-      gridEl.appendChild(cell);
+        });
+        cell.addEventListener('pointerenter', () => {
+          if (
+            painting &&
+            (selectedTool === 'cell' || selectedTool === 'material' || selectedTool === 'erase')
+          ) {
+            applyAt(x, y);
+          }
+        });
+        cell.addEventListener('pointerup', () => {
+          painting = false;
+        });
+        cell.addEventListener('pointercancel', () => {
+          painting = false;
+        });
+        cells[y][x] = cell;
+        gridEl.appendChild(cell);
+      }
     }
-  }
+    const width = grid[0]?.length ?? 0;
+    sizeInfo.textContent = `${width} x ${grid.length}`;
+    widthInput.value = String(width);
+    heightInput.value = String(grid.length);
+  };
+
+  const resizeMap = (width: number, height: number) => {
+    if (!Number.isFinite(width) || !Number.isFinite(height)) {
+      showStatus(status, 'Width and height are required');
+      return;
+    }
+    const nextWidth = Math.max(3, Math.min(128, Math.floor(width)));
+    const nextHeight = Math.max(3, Math.min(128, Math.floor(height)));
+    if (nextWidth === grid[0]?.length && nextHeight === grid.length) return;
+
+    const nextGrid = Array.from({ length: nextHeight }, (_, y) =>
+      Array.from({ length: nextWidth }, (_, x) => grid[y]?.[x] ?? 0),
+    );
+    const nextMaterials = Array.from({ length: nextHeight }, (_, y) =>
+      Array.from({ length: nextWidth }, (_, x) => materials[y]?.[x] ?? ''),
+    );
+    const inside = (x: unknown, y: unknown) => {
+      const cellX = objectCell(x);
+      const cellY = objectCell(y);
+      return (
+        cellX !== null &&
+        cellY !== null &&
+        cellX >= 0 &&
+        cellX < nextWidth &&
+        cellY >= 0 &&
+        cellY < nextHeight
+      );
+    };
+
+    replaceArray(grid, nextGrid);
+    replaceArray(materials, nextMaterials);
+    replaceArray(
+      entities,
+      entities.filter((entity) => inside(entity.x, entity.y)),
+    );
+    replaceArray(
+      lights,
+      lights.filter((light) => inside(light.x, light.y)),
+    );
+    replaceArray(
+      triggers,
+      triggers.filter((trigger) => {
+        const zone = trigger.trigger as { x?: unknown; y?: unknown } | undefined;
+        return inside(zone?.x, zone?.y);
+      }),
+    );
+    spawn.x = Math.min(nextWidth - 0.5, Math.max(0.5, spawn.x));
+    spawn.y = Math.min(nextHeight - 0.5, Math.max(0.5, spawn.y));
+    if (selectedCell && (selectedCell.x >= nextWidth || selectedCell.y >= nextHeight)) {
+      selectedCell = null;
+    }
+    rebuildGrid();
+    syncAllCells();
+    buildInspector();
+    recordHistory();
+  };
+
+  rebuildGrid();
 
   const selectTile = (value: number) => {
     selectedTool = 'cell';
@@ -1126,6 +1217,9 @@ function mountLevelEditor(path: string, level: LevelJson) {
   zoomOutButton.addEventListener('click', () => setZoom(cellSize - 2));
   zoomInButton.addEventListener('click', () => setZoom(cellSize + 2));
   zoomRange.addEventListener('input', () => setZoom(Number(zoomRange.value)));
+  resizeButton.addEventListener('click', () =>
+    resizeMap(Number(widthInput.value), Number(heightInput.value)),
+  );
   undoButton.addEventListener('click', () => stepHistory(-1));
   redoButton.addEventListener('click', () => stepHistory(1));
 
@@ -1380,7 +1474,6 @@ function mountLevelEditor(path: string, level: LevelJson) {
     { capture: true, signal: controller.signal },
   );
 
-  sizeInfo.textContent = `${grid[0]?.length ?? 0} x ${grid.length}`;
   history.push(captureSnapshot());
   setZoom(cellSize);
   buildInspector();
