@@ -187,6 +187,10 @@ const MATERIAL_TO_ANIMATION: Readonly<Record<string, string>> = Object.freeze({
   shotgun: 'animations/weapons/shotgun.json',
 });
 
+export function getAnimationDescriptorPath(material: string) {
+  return MATERIAL_TO_ANIMATION[material] ?? '';
+}
+
 export async function loadAnimationRegistry(
   fetchJson: (url: string) => Promise<unknown> = defaultFetchJson,
 ): Promise<void> {

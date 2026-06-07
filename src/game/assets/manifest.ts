@@ -69,6 +69,7 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   weapon_pickup_skalpel: 'assets/sprites/pickups/weapons/weapon_pickups.png',
   weapon_pickup_pipe: 'assets/sprites/pickups/weapons/weapon_pickups.png',
   weapon_pickup_pistol: 'assets/sprites/pickups/weapons/weapon_pickups.png',
+  weapon_pickup_revolver: 'assets/sprites/pickups/weapons/weapon_pickups.png',
   weapon_pickup_shotgun: 'assets/sprites/pickups/weapons/weapon_pickups.png',
   documents: 'assets/sprites/pickups/documents/documents_sheet.png',
   document_medical_card: 'assets/sprites/pickups/documents/documents_sheet.png',

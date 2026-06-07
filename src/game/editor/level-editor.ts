@@ -1,5 +1,6 @@
 import { ASSET_MANIFEST } from '../assets/manifest';
 import { assetUrl } from '../content/content';
+import { getAnimationDescriptorPath } from '../render/animations';
 
 const LEVEL_SAVE_ROUTE = '/__palata/level-editor/save';
 
@@ -66,6 +67,12 @@ type EditorSnapshot = {
 
 type LevelEditorOptions = {
   onPlaytest?: (path: string) => Promise<void> | void;
+};
+
+type AssetFrame = {
+  src: string;
+  label: string;
+  rect?: { x: number; y: number; w: number; h: number };
 };
 
 const TILE_TOOLS: TileTool[] = [
@@ -656,6 +663,68 @@ function entityPreviewId(entity: Record<string, unknown>) {
   return '';
 }
 
+async function loadAssetFrames(assetId: string): Promise<AssetFrame[]> {
+  const fallback = assetPreviewUrl(assetId);
+  if (!fallback) return [];
+  const sourcePath = ASSET_MANIFEST[assetId];
+  const relatedAssets = Object.entries(ASSET_MANIFEST)
+    .filter(([, path]) => path === sourcePath)
+    .sort(([id]) => (id === assetId ? -1 : 1));
+  const frames = (
+    await Promise.all(
+      relatedAssets.map(async ([relatedId]) => {
+        const descriptorPath = getAnimationDescriptorPath(relatedId);
+        if (!descriptorPath) return [];
+        const res = await fetch(assetUrl(`/assets/${descriptorPath}`), { cache: 'no-store' });
+        if (!res.ok) return [];
+        const data = (await res.json()) as { frames?: unknown; sheet?: unknown };
+        if (data.sheet && typeof data.sheet === 'object') {
+          const sheet = data.sheet as { src?: unknown; frames?: unknown };
+          if (typeof sheet.src === 'string' && Array.isArray(sheet.frames)) {
+            const src = assetUrl(`/assets/${sheet.src}`);
+            return sheet.frames.flatMap((value, index): AssetFrame[] => {
+              if (!value || typeof value !== 'object') return [];
+              const frame = value as { x?: unknown; y?: unknown; w?: unknown; h?: unknown };
+              if (
+                typeof frame.x !== 'number' ||
+                typeof frame.y !== 'number' ||
+                typeof frame.w !== 'number' ||
+                typeof frame.h !== 'number'
+              ) {
+                return [];
+              }
+              return [
+                {
+                  src,
+                  label: `${relatedId} · frame ${index + 1}`,
+                  rect: { x: frame.x, y: frame.y, w: frame.w, h: frame.h },
+                },
+              ];
+            });
+          }
+        }
+        if (Array.isArray(data.frames)) {
+          return data.frames.flatMap((value, index): AssetFrame[] =>
+            typeof value === 'string'
+              ? [{ src: assetUrl(`/assets/${value}`), label: `${relatedId} · frame ${index + 1}` }]
+              : [],
+          );
+        }
+        return [];
+      }),
+    )
+  ).flat();
+  const uniqueFrames = frames.filter(
+    (frame, index) =>
+      frames.findIndex(
+        (candidate) =>
+          candidate.src === frame.src &&
+          JSON.stringify(candidate.rect) === JSON.stringify(frame.rect),
+      ) === index,
+  );
+  return uniqueFrames.length ? uniqueFrames : [{ src: fallback, label: 'Full image' }];
+}
+
 function cellCenter(x: number, y: number) {
   return { x: x + 0.5, y: y + 0.5 };
 }
@@ -723,6 +792,8 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let cellSize = 16;
   let selectedCell: { x: number; y: number } | null = null;
   let previewAsset: { id: string; label: string } | null = null;
+  let viewerFrames: AssetFrame[] = [];
+  let viewerFrameIndex = 0;
   let historyIndex = 0;
   let savedHistoryIndex = 0;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
@@ -933,9 +1004,23 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const assetViewerImage = document.createElement('img');
   assetViewerImage.className = 'level-editor__asset-viewer-image';
   assetViewerImage.alt = '';
+  const assetViewerCanvas = document.createElement('canvas');
+  assetViewerCanvas.className = 'level-editor__asset-viewer-image';
+  assetViewerCanvas.hidden = true;
+  const assetViewerControls = document.createElement('div');
+  assetViewerControls.className = 'level-editor__asset-viewer-controls';
+  assetViewerControls.hidden = true;
+  const assetViewerPrevious = makeButton('Previous');
+  const assetViewerFrame = document.createElement('select');
+  assetViewerFrame.className = 'level-editor__asset-viewer-select';
+  const assetViewerNext = makeButton('Next');
+  assetViewerControls.append(assetViewerPrevious, assetViewerFrame, assetViewerNext);
   const assetViewerPath = document.createElement('code');
   assetViewerPath.className = 'level-editor__asset-viewer-path';
-  assetViewer.append(assetViewerHeader, assetViewerImage, assetViewerPath);
+  const assetViewerMedia = document.createElement('div');
+  assetViewerMedia.className = 'level-editor__asset-viewer-media';
+  assetViewerMedia.append(assetViewerImage, assetViewerCanvas);
+  assetViewer.append(assetViewerHeader, assetViewerMedia, assetViewerControls, assetViewerPath);
   root.appendChild(assetViewer);
 
   const setPreviewAsset = (id: string, label: string) => {
@@ -950,17 +1035,63 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const closeAssetViewer = () => {
     assetViewer.hidden = true;
     assetViewerImage.removeAttribute('src');
+    viewerFrames = [];
+    viewerFrameIndex = 0;
   };
 
-  const openAssetViewer = () => {
+  const renderAssetFrame = async (index: number) => {
+    const frame = viewerFrames[index];
+    if (!frame || !previewAsset) return;
+    viewerFrameIndex = index;
+    assetViewerFrame.value = String(index);
+    assetViewerPrevious.disabled = index === 0;
+    assetViewerNext.disabled = index === viewerFrames.length - 1;
+    assetViewerPath.textContent = `${frame.label} · ${ASSET_MANIFEST[previewAsset.id]} · ${index + 1}/${viewerFrames.length}`;
+    if (!frame.rect) {
+      assetViewerCanvas.hidden = true;
+      assetViewerImage.hidden = false;
+      assetViewerImage.src = frame.src;
+      return;
+    }
+
+    const image = new Image();
+    image.src = frame.src;
+    await image.decode();
+    if (viewerFrames[viewerFrameIndex] !== frame) return;
+    assetViewerImage.hidden = true;
+    assetViewerCanvas.hidden = false;
+    assetViewerCanvas.width = frame.rect.w;
+    assetViewerCanvas.height = frame.rect.h;
+    const context = assetViewerCanvas.getContext('2d');
+    context?.clearRect(0, 0, frame.rect.w, frame.rect.h);
+    context?.drawImage(
+      image,
+      frame.rect.x,
+      frame.rect.y,
+      frame.rect.w,
+      frame.rect.h,
+      0,
+      0,
+      frame.rect.w,
+      frame.rect.h,
+    );
+  };
+
+  const openAssetViewer = async () => {
     if (!previewAsset) return;
-    const url = assetPreviewUrl(previewAsset.id);
-    if (!url) return;
     assetViewerTitle.textContent = previewAsset.label;
-    assetViewerImage.src = url;
     assetViewerImage.alt = previewAsset.label;
-    assetViewerPath.textContent = `${previewAsset.id} · ${ASSET_MANIFEST[previewAsset.id]}`;
     assetViewer.hidden = false;
+    viewerFrames = await loadAssetFrames(previewAsset.id);
+    assetViewerFrame.replaceChildren();
+    for (let index = 0; index < viewerFrames.length; index++) {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = viewerFrames[index].label;
+      assetViewerFrame.appendChild(option);
+    }
+    assetViewerControls.hidden = viewerFrames.length <= 1;
+    await renderAssetFrame(0);
   };
 
   let cells: HTMLElement[][] = [];
@@ -1483,6 +1614,15 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   redoButton.addEventListener('click', () => stepHistory(1));
   viewButton.addEventListener('click', openAssetViewer);
   assetViewerClose.addEventListener('click', closeAssetViewer);
+  assetViewerPrevious.addEventListener('click', () => {
+    void renderAssetFrame(Math.max(0, viewerFrameIndex - 1));
+  });
+  assetViewerNext.addEventListener('click', () => {
+    void renderAssetFrame(Math.min(viewerFrames.length - 1, viewerFrameIndex + 1));
+  });
+  assetViewerFrame.addEventListener('input', () => {
+    void renderAssetFrame(Number(assetViewerFrame.value));
+  });
   assetViewer.addEventListener('click', (e) => {
     if (e.target === assetViewer) closeAssetViewer();
   });
@@ -1683,6 +1823,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         return;
       }
       closeEditor();
+      return;
+    }
+    if (!assetViewer.hidden && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
+      e.preventDefault();
+      const offset = e.code === 'ArrowLeft' ? -1 : 1;
+      void renderAssetFrame(
+        Math.max(0, Math.min(viewerFrames.length - 1, viewerFrameIndex + offset)),
+      );
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
