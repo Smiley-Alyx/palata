@@ -35,6 +35,7 @@ type PaletteItem = {
   id: string;
   label: string;
   group: string;
+  description?: string;
   preview?: string;
   create: (x: number, y: number) => Record<string, unknown>;
 };
@@ -99,11 +100,47 @@ const MATERIAL_TOOLS = [
   'false_window',
 ] as const;
 
+const PALETTE_GROUP_HINTS: Record<string, string> = {
+  Documents: 'Collectible narrative items. Their text comes from the matching message pool.',
+  Keys: 'Collectible keys and locks that restrict matching doors.',
+  Pickups: 'Collectible items that change player health, state, ammunition or armor.',
+  Weapons: 'Collectible weapons that add or switch the player weapon.',
+  Enemies: 'Enemy spawn points used when the level starts.',
+  Audio: 'Positional ambient sounds that loop around the placed cell.',
+  Props: 'Decorative world objects placed at the center of a cell.',
+};
+
+const ENTITY_HINTS: Record<string, string> = {
+  health: 'Places a collectible aid kit that restores player health.',
+  haloperidol: 'Places collectible medication that changes the player perception state.',
+  injector: 'Places a collectible injector used by the medication system.',
+  ammo_pistol: 'Places collectible pistol ammunition.',
+  ammo_shotgun: 'Places collectible shotgun ammunition.',
+  artifact_hallucination: 'Places an artifact that activates the hallucination overlay.',
+  artifact_vhs: 'Places an artifact that activates the VHS overlay.',
+  armor_blue: 'Places collectible blue armor.',
+  armor_green: 'Places collectible green armor.',
+  armor_red: 'Places collectible red armor.',
+  hallucination: 'Places a hallucination entity rather than a physical enemy.',
+  amb_buzz: 'Places a looping positional fluorescent-light buzz.',
+  amb_heart: 'Places a looping positional heartbeat sound.',
+  amb_machine: 'Places a looping positional machine hum.',
+};
+
+function paletteItemHint(item: PaletteItem) {
+  return (
+    item.description ??
+    ENTITY_HINTS[item.id] ??
+    `${PALETTE_GROUP_HINTS[item.group] ?? 'Place this entity on the map'}`
+  );
+}
+
 function makeLockTool(keyId: 'gold' | 'silver' | 'blood'): PaletteItem {
   return {
     id: `lock_${keyId}`,
     label: `${keyId} lock`,
     group: 'Keys',
+    description: `Locks a door cell until the player collects the ${keyId} key.`,
     create: (x, y) => ({
       id: makeEntityId(`${keyId}_lock`, x, y),
       type: 'door_lock',
@@ -119,6 +156,7 @@ function makeWeaponTool(subtype: string, label: string, preview: string): Palett
     id: `weapon_${subtype}`,
     label,
     group: 'Weapons',
+    description: `Places a collectible ${label.toLowerCase()} weapon.`,
     preview,
     create: (x, y) => ({ id: makeEntityId(subtype, x, y), type: 'weapon', subtype, x, y }),
   };
@@ -129,6 +167,7 @@ function makeEnemyTool(kind: string, label: string, preview: string): PaletteIte
     id: `enemy_${kind}`,
     label,
     group: 'Enemies',
+    description: `Places a spawn point for the ${label.toLowerCase()} enemy.`,
     preview,
     create: (x, y) => ({ id: makeEntityId(kind, x, y), type: 'enemy_spawn', kind, x, y }),
   };
@@ -139,6 +178,7 @@ function makePropTool(sprite: string, label: string, scale = 0.55): PaletteItem 
     id: sprite,
     label,
     group: 'Props',
+    description: `Places the decorative ${label.toLowerCase()} prop.`,
     preview: sprite,
     create: (x, y) => ({
       id: makeEntityId(sprite, x, y),
@@ -156,6 +196,8 @@ const ENTITY_TOOLS: PaletteItem[] = [
     id: 'note_archive',
     label: 'Note',
     group: 'Documents',
+    description:
+      'Places a collectible narrative note. Its text is drawn from the level messagePools.note list.',
     preview: 'document_archive',
     create: (x, y) => ({
       id: makeEntityId('note', x, y),
@@ -170,6 +212,8 @@ const ENTITY_TOOLS: PaletteItem[] = [
     id: 'note_card',
     label: 'Medical card',
     group: 'Documents',
+    description:
+      'Places a collectible medical card. Its text is drawn from the level messagePools.card list.',
     preview: 'document_medical_card',
     create: (x, y) => ({
       id: makeEntityId('card', x, y),
@@ -184,6 +228,7 @@ const ENTITY_TOOLS: PaletteItem[] = [
     id: 'key_gold',
     label: 'Gold key',
     group: 'Keys',
+    description: 'Places a collectible gold key that opens matching gold locks.',
     preview: 'keyGold',
     create: (x, y) => ({ id: makeEntityId('gold_key', x, y), type: 'key', subtype: 'gold', x, y }),
   },
@@ -191,6 +236,7 @@ const ENTITY_TOOLS: PaletteItem[] = [
     id: 'key_silver',
     label: 'Silver key',
     group: 'Keys',
+    description: 'Places a collectible silver key that opens matching silver locks.',
     preview: 'keySilver',
     create: (x, y) => ({
       id: makeEntityId('silver_key', x, y),
@@ -204,6 +250,7 @@ const ENTITY_TOOLS: PaletteItem[] = [
     id: 'key_blood',
     label: 'Blood key',
     group: 'Keys',
+    description: 'Places a collectible blood key that opens matching blood locks.',
     preview: 'keyBlood',
     create: (x, y) => ({
       id: makeEntityId('blood_key', x, y),
@@ -683,6 +730,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const playtestButton = makeButton('Playtest');
   const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
+  undoButton.title = 'Undo the last map change (Ctrl/Cmd+Z)';
+  redoButton.title = 'Repeat the last undone map change (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)';
+  saveButton.title = 'Write the current map to its JSON file (Ctrl/Cmd+S)';
+  closeButton.title = 'Close the editor without additional saving';
   playtestButton.disabled = !options.onPlaytest;
   playtestButton.title = options.onPlaytest
     ? 'Save changes and play the level'
@@ -795,6 +846,8 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   heightInput.value = String(grid.length);
   heightInput.title = 'Map height';
   const resizeButton = makeButton('Resize');
+  resizeButton.title =
+    'Resize from the bottom and right edges. Objects outside the new bounds are removed.';
   sizeForm.append(widthInput, heightInput, resizeButton);
   sidebar.appendChild(sizeForm);
 
@@ -1379,6 +1432,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const materialTitle = document.createElement('div');
     materialTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     materialTitle.textContent = 'Materials';
+    materialTitle.title = 'Wall textures painted as per-cell material overrides.';
     inspector.appendChild(materialTitle);
 
     const materialList = document.createElement('div');
@@ -1387,6 +1441,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     for (const material of MATERIAL_TOOLS) {
       const button = makeButton(material, 'level-editor__palette-button') as HTMLButtonElement;
       button.classList.toggle('is-selected', selectedMaterial === material);
+      button.title = `Paint the ${material} wall texture on clicked cells.`;
       const previewUrl = assetPreviewUrl(material);
       if (previewUrl) button.style.setProperty('--preview-image', `url("${previewUrl}")`);
       button.addEventListener('click', () => {
@@ -1401,6 +1456,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const entityTitle = document.createElement('div');
     entityTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     entityTitle.textContent = 'Entities';
+    entityTitle.title = 'Objects placed into the level entities list.';
     inspector.appendChild(entityTitle);
 
     const entityList = document.createElement('div');
@@ -1412,11 +1468,13 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         const group = document.createElement('div');
         group.className = 'level-editor__palette-group';
         group.textContent = item.group;
+        group.title = PALETTE_GROUP_HINTS[item.group] ?? '';
         entityList.appendChild(group);
         lastGroup = item.group;
       }
       const button = makeButton(item.label, 'level-editor__palette-button') as HTMLButtonElement;
       button.classList.toggle('is-selected', selectedEntity.id === item.id);
+      button.title = `${item.group} / ${item.label}\n${paletteItemHint(item)}`;
       const previewUrl = assetPreviewUrl(item.preview);
       if (previewUrl) button.style.setProperty('--preview-image', `url("${previewUrl}")`);
       button.addEventListener('click', () => {
@@ -1432,6 +1490,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const lightTitle = document.createElement('div');
     lightTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     lightTitle.textContent = 'Light';
+    lightTitle.title = 'Configure a light source, then click a map cell to place it.';
     inspector.appendChild(lightTitle);
 
     const lightForm = document.createElement('div');
@@ -1467,6 +1526,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const triggerTitle = document.createElement('div');
     triggerTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     triggerTitle.textContent = 'Sound Trigger';
+    triggerTitle.title = 'Configure a sound, then click a cell to create an enter-zone trigger.';
     inspector.appendChild(triggerTitle);
 
     const triggerForm = document.createElement('div');

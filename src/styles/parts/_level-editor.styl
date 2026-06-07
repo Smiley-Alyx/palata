@@ -58,6 +58,9 @@
   color $accent
   background #2a2117
 
+.level-editor__tool.is-selected
+  box-shadow inset 4px 0 0 $accent
+
 .level-editor__button:disabled
   opacity 0.35
   cursor default
@@ -89,6 +92,10 @@
 
 .level-editor__section-title--spaced
   margin-top 18px
+
+.level-editor__section-title[title],
+.level-editor__palette-group[title]
+  cursor help
 
 .level-editor__current-tool
   display grid
@@ -245,6 +252,9 @@
   border-color $accent
   color $accent
   background #241d15
+
+.level-editor__palette-button.is-selected
+  box-shadow inset 4px 0 0 $accent
 
 .level-editor__form
   display grid
