@@ -703,6 +703,20 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   toolsTitle.textContent = 'Tools';
   sidebar.appendChild(toolsTitle);
 
+  const currentTool = document.createElement('section');
+  currentTool.className = 'level-editor__current-tool';
+  const currentToolLabel = document.createElement('div');
+  currentToolLabel.className = 'level-editor__current-tool-label';
+  currentToolLabel.textContent = 'Current tool';
+  const currentToolMode = document.createElement('strong');
+  currentToolMode.className = 'level-editor__current-tool-mode';
+  const currentToolBrush = document.createElement('span');
+  currentToolBrush.className = 'level-editor__current-tool-brush';
+  const currentToolAction = document.createElement('span');
+  currentToolAction.className = 'level-editor__current-tool-action';
+  currentTool.append(currentToolLabel, currentToolMode, currentToolBrush, currentToolAction);
+  sidebar.appendChild(currentTool);
+
   const toolList = document.createElement('div');
   toolList.className = 'level-editor__tools';
   sidebar.appendChild(toolList);
@@ -825,6 +839,59 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let cells: HTMLElement[][] = [];
   const paletteButtons: HTMLButtonElement[] = [];
 
+  const syncCurrentTool = () => {
+    const tile = TILE_TOOLS.find((tool) => tool.value === selectedValue) ?? TILE_TOOLS[0];
+    if (selectedTool === 'cell') {
+      currentToolMode.textContent = 'Paint geometry';
+      currentToolBrush.textContent = tile.label;
+      currentToolAction.textContent = tile.hint;
+      return;
+    }
+    if (selectedTool === 'material') {
+      currentToolMode.textContent = 'Paint material';
+      currentToolBrush.textContent = selectedMaterial;
+      currentToolAction.textContent =
+        'Click or drag over cells to apply the selected wall material.';
+      return;
+    }
+    if (selectedTool === 'entity') {
+      currentToolMode.textContent = 'Place entity';
+      currentToolBrush.textContent = `${selectedEntity.group} / ${selectedEntity.label}`;
+      currentToolAction.textContent = 'Click a cell to place one copy of the selected entity.';
+      return;
+    }
+    if (selectedTool === 'light') {
+      currentToolMode.textContent = 'Place light';
+      currentToolBrush.textContent = `${lightDraft.mode}, ${lightDraft.color}, radius ${lightDraft.radius}`;
+      currentToolAction.textContent = 'Click a cell to place a light source.';
+      return;
+    }
+    if (selectedTool === 'trigger') {
+      currentToolMode.textContent = 'Place sound zone';
+      currentToolBrush.textContent = triggerDraft.sound;
+      currentToolAction.textContent = 'Click a cell to place a one-tile sound trigger.';
+      return;
+    }
+    if (selectedTool === 'erase') {
+      currentToolMode.textContent = 'Erase objects';
+      currentToolBrush.textContent = 'Everything in one cell';
+      currentToolAction.textContent =
+        'Click or drag to remove materials, entities, lights and triggers.';
+      return;
+    }
+    if (selectedTool === 'fill') {
+      currentToolMode.textContent = 'Fill geometry area';
+      currentToolBrush.textContent = tile.label;
+      currentToolAction.textContent = 'Click a cell to replace its connected area.';
+      return;
+    }
+    currentToolMode.textContent = 'Inspect cell';
+    currentToolBrush.textContent = selectedCell
+      ? `Cell ${selectedCell.x}, ${selectedCell.y}`
+      : 'No cell selected';
+    currentToolAction.textContent = 'Click a cell to show its contents in the inspector.';
+  };
+
   const syncToolButtons = () => {
     spawnButton.classList.toggle('is-selected', selectedTool === 'spawn');
     materialButton.classList.toggle('is-selected', selectedTool === 'material');
@@ -840,6 +907,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         selectedTool === 'cell' && tool.value === selectedValue,
       );
     }
+    syncCurrentTool();
   };
 
   const syncSpawnInfo = () => {
@@ -1084,6 +1152,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     selectedCell = { x, y };
     if (prev) syncCell(prev.x, prev.y);
     syncCell(x, y);
+    syncCurrentTool();
     buildInspector();
   };
 
