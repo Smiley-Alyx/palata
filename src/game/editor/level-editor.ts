@@ -1319,7 +1319,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       parts.push(`enemies: ${kinds}`);
     }
     if (objects.health.length) parts.push(`${objects.health.length} health pickups`);
-    if (objects.light.length) parts.push(`${objects.light.length} lights`);
+    if (objects.light.length) {
+      const colors = objects.light.map((light) => String(light.color ?? '#ffffff')).join(', ');
+      parts.push(`${objects.light.length} lights: ${colors}`);
+    }
     if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
     return parts.join(' | ');
   };
@@ -1365,6 +1368,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const marker = document.createElement('span');
       marker.className = 'level-editor__marker level-editor__marker--light';
       marker.textContent = 'L';
+      const color = objects.light[0].color;
+      if (typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) {
+        marker.style.backgroundColor = color;
+      }
       cell.appendChild(marker);
     }
     if (objects.trigger.length) {
@@ -2033,6 +2040,58 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
             },
           );
         }
+      });
+
+      objects.light.forEach((light, lightIndex) => {
+        addNumberInput(
+          editForm,
+          `Light radius ${lightIndex + 1}`,
+          typeof light.radius === 'number' ? light.radius : 5,
+          1,
+          16,
+          0.5,
+          (value) => {
+            light.radius = value;
+            recordHistory();
+          },
+        );
+        addNumberInput(
+          editForm,
+          `Light intensity ${lightIndex + 1}`,
+          typeof light.intensity === 'number' ? light.intensity : 1,
+          0.05,
+          2,
+          0.05,
+          (value) => {
+            light.intensity = value;
+            recordHistory();
+          },
+        );
+        addColorInput(
+          editForm,
+          `Light color ${lightIndex + 1}`,
+          typeof light.color === 'string' && /^#[0-9a-f]{6}$/i.test(light.color)
+            ? light.color
+            : '#ffffff',
+          (value) => {
+            light.color = value;
+            syncCell(x, y);
+            recordHistory();
+          },
+        );
+        addChoiceInput(
+          editForm,
+          `Light mode ${lightIndex + 1}`,
+          ['steady', 'flicker', 'emergency', 'pulse', 'organic'].map((mode) => ({
+            value: mode,
+            label: mode,
+          })),
+          typeof light.mode === 'string' ? light.mode : 'steady',
+          (value) => {
+            light.mode = value;
+            recordHistory();
+          },
+        );
       });
 
       const entries: Array<{ title: string; value: unknown }> = [

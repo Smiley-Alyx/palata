@@ -43,6 +43,7 @@ export function createRenderer({
   let floorMaterial: string | number | null = null;
 
   let ambientLight01 = 1;
+  let ambientLightColor: string | null = null;
   let lightingMultiplier = 1.12;
 
   let flash = 0;
@@ -194,6 +195,10 @@ export function createRenderer({
 
   function setAmbientLight01(light01: number) {
     ambientLight01 = Math.max(0, Math.min(1, light01));
+  }
+
+  function setAmbientLightColor(color: string | null) {
+    ambientLightColor = color;
   }
 
   function setLightingMultiplier(multiplier: number) {
@@ -357,6 +362,15 @@ export function createRenderer({
       ctx.fillRect(0, 0, w, h);
     }
 
+    if (ambientLightColor) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = Math.min(0.22, litAmbient * 0.2);
+      ctx.fillStyle = ambientLightColor;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
     if (flash > 0) {
       ctx.fillStyle = `rgba(255,255,255,${Math.min(0.18, flash)})`;
       ctx.fillRect(0, 0, w, h);
@@ -450,6 +464,7 @@ export function createRenderer({
     offset: number,
     img: string | number,
     light01: number = 1,
+    lightColor: string | null = null,
     columnWidth: number = 1,
   ) {
     const viewWidth = getViewWidth();
@@ -473,6 +488,14 @@ export function createRenderer({
     if (texX > texW - 1) texX = texW - 1;
 
     ctx.drawImage(drawTexture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
+    if (lightColor) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = Math.min(0.3, l * 0.26);
+      ctx.fillStyle = lightColor;
+      ctx.fillRect(x, y0, columnWidth, sliceHeight);
+      ctx.restore();
+    }
   }
 
   function drawSpriteList(
@@ -706,6 +729,7 @@ export function createRenderer({
     setBackgroundColors,
     setBackgroundMaterials,
     setAmbientLight01,
+    setAmbientLightColor,
     setLightingMultiplier,
     triggerFlash,
     triggerDamagePulse,

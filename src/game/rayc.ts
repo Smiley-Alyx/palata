@@ -971,6 +971,8 @@ function ensureEngine() {
         return doorsSystem?.getDoorTextureOffset(hit.xMap, hit.yMap, hit.offset) ?? hit.offset;
       },
       getLightAt: (x: number, y: number) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
+      getLightColorAt: (x: number, y: number) =>
+        lightsSystem ? lightsSystem.getLightColorAt(x, y) : null,
       isDoorBlocking: (x: number, y: number) => {
         return !!doorsSystem && doorsSystem.isDoorBlocking(x, y);
       },
@@ -1032,6 +1034,9 @@ function ensureEngine() {
         predatorSystem?.tick(dt);
         ambienceSystem?.tick(dt);
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
+        renderer?.setAmbientLightColor(
+          lightsSystem ? lightsSystem.getLightColorAt(player.x, player.y) : null,
+        );
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
           const cx = xMap + 0.5;

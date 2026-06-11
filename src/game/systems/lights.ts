@@ -18,6 +18,19 @@ export type Light = {
   phase: number;
 };
 
+type LightSample = {
+  light01: number;
+  color: string | null;
+};
+
+function parseHexColor(color: string | null): { r: number; g: number; b: number } | null {
+  if (!color) return null;
+  const match = /^#([0-9a-f]{6})$/i.exec(color);
+  if (!match) return null;
+  const value = Number.parseInt(match[1], 16);
+  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+}
+
 function normalizeMode(raw: unknown, flicker: boolean | undefined): LightMode {
   if (typeof raw === 'string') {
     if (
@@ -36,7 +49,7 @@ function normalizeMode(raw: unknown, flicker: boolean | undefined): LightMode {
 export function createLightsSystem() {
   let timeSec = 0;
   let lights: Light[] = [];
-  const tileLightCache = new Map<string, number>();
+  const tileLightCache = new Map<string, LightSample>();
 
   function setLights(
     next: Array<{
@@ -117,10 +130,14 @@ export function createLightsSystem() {
     }
   }
 
-  function computeLightAt(x: number, y: number): number {
-    if (!lights.length) return 1;
+  function computeLightSampleAt(x: number, y: number): LightSample {
+    if (!lights.length) return { light01: 1, color: null };
 
     let acc = 0;
+    let colorWeight = 0;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
     for (let i = 0; i < lights.length; i++) {
       const l = lights[i];
       const dx = x - l.x;
@@ -131,13 +148,28 @@ export function createLightsSystem() {
 
       const falloff = 1 - Math.sqrt(distSq) / l.radius;
       const inten = l.intensity * modulate(l.mode, l.phase);
-      acc += inten * falloff * falloff;
+      const contribution = inten * falloff * falloff;
+      acc += contribution;
+      const color = parseHexColor(l.color);
+      if (color) {
+        colorWeight += contribution;
+        red += color.r * contribution;
+        green += color.g * contribution;
+        blue += color.b * contribution;
+      }
     }
 
     // Base ambient to avoid fully black walls.
     const ambient = 0.22;
     const out = ambient + acc;
-    return Math.max(0, Math.min(1, out));
+    let color: string | null = null;
+    if (colorWeight > 0.001) {
+      const r = Math.round(red / colorWeight);
+      const g = Math.round(green / colorWeight);
+      const b = Math.round(blue / colorWeight);
+      if (Math.max(r, g, b) - Math.min(r, g, b) > 12) color = `rgb(${r}, ${g}, ${b})`;
+    }
+    return { light01: Math.max(0, Math.min(1, out)), color };
   }
 
   function getTileLightCacheKey(x: number, y: number): string | null {
@@ -147,16 +179,24 @@ export function createLightsSystem() {
     return `${xMap},${yMap}`;
   }
 
-  function getLightAt(x: number, y: number): number {
+  function getLightSampleAt(x: number, y: number): LightSample {
     const key = getTileLightCacheKey(x, y);
-    if (!key) return computeLightAt(x, y);
+    if (!key) return computeLightSampleAt(x, y);
 
     const cached = tileLightCache.get(key);
     if (cached !== undefined) return cached;
 
-    const light = computeLightAt(x, y);
-    tileLightCache.set(key, light);
-    return light;
+    const sample = computeLightSampleAt(x, y);
+    tileLightCache.set(key, sample);
+    return sample;
+  }
+
+  function getLightAt(x: number, y: number): number {
+    return getLightSampleAt(x, y).light01;
+  }
+
+  function getLightColorAt(x: number, y: number): string | null {
+    return getLightSampleAt(x, y).color;
   }
 
   return {
@@ -164,5 +204,6 @@ export function createLightsSystem() {
     onMapChanged,
     tick,
     getLightAt,
+    getLightColorAt,
   };
 }
