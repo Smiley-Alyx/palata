@@ -16,6 +16,7 @@ import {
   resetKeys,
   resetPlayerState,
   setDifficulty,
+  setDarkZones,
   setAudioConfig,
   setBackgroundColors,
   setBackgroundMaterials,
@@ -788,6 +789,7 @@ async function startLevelById(
   setWorldStates(level.worldStates ?? null);
   setTriggers(level.triggers ?? []);
   setLights(level.lights ?? []);
+  setDarkZones(level.darkZones ?? []);
   setGeometryOverrides(level.geometryOverrides ?? []);
   setMessagePools(level.messagePools ?? {});
 

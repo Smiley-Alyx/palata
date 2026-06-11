@@ -11,6 +11,7 @@ type LevelJson = Record<string, unknown> & {
   materialsWall?: unknown;
   entities?: unknown;
   lights?: unknown;
+  darkZones?: unknown;
   triggers?: unknown;
   messagePools?: unknown;
 };
@@ -21,6 +22,7 @@ type EditorTool =
   | 'material'
   | 'entity'
   | 'light'
+  | 'darkness'
   | 'trigger'
   | 'erase'
   | 'fill'
@@ -58,6 +60,11 @@ type TriggerDraft = {
   once: boolean;
 };
 
+type DarknessDraft = {
+  radius: number;
+  strength: number;
+};
+
 type NoteDraft = {
   title: string;
   text: string;
@@ -77,6 +84,7 @@ type EditorSnapshot = {
   spawn: { x: number; y: number; rot: number };
   entities: Record<string, unknown>[];
   lights: Record<string, unknown>[];
+  darkZones: Record<string, unknown>[];
   triggers: Record<string, unknown>[];
   messagePools: EditorMessagePools;
 };
@@ -531,6 +539,7 @@ const DEFAULT_LEVEL: LevelJson = {
   rows: ['11111111', '10000001', '10000001', '10000001', '11111111'],
   entities: [],
   lights: [],
+  darkZones: [],
   triggers: [],
 };
 
@@ -836,12 +845,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const materials = readMaterials(level, grid);
   const entities = readObjects<Record<string, unknown>>(level.entities);
   const lights = readObjects<Record<string, unknown>>(level.lights);
+  const darkZones = readObjects<Record<string, unknown>>(level.darkZones);
   const triggers = readObjects<Record<string, unknown>>(level.triggers);
   const messagePools = readMessagePools(level.messagePools);
   const spawn = readSpawn(level);
   const hadMaterials = Array.isArray(level.materialsWall);
   const hadEntities = Array.isArray(level.entities);
   const hadLights = Array.isArray(level.lights);
+  const hadDarkZones = Array.isArray(level.darkZones);
   const hadTriggers = Array.isArray(level.triggers);
   const hadMessagePools =
     !!level.messagePools &&
@@ -872,6 +883,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     colorInfluence: 1,
     mode: 'steady',
   };
+  const darknessDraft: DarknessDraft = { radius: 5, strength: 0.7 };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
   const noteDraft: NoteDraft = { title: '', text: '' };
   const history: EditorSnapshot[] = [];
@@ -964,6 +976,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const materialButton = makeButton('M Material', 'level-editor__tool');
   const entityButton = makeButton('E Entity', 'level-editor__tool');
   const lightButton = makeButton('L Light', 'level-editor__tool');
+  const darknessButton = makeButton('D Darkness zone', 'level-editor__tool');
   const triggerButton = makeButton('T Sound zone', 'level-editor__tool');
   const eraseButton = makeButton('X Erase object', 'level-editor__tool');
   const fillButton = makeButton('F Fill area', 'level-editor__tool');
@@ -972,6 +985,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   materialButton.title = 'Paint wall material overrides';
   entityButton.title = 'Place selected entity';
   lightButton.title = 'Place light source';
+  darknessButton.title = 'Place a radial zone that reduces lighting';
   triggerButton.title = 'Place one-tile enter_zone sound trigger';
   eraseButton.title = 'Remove objects/materials from a cell';
   fillButton.title = 'Fill connected geometry area with selected cell value';
@@ -981,6 +995,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     materialButton,
     entityButton,
     lightButton,
+    darknessButton,
     triggerButton,
     eraseButton,
     fillButton,
@@ -1210,6 +1225,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       currentToolAction.textContent = 'Click a cell to place a light source.';
       return;
     }
+    if (selectedTool === 'darkness') {
+      currentToolMode.textContent = 'Place darkness zone';
+      currentToolBrush.textContent = `radius ${darknessDraft.radius}, strength ${darknessDraft.strength}`;
+      currentToolAction.textContent = 'Click a cell to place a radial darkness zone.';
+      return;
+    }
     if (selectedTool === 'trigger') {
       currentToolMode.textContent = 'Place sound zone';
       currentToolBrush.textContent = triggerDraft.sound;
@@ -1220,7 +1241,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       currentToolMode.textContent = 'Erase objects';
       currentToolBrush.textContent = 'Everything in one cell';
       currentToolAction.textContent =
-        'Click or drag to remove materials, entities, lights and triggers.';
+        'Click or drag to remove materials, entities, lights, darkness zones and triggers.';
       return;
     }
     if (selectedTool === 'fill') {
@@ -1244,6 +1265,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     materialButton.classList.toggle('is-selected', selectedTool === 'material');
     entityButton.classList.toggle('is-selected', selectedTool === 'entity');
     lightButton.classList.toggle('is-selected', selectedTool === 'light');
+    darknessButton.classList.toggle('is-selected', selectedTool === 'darkness');
     triggerButton.classList.toggle('is-selected', selectedTool === 'trigger');
     eraseButton.classList.toggle('is-selected', selectedTool === 'erase');
     fillButton.classList.toggle('is-selected', selectedTool === 'fill');
@@ -1267,7 +1289,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       (sum, messages) => sum + messages.length,
       0,
     );
-    countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat / ${messageCount} msg`;
+    countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${darkZones.length} dark / ${triggers.length} trig / ${materialCount} mat / ${messageCount} msg`;
   };
 
   const captureSnapshot = (): EditorSnapshot => ({
@@ -1276,6 +1298,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     spawn: { ...spawn },
     entities: structuredClone(entities),
     lights: structuredClone(lights),
+    darkZones: structuredClone(darkZones),
     triggers: structuredClone(triggers),
     messagePools: structuredClone(messagePools),
   });
@@ -1312,6 +1335,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     Object.assign(spawn, snapshot.spawn);
     replaceArray(entities, snapshot.entities);
     replaceArray(lights, snapshot.lights);
+    replaceArray(darkZones, snapshot.darkZones);
     replaceArray(triggers, snapshot.triggers);
     for (const key of Object.keys(messagePools)) delete messagePools[key];
     Object.assign(messagePools, structuredClone(snapshot.messagePools));
@@ -1340,11 +1364,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const enemy = ent.filter((e) => e.type === 'enemy_spawn');
     const health = ent.filter((e) => e.type === 'health_pickup' || e.type === 'health');
     const light = lights.filter((l) => objectCell(l.x) === x && objectCell(l.y) === y);
+    const darkness = darkZones.filter(
+      (zone) => objectCell(zone.x) === x && objectCell(zone.y) === y,
+    );
     const trigger = triggers.filter((t) => {
       const zone = t.trigger as { x?: unknown; y?: unknown } | undefined;
       return objectCell(zone?.x) === x && objectCell(zone?.y) === y;
     });
-    return { ent, enemy, health, light, trigger };
+    return { ent, enemy, health, light, darkness, trigger };
   };
 
   const legendMaterialAt = (x: number, y: number) => {
@@ -1373,6 +1400,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const colors = objects.light.map((light) => String(light.color ?? '#ffffff')).join(', ');
       parts.push(`${objects.light.length} lights: ${colors}`);
     }
+    if (objects.darkness.length) parts.push(`${objects.darkness.length} darkness zones`);
     if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
     return parts.join(' | ');
   };
@@ -1386,6 +1414,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     cell.classList.toggle('has-spawn', Math.floor(spawn.x) === x && Math.floor(spawn.y) === y);
     cell.classList.toggle('has-entity', objects.ent.length > 0);
     cell.classList.toggle('has-light', objects.light.length > 0);
+    cell.classList.toggle('has-darkness', objects.darkness.length > 0);
     cell.classList.toggle('has-trigger', objects.trigger.length > 0);
     cell.classList.toggle('is-selected', selectedCells.has(`${x},${y}`));
     cell.title = cellTitle(x, y);
@@ -1424,6 +1453,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       }
       cell.appendChild(marker);
     }
+    if (objects.darkness.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--darkness';
+      marker.textContent = 'D';
+      cell.appendChild(marker);
+    }
     if (objects.trigger.length) {
       const marker = document.createElement('span');
       marker.className = 'level-editor__marker level-editor__marker--trigger';
@@ -1447,6 +1482,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     }
     for (let i = lights.length - 1; i >= 0; i--) {
       if (objectCell(lights[i].x) === x && objectCell(lights[i].y) === y) lights.splice(i, 1);
+    }
+    for (let i = darkZones.length - 1; i >= 0; i--) {
+      if (objectCell(darkZones[i].x) === x && objectCell(darkZones[i].y) === y) {
+        darkZones.splice(i, 1);
+      }
     }
     for (let i = triggers.length - 1; i >= 0; i--) {
       const zone = triggers[i].trigger as { x?: unknown; y?: unknown } | undefined;
@@ -1498,6 +1538,18 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         color: lightDraft.color,
         colorInfluence: lightDraft.colorInfluence,
         mode: lightDraft.mode,
+      });
+      syncCell(x, y);
+      syncCounts();
+      recordHistory();
+      return;
+    }
+    if (selectedTool === 'darkness') {
+      darkZones.push({
+        x: center.x,
+        y: center.y,
+        radius: darknessDraft.radius,
+        strength: darknessDraft.strength,
       });
       syncCell(x, y);
       syncCounts();
@@ -1619,6 +1671,9 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     if (lights.length || hadLights) next.lights = lights;
     else delete next.lights;
 
+    if (darkZones.length || hadDarkZones) next.darkZones = darkZones;
+    else delete next.darkZones;
+
     if (triggers.length || hadTriggers) next.triggers = triggers;
     else delete next.triggers;
 
@@ -1729,6 +1784,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       lights.filter((light) => inside(light.x, light.y)),
     );
     replaceArray(
+      darkZones,
+      darkZones.filter((zone) => inside(zone.x, zone.y)),
+    );
+    replaceArray(
       triggers,
       triggers.filter((trigger) => {
         const zone = trigger.trigger as { x?: unknown; y?: unknown } | undefined;
@@ -1775,6 +1834,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   materialButton.addEventListener('click', () => setTool('material'));
   entityButton.addEventListener('click', () => setTool('entity'));
   lightButton.addEventListener('click', () => setTool('light'));
+  darknessButton.addEventListener('click', () => setTool('darkness'));
   triggerButton.addEventListener('click', () => setTool('trigger'));
   eraseButton.addEventListener('click', () => setTool('erase'));
   fillButton.addEventListener('click', () => setTool('fill'));
@@ -1855,6 +1915,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
           lights.filter((light) => !isSelectedObject(light.x, light.y)),
         );
         replaceArray(
+          darkZones,
+          darkZones.filter((zone) => !isSelectedObject(zone.x, zone.y)),
+        );
+        replaceArray(
           triggers,
           triggers.filter((trigger) => {
             const zone = trigger.trigger as { x?: unknown; y?: unknown } | undefined;
@@ -1931,7 +1995,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         'level-editor__button level-editor__button--danger',
       );
       deleteCellButton.title =
-        'Set geometry to Empty and remove the material, entities, lights and triggers';
+        'Set geometry to Empty and remove the material, entities, lights, darkness zones and triggers';
       deleteCellButton.addEventListener('click', () => {
         const hadSpawn = Math.floor(spawn.x) === x && Math.floor(spawn.y) === y;
         grid[y][x] = 0;
@@ -2160,6 +2224,33 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         );
       });
 
+      objects.darkness.forEach((zone, zoneIndex) => {
+        addNumberInput(
+          editForm,
+          `Darkness radius ${zoneIndex + 1}`,
+          typeof zone.radius === 'number' ? zone.radius : 5,
+          1,
+          16,
+          0.5,
+          (value) => {
+            zone.radius = value;
+            recordHistory();
+          },
+        );
+        addNumberInput(
+          editForm,
+          `Darkness strength ${zoneIndex + 1}`,
+          typeof zone.strength === 'number' ? zone.strength : 0.7,
+          0,
+          1,
+          0.05,
+          (value) => {
+            zone.strength = value;
+            recordHistory();
+          },
+        );
+      });
+
       const entries: Array<{ title: string; value: unknown }> = [
         { title: 'Cell', value: { x, y, value: grid[y][x] } },
       ];
@@ -2179,6 +2270,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       }
       for (const entity of objects.ent) entries.push({ title: 'Entity', value: entity });
       for (const light of objects.light) entries.push({ title: 'Light', value: light });
+      for (const zone of objects.darkness) entries.push({ title: 'Darkness zone', value: zone });
       for (const trigger of objects.trigger) entries.push({ title: 'Trigger', value: trigger });
 
       for (const entry of entries) {
@@ -2423,6 +2515,26 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       },
     );
 
+    const darknessTitle = document.createElement('div');
+    darknessTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+    darknessTitle.textContent = 'Darkness Zone';
+    darknessTitle.title = 'Configure a darkness zone, then click a map cell to place it.';
+    inspector.appendChild(darknessTitle);
+
+    const darknessForm = document.createElement('div');
+    darknessForm.className = 'level-editor__form';
+    inspector.appendChild(darknessForm);
+    addNumberInput(darknessForm, 'Radius', darknessDraft.radius, 1, 16, 0.5, (value) => {
+      darknessDraft.radius = value;
+      selectedTool = 'darkness';
+      syncToolButtons();
+    });
+    addNumberInput(darknessForm, 'Strength', darknessDraft.strength, 0, 1, 0.05, (value) => {
+      darknessDraft.strength = value;
+      selectedTool = 'darkness';
+      syncToolButtons();
+    });
+
     const triggerTitle = document.createElement('div');
     triggerTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
     triggerTitle.textContent = 'Sound Trigger';
@@ -2539,6 +2651,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     if (e.code === 'KeyL') {
       e.preventDefault();
       setTool('light');
+      return;
+    }
+    if (e.code === 'KeyD') {
+      e.preventDefault();
+      setTool('darkness');
       return;
     }
     if (e.code === 'KeyT') {

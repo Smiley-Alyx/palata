@@ -41,6 +41,7 @@ import type { Difficulty, EnemyKind } from './game-types';
 import type { RayHit } from '../raycast/raycaster';
 import type { LevelTriggerJson } from './levels/level-loader';
 import type { LevelLightJson } from './levels/level-loader';
+import type { LevelDarkZoneJson } from './levels/level-loader';
 import type { LevelGeometryOverrideJson } from './levels/level-loader';
 import type { LevelWorldStatesJson } from './levels/level-loader';
 import type { LevelEntityJson } from './levels/level-loader';
@@ -84,6 +85,7 @@ const enemyHearingRadiusMultiplier = 1.5;
 
 let rawTriggers: LevelTriggerJson[] = [];
 let rawLights: LevelLightJson[] = [];
+let rawDarkZones: LevelDarkZoneJson[] = [];
 let rawEntities: LevelEntityJson[] = [];
 let decorativeSprites: Array<{
   x: number;
@@ -615,6 +617,13 @@ export function setLights(next: LevelLightJson[]) {
   lightsSystem?.setLights(enabled);
 }
 
+export function setDarkZones(next: LevelDarkZoneJson[]) {
+  ensureEngine();
+  rawDarkZones = Array.isArray(next) ? next : [];
+  const enabled = rawDarkZones.filter((zone) => worldStateSystem?.isEnabled(zone) ?? true);
+  lightsSystem?.setDarkZones(enabled);
+}
+
 export function setWorldStates(config: LevelWorldStatesJson | null) {
   ensureEngine();
   worldStateSystem?.setConfig(config ?? null);
@@ -763,6 +772,10 @@ function ensureEngine() {
     triggersSystem?.setTriggers(enabledTriggers);
     const enabledLights = rawLights.filter((l) => worldStateSystem?.isEnabled(l) ?? true);
     lightsSystem?.setLights(enabledLights);
+    const enabledDarkZones = rawDarkZones.filter(
+      (zone) => worldStateSystem?.isEnabled(zone) ?? true,
+    );
+    lightsSystem?.setDarkZones(enabledDarkZones);
     applyGeometryOverrides();
     reapplyEntities();
   });
@@ -1107,6 +1120,7 @@ export function setMap(grid: number[][]) {
   inventory.reset();
   rawTriggers = [];
   rawLights = [];
+  rawDarkZones = [];
   rawEntities = [];
   rawGeometryOverrides = [];
   entityIdSeq = 1;

@@ -37,6 +37,7 @@ type LevelJson = {
   entities?: unknown;
   triggers?: unknown;
   lights?: unknown;
+  darkZones?: unknown;
   geometryOverrides?: unknown;
   rows?: string[];
   geometry?: unknown;
@@ -184,6 +185,16 @@ export type LevelLightJson = {
   intensity?: number;
   flicker?: boolean;
   mode?: 'steady' | 'flicker' | 'emergency' | 'pulse' | 'organic';
+  enabledInStates?: string[];
+  disabledInStates?: string[];
+  enabledIfFlags?: Record<string, boolean>;
+};
+
+export type LevelDarkZoneJson = {
+  x: number;
+  y: number;
+  radius: number;
+  strength?: number;
   enabledInStates?: string[];
   disabledInStates?: string[];
   enabledIfFlags?: Record<string, boolean>;
@@ -594,6 +605,47 @@ export async function loadLevel(levelUrl: string) {
     }
   }
 
+  const darkZones: LevelDarkZoneJson[] = [];
+  if (Array.isArray(data.darkZones)) {
+    for (const it of data.darkZones) {
+      if (!it || typeof it !== 'object') continue;
+      const zone = it as {
+        x?: unknown;
+        y?: unknown;
+        radius?: unknown;
+        strength?: unknown;
+        enabledInStates?: unknown;
+        disabledInStates?: unknown;
+        enabledIfFlags?: unknown;
+      };
+      if (
+        typeof zone.x !== 'number' ||
+        typeof zone.y !== 'number' ||
+        typeof zone.radius !== 'number' ||
+        !Number.isFinite(zone.radius) ||
+        zone.radius <= 0
+      ) {
+        continue;
+      }
+      darkZones.push({
+        x: zone.x,
+        y: zone.y,
+        radius: zone.radius,
+        strength: typeof zone.strength === 'number' ? zone.strength : undefined,
+        enabledInStates: Array.isArray(zone.enabledInStates)
+          ? (zone.enabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        disabledInStates: Array.isArray(zone.disabledInStates)
+          ? (zone.disabledInStates as unknown[]).filter((s): s is string => typeof s === 'string')
+          : undefined,
+        enabledIfFlags:
+          zone.enabledIfFlags && typeof zone.enabledIfFlags === 'object'
+            ? (zone.enabledIfFlags as Record<string, boolean>)
+            : undefined,
+      });
+    }
+  }
+
   const geometryOverrides: LevelGeometryOverrideJson[] = [];
   if (Array.isArray(data.geometryOverrides)) {
     for (const it of data.geometryOverrides) {
@@ -670,6 +722,7 @@ export async function loadLevel(levelUrl: string) {
     entities,
     triggers,
     lights,
+    darkZones,
     geometryOverrides,
     messagePools,
     keyPickups,

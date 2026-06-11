@@ -19,6 +19,13 @@ export type Light = {
   phase: number;
 };
 
+export type DarkZone = {
+  x: number;
+  y: number;
+  radius: number;
+  strength: number;
+};
+
 type LightSample = {
   light01: number;
   color: string | null;
@@ -60,6 +67,7 @@ export function createLightsSystem({
 } = {}) {
   let timeSec = 0;
   let lights: Light[] = [];
+  let darkZones: DarkZone[] = [];
   const lightSampleCache = new Map<string, LightSample>();
 
   function setLights(
@@ -98,8 +106,30 @@ export function createLightsSystem({
       : [];
   }
 
+  function setDarkZones(next: Array<{ x: number; y: number; radius: number; strength?: number }>) {
+    lightSampleCache.clear();
+    darkZones = Array.isArray(next)
+      ? next
+          .filter(
+            (zone) =>
+              zone &&
+              typeof zone.x === 'number' &&
+              typeof zone.y === 'number' &&
+              typeof zone.radius === 'number',
+          )
+          .map((zone) => ({
+            x: zone.x,
+            y: zone.y,
+            radius: Math.max(0.001, zone.radius),
+            strength:
+              typeof zone.strength === 'number' ? Math.max(0, Math.min(1, zone.strength)) : 0.7,
+          }))
+      : [];
+  }
+
   function onMapChanged() {
     lights = [];
+    darkZones = [];
     timeSec = 0;
     lightSampleCache.clear();
   }
@@ -200,8 +230,20 @@ export function createLightsSystem({
     return visible / (LIGHT_VISIBILITY_OFFSETS.length * LIGHT_VISIBILITY_OFFSETS.length);
   }
 
+  function getDarknessAt(x: number, y: number): number {
+    let remainingLight = 1;
+    for (const zone of darkZones) {
+      const dist = Math.hypot(x - zone.x, y - zone.y);
+      if (dist >= zone.radius) continue;
+      const falloff = 1 - dist / zone.radius;
+      const contribution = Math.max(0, Math.min(1, zone.strength * falloff * falloff));
+      remainingLight *= 1 - contribution;
+    }
+    return 1 - remainingLight;
+  }
+
   function computeLightSampleAt(x: number, y: number): LightSample {
-    if (!lights.length) return { light01: 1, color: null, colorInfluence: 0 };
+    if (!lights.length && !darkZones.length) return { light01: 1, color: null, colorInfluence: 0 };
 
     let acc = 0;
     let colorWeight = 0;
@@ -233,9 +275,10 @@ export function createLightsSystem({
     }
 
     // Base ambient to avoid fully black walls.
-    const ambient = 0.22;
+    const ambient = lights.length ? 0.22 : 1;
     const normalized = 1 - Math.exp(-Math.max(0, acc) * 0.85);
     const out = ambient + normalized * (1 - ambient);
+    const remainingLight = 1 - getDarknessAt(x, y);
     let color: string | null = null;
     if (colorWeight > 0.001) {
       const r = Math.round(red / colorWeight);
@@ -244,9 +287,9 @@ export function createLightsSystem({
       if (Math.max(r, g, b) - Math.min(r, g, b) > 12) color = `rgb(${r}, ${g}, ${b})`;
     }
     return {
-      light01: Math.max(0, Math.min(1, out)),
+      light01: Math.max(0, Math.min(1, out * remainingLight)),
       color,
-      colorInfluence: Math.max(0, Math.min(2, colorWeight / Math.max(0.001, acc))),
+      colorInfluence: Math.max(0, Math.min(2, colorWeight / Math.max(0.001, acc))) * remainingLight,
     };
   }
 
@@ -274,6 +317,7 @@ export function createLightsSystem({
 
   return {
     setLights,
+    setDarkZones,
     onMapChanged,
     tick,
     getLightAt,
