@@ -8,6 +8,7 @@ type DrawRay = (
   img: string | number,
   light01?: number,
   lightColor?: string | null,
+  lightColorInfluence?: number,
   columnWidth?: number,
 ) => void;
 
@@ -31,6 +32,7 @@ type World<MaterialId = string | number> = {
   getWallTextureOffset?: (hit: RayHit<MaterialId>) => number;
   getLightAt?: (x: number, y: number) => number;
   getLightColorAt?: (x: number, y: number) => string | null;
+  getLightColorInfluenceAt?: (x: number, y: number) => number;
 };
 
 export function castRays({
@@ -147,13 +149,17 @@ function castSingleRay({
     hit && typeof world.getLightColorAt === 'function'
       ? world.getLightColorAt(hit.xMap + 0.5, hit.yMap + 0.5)
       : null;
+  const lightColorInfluence =
+    hit && typeof world.getLightColorInfluenceAt === 'function'
+      ? world.getLightColorInfluenceAt(hit.xMap + 0.5, hit.yMap + 0.5)
+      : 1;
 
   const dist = hit.dist * Math.cos(player.rot - angle);
   const textureOffset =
     hit && typeof world.getWallTextureOffset === 'function'
       ? world.getWallTextureOffset(hit)
       : hit.offset;
-  drawRay(dist, row, textureOffset, imgOut, light01, lightColor, columnWidth);
+  drawRay(dist, row, textureOffset, imgOut, light01, lightColor, lightColorInfluence, columnWidth);
 
   return dist;
 }

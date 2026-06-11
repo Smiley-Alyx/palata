@@ -912,6 +912,8 @@ function ensureEngine() {
     getNearestEnemyDistance,
     getLightAt: (x, y) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
     getLightColorAt: (x, y) => (lightsSystem ? lightsSystem.getLightColorAt(x, y) : null),
+    getLightColorInfluenceAt: (x, y) =>
+      lightsSystem ? lightsSystem.getLightColorInfluenceAt(x, y) : 0,
   });
 
   lightsSystem = createLightsSystem();
@@ -975,6 +977,8 @@ function ensureEngine() {
       getLightAt: (x: number, y: number) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
       getLightColorAt: (x: number, y: number) =>
         lightsSystem ? lightsSystem.getLightColorAt(x, y) : null,
+      getLightColorInfluenceAt: (x: number, y: number) =>
+        lightsSystem ? lightsSystem.getLightColorInfluenceAt(x, y) : 0,
       isDoorBlocking: (x: number, y: number) => {
         return !!doorsSystem && doorsSystem.isDoorBlocking(x, y);
       },
@@ -1038,6 +1042,9 @@ function ensureEngine() {
         renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
         renderer?.setAmbientLightColor(
           lightsSystem ? lightsSystem.getLightColorAt(player.x, player.y) : null,
+        );
+        renderer?.setAmbientLightColorInfluence(
+          lightsSystem ? lightsSystem.getLightColorInfluenceAt(player.x, player.y) : 0,
         );
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.

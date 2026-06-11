@@ -20,6 +20,7 @@ export function createRenderer({
   getNearestEnemyDistance,
   getLightAt,
   getLightColorAt,
+  getLightColorInfluenceAt,
 }: {
   ctx: CanvasRenderingContext2D;
   getViewWidth: () => number;
@@ -39,6 +40,7 @@ export function createRenderer({
   getNearestEnemyDistance?: () => number | null;
   getLightAt?: (x: number, y: number) => number;
   getLightColorAt?: (x: number, y: number) => string | null;
+  getLightColorInfluenceAt?: (x: number, y: number) => number;
 }) {
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
@@ -48,6 +50,7 @@ export function createRenderer({
 
   let ambientLight01 = 1;
   let ambientLightColor: string | null = null;
+  let ambientLightColorInfluence = 0;
   let lightingMultiplier = 1.12;
 
   let flash = 0;
@@ -150,6 +153,7 @@ export function createRenderer({
     texture: CanvasImageSource,
     light01: number,
     lightColor: string | null,
+    colorInfluence: number,
     dist: number,
   ): CanvasImageSource {
     const light = Math.max(0, Math.min(1, light01 * lightingMultiplier * getDistanceLight01(dist)));
@@ -164,7 +168,8 @@ export function createRenderer({
           .map((value) => Math.min(255, Math.round(Number(value) / 16) * 16))
           .join(', ')})`
       : lightColor;
-    const key = `${Math.round(shade * 64)}:${tint}`;
+    const quantizedInfluence = Math.round(Math.max(0, Math.min(2, colorInfluence)) * 10) / 10;
+    const key = `${Math.round(shade * 64)}:${quantizedInfluence}:${tint}`;
     const cacheKey = texture as object;
     const cachedByTint = tintedTextureCache.get(cacheKey);
     const cached = cachedByTint?.get(key);
@@ -179,7 +184,7 @@ export function createRenderer({
     cctx.imageSmoothingEnabled = false;
     cctx.drawImage(shaded, 0, 0, w, h);
     cctx.globalCompositeOperation = 'source-atop';
-    cctx.globalAlpha = 0.2;
+    cctx.globalAlpha = Math.min(0.4, 0.2 * quantizedInfluence);
     cctx.fillStyle = tint;
     cctx.fillRect(0, 0, w, h);
     cctx.globalCompositeOperation = 'source-over';
@@ -251,6 +256,10 @@ export function createRenderer({
 
   function setAmbientLightColor(color: string | null) {
     ambientLightColor = color;
+  }
+
+  function setAmbientLightColorInfluence(influence: number) {
+    ambientLightColorInfluence = Math.max(0, Math.min(2, influence));
   }
 
   function setLightingMultiplier(multiplier: number) {
@@ -417,7 +426,7 @@ export function createRenderer({
     if (ambientLightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = Math.min(0.48, 0.15 + litAmbient * 0.34);
+      ctx.globalAlpha = Math.min(0.48, 0.15 + litAmbient * 0.34) * ambientLightColorInfluence;
       ctx.fillStyle = ambientLightColor;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
@@ -517,6 +526,7 @@ export function createRenderer({
     img: string | number,
     light01: number = 1,
     lightColor: string | null = null,
+    lightColorInfluence: number = 1,
     columnWidth: number = 1,
   ) {
     const viewWidth = getViewWidth();
@@ -543,7 +553,7 @@ export function createRenderer({
     if (lightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = Math.min(0.42, 0.1 + l * 0.32);
+      ctx.globalAlpha = Math.min(0.84, Math.min(0.42, 0.1 + l * 0.32) * lightColorInfluence);
       ctx.fillStyle = lightColor;
       ctx.fillRect(x, y0, columnWidth, sliceHeight);
       ctx.restore();
@@ -583,8 +593,10 @@ export function createRenderer({
         const sourceTexture = getTextureForMaterial(s.material);
         const light01 = typeof getLightAt === 'function' ? getLightAt(s.x, s.y) : 1;
         const lightColor = typeof getLightColorAt === 'function' ? getLightColorAt(s.x, s.y) : null;
+        const colorInfluence =
+          typeof getLightColorInfluenceAt === 'function' ? getLightColorInfluenceAt(s.x, s.y) : 1;
         const texture = sourceTexture
-          ? getLitTexture(sourceTexture, light01, lightColor, dist)
+          ? getLitTexture(sourceTexture, light01, lightColor, colorInfluence, dist)
           : sourceTexture;
         return { s, dist, distPerp, rel, texture };
       })
@@ -787,6 +799,7 @@ export function createRenderer({
     setBackgroundMaterials,
     setAmbientLight01,
     setAmbientLightColor,
+    setAmbientLightColorInfluence,
     setLightingMultiplier,
     triggerFlash,
     triggerDamagePulse,

@@ -14,6 +14,7 @@ export type Light = {
   intensity: number;
   mode: LightMode;
   color: string | null;
+  colorInfluence: number;
   // Internal phase offset so simultaneous lights don't beat in lockstep.
   phase: number;
 };
@@ -21,6 +22,7 @@ export type Light = {
 type LightSample = {
   light01: number;
   color: string | null;
+  colorInfluence: number;
 };
 
 function parseHexColor(color: string | null): { r: number; g: number; b: number } | null {
@@ -60,6 +62,7 @@ export function createLightsSystem() {
       flicker?: boolean;
       mode?: string;
       color?: string;
+      colorInfluence?: number;
     }>,
   ) {
     tileLightCache.clear();
@@ -79,6 +82,8 @@ export function createLightsSystem() {
             intensity: typeof l.intensity === 'number' ? l.intensity : 1,
             mode: normalizeMode(l.mode, l.flicker),
             color: typeof l.color === 'string' ? l.color : null,
+            colorInfluence:
+              typeof l.colorInfluence === 'number' ? Math.max(0, Math.min(2, l.colorInfluence)) : 1,
             phase: i * 13.37,
           }))
       : [];
@@ -131,7 +136,7 @@ export function createLightsSystem() {
   }
 
   function computeLightSampleAt(x: number, y: number): LightSample {
-    if (!lights.length) return { light01: 1, color: null };
+    if (!lights.length) return { light01: 1, color: null, colorInfluence: 0 };
 
     let acc = 0;
     let colorWeight = 0;
@@ -152,10 +157,11 @@ export function createLightsSystem() {
       acc += contribution;
       const color = parseHexColor(l.color);
       if (color) {
-        colorWeight += contribution;
-        red += color.r * contribution;
-        green += color.g * contribution;
-        blue += color.b * contribution;
+        const coloredContribution = contribution * l.colorInfluence;
+        colorWeight += coloredContribution;
+        red += color.r * coloredContribution;
+        green += color.g * coloredContribution;
+        blue += color.b * coloredContribution;
       }
     }
 
@@ -170,7 +176,11 @@ export function createLightsSystem() {
       const b = Math.round(blue / colorWeight);
       if (Math.max(r, g, b) - Math.min(r, g, b) > 12) color = `rgb(${r}, ${g}, ${b})`;
     }
-    return { light01: Math.max(0, Math.min(1, out)), color };
+    return {
+      light01: Math.max(0, Math.min(1, out)),
+      color,
+      colorInfluence: Math.max(0, Math.min(2, colorWeight / Math.max(0.001, acc))),
+    };
   }
 
   function getTileLightCacheKey(x: number, y: number): string | null {
@@ -200,11 +210,16 @@ export function createLightsSystem() {
     return getLightSampleAt(x, y).color;
   }
 
+  function getLightColorInfluenceAt(x: number, y: number): number {
+    return getLightSampleAt(x, y).colorInfluence;
+  }
+
   return {
     setLights,
     onMapChanged,
     tick,
     getLightAt,
     getLightColorAt,
+    getLightColorInfluenceAt,
   };
 }

@@ -180,6 +180,7 @@ export type LevelLightJson = {
   y: number;
   radius: number;
   color?: string;
+  colorInfluence?: number;
   intensity?: number;
   flicker?: boolean;
   mode?: 'steady' | 'flicker' | 'emergency' | 'pulse' | 'organic';
@@ -550,6 +551,7 @@ export async function loadLevel(levelUrl: string) {
         y?: unknown;
         radius?: unknown;
         color?: unknown;
+        colorInfluence?: unknown;
         intensity?: unknown;
         flicker?: unknown;
         mode?: unknown;
@@ -574,6 +576,7 @@ export async function loadLevel(levelUrl: string) {
         y: l.y,
         radius: l.radius,
         color: typeof l.color === 'string' ? l.color : undefined,
+        colorInfluence: typeof l.colorInfluence === 'number' ? l.colorInfluence : undefined,
         intensity: typeof l.intensity === 'number' ? l.intensity : undefined,
         flicker: typeof l.flicker === 'boolean' ? l.flicker : undefined,
         mode,

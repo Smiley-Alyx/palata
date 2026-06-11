@@ -11,6 +11,7 @@ export function createWorldAdapter({
   isDoorRayBlockingAt,
   getLightAt,
   getLightColorAt,
+  getLightColorInfluenceAt,
 }: {
   isSolid: (x: number, y: number) => boolean;
   interact: (x: number, y: number) => void;
@@ -20,6 +21,7 @@ export function createWorldAdapter({
   isDoorRayBlockingAt?: (xMap: number, yMap: number, offset: number) => boolean;
   getLightAt?: (x: number, y: number) => number;
   getLightColorAt?: (x: number, y: number) => string | null;
+  getLightColorInfluenceAt?: (x: number, y: number) => number;
 }): World<string | number> {
   return {
     isSolid,
@@ -50,5 +52,6 @@ export function createWorldAdapter({
     getWallTextureOffset,
     getLightAt,
     getLightColorAt,
+    getLightColorInfluenceAt,
   };
 }

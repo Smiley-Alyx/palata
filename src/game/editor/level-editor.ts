@@ -48,6 +48,7 @@ type LightDraft = {
   radius: number;
   intensity: number;
   color: string;
+  colorInfluence: number;
   mode: LightMode;
 };
 
@@ -864,7 +865,13 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let viewerFrameIndex = 0;
   let historyIndex = 0;
   let savedHistoryIndex = 0;
-  const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
+  const lightDraft: LightDraft = {
+    radius: 5,
+    intensity: 0.8,
+    color: '#ffffff',
+    colorInfluence: 1,
+    mode: 'steady',
+  };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
   const noteDraft: NoteDraft = { title: '', text: '' };
   const history: EditorSnapshot[] = [];
@@ -1199,7 +1206,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     }
     if (selectedTool === 'light') {
       currentToolMode.textContent = 'Place light';
-      currentToolBrush.textContent = `${lightDraft.mode}, ${lightDraft.color}, radius ${lightDraft.radius}`;
+      currentToolBrush.textContent = `${lightDraft.mode}, ${lightDraft.color}, radius ${lightDraft.radius}, color influence ${lightDraft.colorInfluence}`;
       currentToolAction.textContent = 'Click a cell to place a light source.';
       return;
     }
@@ -1489,6 +1496,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         radius: lightDraft.radius,
         intensity: lightDraft.intensity,
         color: lightDraft.color,
+        colorInfluence: lightDraft.colorInfluence,
         mode: lightDraft.mode,
       });
       syncCell(x, y);
@@ -2125,6 +2133,18 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
             recordHistory();
           },
         );
+        addNumberInput(
+          editForm,
+          `Color influence ${lightIndex + 1}`,
+          typeof light.colorInfluence === 'number' ? light.colorInfluence : 1,
+          0,
+          2,
+          0.05,
+          (value) => {
+            light.colorInfluence = value;
+            recordHistory();
+          },
+        );
         addChoiceInput(
           editForm,
           `Light mode ${lightIndex + 1}`,
@@ -2383,6 +2403,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     });
     addColorInput(lightForm, 'Color', lightDraft.color, (value) => {
       lightDraft.color = value;
+      selectedTool = 'light';
+      syncToolButtons();
+    });
+    addNumberInput(lightForm, 'Color influence', lightDraft.colorInfluence, 0, 2, 0.05, (value) => {
+      lightDraft.colorInfluence = value;
       selectedTool = 'light';
       syncToolButtons();
     });

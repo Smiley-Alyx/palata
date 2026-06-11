@@ -31,6 +31,7 @@ type Renderer = {
     img: string | number,
     light01?: number,
     lightColor?: string | null,
+    lightColorInfluence?: number,
     columnWidth?: number,
   ) => void;
   drawMap: () => void;
@@ -59,6 +60,7 @@ export type World<MaterialId = string | number> = {
   getWallTextureOffset?: (hit: RayHit<MaterialId>) => number;
   getLightAt?: (x: number, y: number) => number;
   getLightColorAt?: (x: number, y: number) => string | null;
+  getLightColorInfluenceAt?: (x: number, y: number) => number;
 };
 
 export function createEngine({
