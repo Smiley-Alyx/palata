@@ -71,8 +71,9 @@ export function createRenderer({
   const renderTextureCache = new WeakMap<object, HTMLCanvasElement>();
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const tintedTextureCache = new WeakMap<object, Map<string, HTMLCanvasElement>>();
-  const textureDataCache = new WeakMap<object, ImageData>();
+  const planeTextureDataCache = new WeakMap<object, ImageData>();
   const MAX_RENDER_TEXTURE_SIZE = 256;
+  const MAX_PLANE_TEXTURE_SIZE = 512;
 
   function getSourceSize(src: CanvasImageSource): { w: number; h: number } {
     if (src instanceof HTMLImageElement) {
@@ -230,11 +231,30 @@ export function createRenderer({
     };
   }
 
-  function getTextureData(texture: CanvasImageSource): ImageData | null {
-    const cached = textureDataCache.get(texture as object);
+  function getTextureDataAtSize(
+    texture: CanvasImageSource,
+    maxSize: number,
+    cache: WeakMap<object, ImageData>,
+  ): ImageData | null {
+    const cached = cache.get(texture as object);
     if (cached) return cached;
 
-    const renderTexture = getRenderTexture(texture);
+    const { w: sourceW, h: sourceH } = getSourceSize(texture);
+    const largest = Math.max(sourceW, sourceH);
+    let renderTexture = texture;
+    if (largest > maxSize) {
+      const scale = maxSize / largest;
+      const resized = document.createElement('canvas');
+      resized.width = Math.max(1, Math.round(sourceW * scale));
+      resized.height = Math.max(1, Math.round(sourceH * scale));
+      const resizedCtx = resized.getContext('2d');
+      if (resizedCtx) {
+        resizedCtx.imageSmoothingEnabled = true;
+        resizedCtx.drawImage(texture, 0, 0, resized.width, resized.height);
+        renderTexture = resized;
+      }
+    }
+
     const { w, h } = getSourceSize(renderTexture);
     const canvas = document.createElement('canvas');
     canvas.width = w;
@@ -248,11 +268,15 @@ export function createRenderer({
 
     try {
       const data = cctx.getImageData(0, 0, w, h);
-      textureDataCache.set(texture as object, data);
+      cache.set(texture as object, data);
       return data;
     } catch {
       return null;
     }
+  }
+
+  function getPlaneTextureData(texture: CanvasImageSource): ImageData | null {
+    return getTextureDataAtSize(texture, MAX_PLANE_TEXTURE_SIZE, planeTextureDataCache);
   }
 
   function setBackgroundColors(colors: { ceiling?: string; floor?: string }) {
@@ -458,9 +482,9 @@ export function createRenderer({
 
     ctx.clearRect(0, 0, w, h);
     const ceilingTexture = ceilingMaterial != null ? getTextureForMaterial(ceilingMaterial) : null;
-    const ceilingData = ceilingTexture ? getTextureData(ceilingTexture) : null;
+    const ceilingData = ceilingTexture ? getPlaneTextureData(ceilingTexture) : null;
     const floorTexture = floorMaterial != null ? getTextureForMaterial(floorMaterial) : null;
-    const floorData = floorTexture ? getTextureData(floorTexture) : null;
+    const floorData = floorTexture ? getPlaneTextureData(floorTexture) : null;
 
     ctx.fillStyle = ceilingColor;
     ctx.fillRect(0, 0, w, h / 2);
@@ -468,7 +492,7 @@ export function createRenderer({
     ctx.fillStyle = floorColor;
     ctx.fillRect(0, h / 2, w, h / 2);
 
-    const planeScale = w > 480 ? 4 : 2;
+    const planeScale = w > 480 ? 2 : 1;
     drawBackgroundPlane(ceilingData, 0, h / 2, true, planeScale);
     drawBackgroundPlane(floorData, h / 2, h / 2, false, planeScale);
 
