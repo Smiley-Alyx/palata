@@ -18,6 +18,8 @@ export function createRenderer({
   getWeaponDef,
   getPerceptionStages,
   getNearestEnemyDistance,
+  getLightAt,
+  getLightColorAt,
 }: {
   ctx: CanvasRenderingContext2D;
   getViewWidth: () => number;
@@ -35,6 +37,8 @@ export function createRenderer({
   getWeaponDef?: () => WeaponDef | null;
   getPerceptionStages?: () => ReadonlyArray<PerceptionState>;
   getNearestEnemyDistance?: () => number | null;
+  getLightAt?: (x: number, y: number) => number;
+  getLightColorAt?: (x: number, y: number) => string | null;
 }) {
   let ceilingColor = '#E3E3E1';
   let floorColor = '#858585';
@@ -59,6 +63,7 @@ export function createRenderer({
   } | null = null;
   const renderTextureCache = new WeakMap<object, HTMLCanvasElement>();
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
+  const tintedTextureCache = new WeakMap<object, Map<string, HTMLCanvasElement>>();
   const textureDataCache = new WeakMap<object, ImageData>();
   const MAX_RENDER_TEXTURE_SIZE = 256;
 
@@ -139,6 +144,53 @@ export function createRenderer({
     }
     byShade.set(key, shaded);
     return shaded;
+  }
+
+  function getLitTexture(
+    texture: CanvasImageSource,
+    light01: number,
+    lightColor: string | null,
+    dist: number,
+  ): CanvasImageSource {
+    const light = Math.max(0, Math.min(1, light01 * lightingMultiplier * getDistanceLight01(dist)));
+    const shade = 1 - light;
+    const shaded = shade > 0.001 ? getShadedTexture(texture, shade) : texture;
+    if (!lightColor) return shaded;
+
+    const rgb = /^rgb\((\d+), (\d+), (\d+)\)$/.exec(lightColor);
+    const tint = rgb
+      ? `rgb(${rgb
+          .slice(1)
+          .map((value) => Math.min(255, Math.round(Number(value) / 16) * 16))
+          .join(', ')})`
+      : lightColor;
+    const key = `${Math.round(shade * 64)}:${tint}`;
+    const cacheKey = texture as object;
+    const cachedByTint = tintedTextureCache.get(cacheKey);
+    const cached = cachedByTint?.get(key);
+    if (cached) return cached;
+
+    const { w, h } = getSourceSize(shaded);
+    const tinted = document.createElement('canvas');
+    tinted.width = w;
+    tinted.height = h;
+    const cctx = tinted.getContext('2d');
+    if (!cctx) return shaded;
+    cctx.imageSmoothingEnabled = false;
+    cctx.drawImage(shaded, 0, 0, w, h);
+    cctx.globalCompositeOperation = 'source-atop';
+    cctx.globalAlpha = 0.62;
+    cctx.fillStyle = tint;
+    cctx.fillRect(0, 0, w, h);
+    cctx.globalCompositeOperation = 'source-over';
+
+    let byTint = cachedByTint;
+    if (!byTint) {
+      byTint = new Map();
+      tintedTextureCache.set(cacheKey, byTint);
+    }
+    byTint.set(key, tinted);
+    return tinted;
   }
 
   function getDistanceLight01(dist: number): number {
@@ -365,7 +417,7 @@ export function createRenderer({
     if (ambientLightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = Math.min(0.24, litAmbient * 0.22);
+      ctx.globalAlpha = Math.min(0.52, 0.18 + litAmbient * 0.3);
       ctx.fillStyle = ambientLightColor;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
@@ -491,7 +543,7 @@ export function createRenderer({
     if (lightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = Math.min(0.34, l * 0.3);
+      ctx.globalAlpha = Math.min(0.62, 0.18 + l * 0.44);
       ctx.fillStyle = lightColor;
       ctx.fillRect(x, y0, columnWidth, sliceHeight);
       ctx.restore();
@@ -528,7 +580,12 @@ export function createRenderer({
         rel = Math.atan2(Math.sin(rel), Math.cos(rel));
         const distPerp = dist * Math.cos(rel);
 
-        const texture = getTextureForMaterial(s.material);
+        const sourceTexture = getTextureForMaterial(s.material);
+        const light01 = typeof getLightAt === 'function' ? getLightAt(s.x, s.y) : 1;
+        const lightColor = typeof getLightColorAt === 'function' ? getLightColorAt(s.x, s.y) : null;
+        const texture = sourceTexture
+          ? getLitTexture(sourceTexture, light01, lightColor, dist)
+          : sourceTexture;
         return { s, dist, distPerp, rel, texture };
       })
       // back-to-front

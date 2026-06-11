@@ -910,6 +910,8 @@ function ensureEngine() {
     getWeaponDef: () => weaponsSystem.getCurrentDef(),
     getPerceptionStages: () => worldStateSystem?.getPerceptionStages() ?? [],
     getNearestEnemyDistance,
+    getLightAt: (x, y) => (lightsSystem ? lightsSystem.getLightAt(x, y) : 1),
+    getLightColorAt: (x, y) => (lightsSystem ? lightsSystem.getLightColorAt(x, y) : null),
   });
 
   lightsSystem = createLightsSystem();
