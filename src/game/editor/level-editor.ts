@@ -56,6 +56,11 @@ type TriggerDraft = {
   once: boolean;
 };
 
+type NoteDraft = {
+  title: string;
+  text: string;
+};
+
 type EditorSnapshot = {
   grid: number[][];
   materials: string[][];
@@ -825,6 +830,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let savedHistoryIndex = 0;
   const lightDraft: LightDraft = { radius: 5, intensity: 0.8, color: '#ffffff', mode: 'steady' };
   const triggerDraft: TriggerDraft = { sound: TRIGGER_SOUNDS[0], volume: 0.55, once: true };
+  const noteDraft: NoteDraft = { title: '', text: '' };
   const history: EditorSnapshot[] = [];
 
   const root = document.createElement('section');
@@ -1396,7 +1402,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       return;
     }
     if (selectedTool === 'entity') {
-      entities.push(selectedEntity.create(center.x, center.y));
+      const entity = selectedEntity.create(center.x, center.y);
+      if (entity.type === 'note') {
+        if (noteDraft.title) entity.title = noteDraft.title;
+        if (noteDraft.text) entity.text = noteDraft.text;
+      }
+      entities.push(entity);
       syncCell(x, y);
       syncCounts();
       recordHistory();
@@ -1968,6 +1979,33 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
             },
           );
         }
+
+        if (entity.type === 'note' || entity.type === 'message') {
+          addTextInput(
+            editForm,
+            `Title ${entityIndex + 1}`,
+            String(entity.title ?? ''),
+            false,
+            (value) => {
+              if (value) entity.title = value;
+              else delete entity.title;
+              recordHistory();
+              buildInspector();
+            },
+          );
+          addTextInput(
+            editForm,
+            `Text ${entityIndex + 1}`,
+            String(entity.text ?? ''),
+            true,
+            (value) => {
+              if (value) entity.text = value;
+              else delete entity.text;
+              recordHistory();
+              buildInspector();
+            },
+          );
+        }
       });
 
       const entries: Array<{ title: string; value: unknown }> = [
@@ -2064,6 +2102,25 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       });
       entityList.appendChild(button);
       paletteButtons.push(button);
+    }
+
+    const selectedEntitySample = selectedEntity.create(0.5, 0.5);
+    if (selectedEntitySample.type === 'note') {
+      const noteTitle = document.createElement('div');
+      noteTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+      noteTitle.textContent = 'New note text';
+      noteTitle.title = 'Optional text stored directly on newly placed notes.';
+      inspector.appendChild(noteTitle);
+
+      const noteForm = document.createElement('div');
+      noteForm.className = 'level-editor__form';
+      inspector.appendChild(noteForm);
+      addTextInput(noteForm, 'Title', noteDraft.title, false, (value) => {
+        noteDraft.title = value;
+      });
+      addTextInput(noteForm, 'Text', noteDraft.text, true, (value) => {
+        noteDraft.text = value;
+      });
     }
 
     const lightTitle = document.createElement('div');
@@ -2317,6 +2374,26 @@ function addColorInput(
   input.type = 'color';
   input.value = value;
   input.addEventListener('input', () => onInput(input.value));
+  row.append(caption, input);
+  parent.appendChild(row);
+}
+
+function addTextInput(
+  parent: HTMLElement,
+  label: string,
+  value: string,
+  multiline: boolean,
+  onChange: (value: string) => void,
+) {
+  const row = document.createElement('label');
+  row.className = 'level-editor__field';
+  const caption = document.createElement('span');
+  caption.textContent = label;
+  const input = multiline ? document.createElement('textarea') : document.createElement('input');
+  if (input instanceof HTMLTextAreaElement) input.rows = 4;
+  else input.type = 'text';
+  input.value = value;
+  input.addEventListener('change', () => onChange(input.value));
   row.append(caption, input);
   parent.appendChild(row);
 }

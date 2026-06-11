@@ -131,9 +131,9 @@ function showNarrativeMessage(
   collectDocument = false,
 ) {
   const assignedMessage = narrativeMessagesSystem.take(messageType);
-  const title = assignedMessage?.title ?? fallback?.title ?? 'Note';
-  const text = assignedMessage?.text ?? fallback?.text ?? '';
-  const isDocument = assignedMessage?.isDocument ?? !!fallback?.isDocument;
+  const title = fallback?.title ?? assignedMessage?.title ?? 'Note';
+  const text = fallback?.text ?? assignedMessage?.text ?? '';
+  const isDocument = fallback?.isDocument ?? !!assignedMessage?.isDocument;
 
   triggerKeyHallucination();
   showNoteOverlay(title, text, { document: isDocument });
