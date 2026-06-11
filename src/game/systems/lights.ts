@@ -25,6 +25,8 @@ type LightSample = {
   colorInfluence: number;
 };
 
+type IsLightBlockingAt = (xMap: number, yMap: number, offset: number) => boolean;
+
 function parseHexColor(color: string | null): { r: number; g: number; b: number } | null {
   if (!color) return null;
   const match = /^#([0-9a-f]{6})$/i.exec(color);
@@ -48,7 +50,11 @@ function normalizeMode(raw: unknown, flicker: boolean | undefined): LightMode {
   return flicker ? 'flicker' : 'steady';
 }
 
-export function createLightsSystem() {
+export function createLightsSystem({
+  isLightBlockingAt,
+}: {
+  isLightBlockingAt?: IsLightBlockingAt;
+} = {}) {
   let timeSec = 0;
   let lights: Light[] = [];
   const tileLightCache = new Map<string, LightSample>();
@@ -135,6 +141,46 @@ export function createLightsSystem() {
     }
   }
 
+  function hasLineOfSight(fromX: number, fromY: number, toX: number, toY: number): boolean {
+    if (typeof isLightBlockingAt !== 'function') return true;
+
+    let xMap = Math.floor(fromX);
+    let yMap = Math.floor(fromY);
+    const targetXMap = Math.floor(toX);
+    const targetYMap = Math.floor(toY);
+    if (xMap === targetXMap && yMap === targetYMap) return true;
+
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const stepX = dx < 0 ? -1 : 1;
+    const stepY = dy < 0 ? -1 : 1;
+    const deltaDistX = Math.abs(dx) < 0.000001 ? Infinity : Math.abs(1 / dx);
+    const deltaDistY = Math.abs(dy) < 0.000001 ? Infinity : Math.abs(1 / dy);
+    let sideDistX = dx < 0 ? (fromX - xMap) * deltaDistX : (xMap + 1 - fromX) * deltaDistX;
+    let sideDistY = dy < 0 ? (fromY - yMap) * deltaDistY : (yMap + 1 - fromY) * deltaDistY;
+
+    for (let steps = 0; steps < 4096; steps++) {
+      const isVerticalHit = sideDistX < sideDistY;
+      const rayDist = isVerticalHit ? sideDistX : sideDistY;
+      if (isVerticalHit) {
+        xMap += stepX;
+        sideDistX += deltaDistX;
+      } else {
+        yMap += stepY;
+        sideDistY += deltaDistY;
+      }
+
+      if (xMap === targetXMap && yMap === targetYMap) return true;
+
+      const hitX = fromX + rayDist * dx;
+      const hitY = fromY + rayDist * dy;
+      const offset = isVerticalHit ? ((hitY % 1) + 1) % 1 : ((hitX % 1) + 1) % 1;
+      if (isLightBlockingAt(xMap, yMap, offset)) return false;
+    }
+
+    return false;
+  }
+
   function computeLightSampleAt(x: number, y: number): LightSample {
     if (!lights.length) return { light01: 1, color: null, colorInfluence: 0 };
 
@@ -150,6 +196,7 @@ export function createLightsSystem() {
       const distSq = dx * dx + dy * dy;
       const radiusSq = l.radius * l.radius;
       if (distSq > radiusSq) continue;
+      if (!hasLineOfSight(l.x, l.y, x, y)) continue;
 
       const falloff = 1 - Math.sqrt(distSq) / l.radius;
       const inten = l.intensity * modulate(l.mode, l.phase);

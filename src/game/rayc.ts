@@ -7,6 +7,7 @@ import { AudioManager } from './audio/audio-manager';
 import { DEFAULT_SFX, SFX } from './audio/sfx-config';
 import {
   getMap,
+  hitWall,
   isDoorCell,
   setLegend as setLegendState,
   setMap as setMapState,
@@ -916,7 +917,14 @@ function ensureEngine() {
       lightsSystem ? lightsSystem.getLightColorInfluenceAt(x, y) : 0,
   });
 
-  lightsSystem = createLightsSystem();
+  lightsSystem = createLightsSystem({
+    isLightBlockingAt: (xMap, yMap, offset) => {
+      if (isDoorCell(xMap, yMap)) {
+        return !doorsSystem || doorsSystem.isDoorRayBlockingAt(xMap, yMap, offset);
+      }
+      return hitWall(xMap + 0.5, yMap + 0.5);
+    },
+  });
   hallucinationsSystem = createHallucinationsSystem({
     player,
     playSfx: (key) => audio.playSfx(key),
