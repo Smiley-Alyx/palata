@@ -161,7 +161,8 @@ export function createLightsSystem() {
 
     // Base ambient to avoid fully black walls.
     const ambient = 0.22;
-    const out = ambient + acc;
+    const normalized = 1 - Math.exp(-Math.max(0, acc) * 0.85);
+    const out = ambient + normalized * (1 - ambient);
     let color: string | null = null;
     if (colorWeight > 0.001) {
       const r = Math.round(red / colorWeight);

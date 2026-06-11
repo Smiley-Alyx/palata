@@ -364,8 +364,8 @@ export function createRenderer({
 
     if (ambientLightColor) {
       ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = Math.min(0.22, litAmbient * 0.2);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = Math.min(0.24, litAmbient * 0.22);
       ctx.fillStyle = ambientLightColor;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
@@ -490,8 +490,8 @@ export function createRenderer({
     ctx.drawImage(drawTexture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
     if (lightColor) {
       ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = Math.min(0.3, l * 0.26);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = Math.min(0.34, l * 0.3);
       ctx.fillStyle = lightColor;
       ctx.fillRect(x, y0, columnWidth, sliceHeight);
       ctx.restore();

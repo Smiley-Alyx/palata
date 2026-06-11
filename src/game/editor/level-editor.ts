@@ -2059,7 +2059,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
           editForm,
           `Light intensity ${lightIndex + 1}`,
           typeof light.intensity === 'number' ? light.intensity : 1,
-          0.05,
+          0,
           2,
           0.05,
           (value) => {
@@ -2223,7 +2223,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       selectedTool = 'light';
       syncToolButtons();
     });
-    addNumberInput(lightForm, 'Intensity', lightDraft.intensity, 0.05, 2, 0.05, (value) => {
+    addNumberInput(lightForm, 'Intensity', lightDraft.intensity, 0, 2, 0.05, (value) => {
       lightDraft.intensity = value;
       selectedTool = 'light';
       syncToolButtons();
