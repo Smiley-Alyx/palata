@@ -12,6 +12,7 @@ type LevelJson = Record<string, unknown> & {
   entities?: unknown;
   lights?: unknown;
   triggers?: unknown;
+  messagePools?: unknown;
 };
 
 type EditorTool =
@@ -61,6 +62,14 @@ type NoteDraft = {
   text: string;
 };
 
+type EditorMessage = {
+  title: string;
+  text: string;
+  isDocument?: boolean;
+};
+
+type EditorMessagePools = Record<string, EditorMessage[]>;
+
 type EditorSnapshot = {
   grid: number[][];
   materials: string[][];
@@ -68,6 +77,7 @@ type EditorSnapshot = {
   entities: Record<string, unknown>[];
   lights: Record<string, unknown>[];
   triggers: Record<string, unknown>[];
+  messagePools: EditorMessagePools;
 };
 
 type LevelEditorOptions = {
@@ -630,6 +640,27 @@ function readObjects<T extends Record<string, unknown>>(raw: unknown) {
     : [];
 }
 
+function readMessagePools(raw: unknown): EditorMessagePools {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const pools: EditorMessagePools = {};
+  for (const [messageType, messages] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(messages)) continue;
+    pools[messageType] = messages.flatMap((message): EditorMessage[] => {
+      if (!message || typeof message !== 'object') return [];
+      const item = message as { title?: unknown; text?: unknown; isDocument?: unknown };
+      if (typeof item.title !== 'string' || typeof item.text !== 'string') return [];
+      return [
+        {
+          title: item.title,
+          text: item.text,
+          isDocument: typeof item.isDocument === 'boolean' ? item.isDocument : undefined,
+        },
+      ];
+    });
+  }
+  return pools;
+}
+
 function makeButton(label: string, className = 'level-editor__button') {
   const button = document.createElement('button');
   button.type = 'button';
@@ -805,11 +836,16 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const entities = readObjects<Record<string, unknown>>(level.entities);
   const lights = readObjects<Record<string, unknown>>(level.lights);
   const triggers = readObjects<Record<string, unknown>>(level.triggers);
+  const messagePools = readMessagePools(level.messagePools);
   const spawn = readSpawn(level);
   const hadMaterials = Array.isArray(level.materialsWall);
   const hadEntities = Array.isArray(level.entities);
   const hadLights = Array.isArray(level.lights);
   const hadTriggers = Array.isArray(level.triggers);
+  const hadMessagePools =
+    !!level.messagePools &&
+    typeof level.messagePools === 'object' &&
+    !Array.isArray(level.messagePools);
   const legend =
     level.legend && typeof level.legend === 'object'
       ? (level.legend as Record<string, unknown>)
@@ -1220,7 +1256,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const syncCounts = () => {
     const materialCount = compactMaterials(materials).length;
-    countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat`;
+    const messageCount = Object.values(messagePools).reduce(
+      (sum, messages) => sum + messages.length,
+      0,
+    );
+    countsInfo.textContent = `${entities.length} ent / ${lights.length} light / ${triggers.length} trig / ${materialCount} mat / ${messageCount} msg`;
   };
 
   const captureSnapshot = (): EditorSnapshot => ({
@@ -1230,6 +1270,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     entities: structuredClone(entities),
     lights: structuredClone(lights),
     triggers: structuredClone(triggers),
+    messagePools: structuredClone(messagePools),
   });
 
   const syncHistory = () => {
@@ -1265,6 +1306,8 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     replaceArray(entities, snapshot.entities);
     replaceArray(lights, snapshot.lights);
     replaceArray(triggers, snapshot.triggers);
+    for (const key of Object.keys(messagePools)) delete messagePools[key];
+    Object.assign(messagePools, structuredClone(snapshot.messagePools));
     rebuildGrid();
     syncAllCells();
     buildInspector();
@@ -1570,6 +1613,9 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
     if (triggers.length || hadTriggers) next.triggers = triggers;
     else delete next.triggers;
+
+    if (Object.keys(messagePools).length || hadMessagePools) next.messagePools = messagePools;
+    else delete next.messagePools;
 
     return `${JSON.stringify(next, null, 2)}\n`;
   };
@@ -2128,6 +2174,113 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         item.append(title, value);
         selectionPanel.appendChild(item);
       }
+    }
+
+    const textsTitle = document.createElement('div');
+    textsTitle.className = 'level-editor__section-title level-editor__section-title--spaced';
+    textsTitle.textContent = 'Texts';
+    textsTitle.title = 'Edit messagePools used by notes, cards, inscriptions and other messages.';
+    inspector.appendChild(textsTitle);
+
+    const textsPanel = document.createElement('div');
+    textsPanel.className = 'level-editor__selection';
+    inspector.appendChild(textsPanel);
+
+    const addCategoryForm = document.createElement('div');
+    addCategoryForm.className = 'level-editor__form level-editor__selection-form';
+    const categoryInput = document.createElement('input');
+    categoryInput.type = 'text';
+    categoryInput.className = 'level-editor__text-input';
+    categoryInput.placeholder = 'New message type';
+    const addCategoryButton = makeButton('Add text category');
+    const addCategory = () => {
+      const messageType = categoryInput.value.trim();
+      if (!messageType) {
+        showStatus(status, 'Message type is required');
+        return;
+      }
+      if (messagePools[messageType]) {
+        showStatus(status, `Message type ${messageType} already exists`);
+        return;
+      }
+      messagePools[messageType] = [];
+      recordHistory();
+      syncCounts();
+      buildInspector();
+    };
+    addCategoryButton.addEventListener('click', addCategory);
+    categoryInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addCategory();
+    });
+    addCategoryForm.append(categoryInput, addCategoryButton);
+    textsPanel.appendChild(addCategoryForm);
+
+    for (const messageType of Object.keys(messagePools).sort()) {
+      const messages = messagePools[messageType];
+      const categoryPanel = document.createElement('section');
+      categoryPanel.className = 'level-editor__selection-item';
+      const categoryTitle = document.createElement('div');
+      categoryTitle.className = 'level-editor__selection-title';
+      categoryTitle.textContent = `${messageType} (${messages.length})`;
+      categoryPanel.appendChild(categoryTitle);
+
+      const categoryActions = document.createElement('div');
+      categoryActions.className = 'level-editor__form level-editor__selection-form';
+      const addMessageButton = makeButton('Add message');
+      addMessageButton.addEventListener('click', () => {
+        messages.push({ title: 'New message', text: '', isDocument: true });
+        recordHistory();
+        syncCounts();
+        buildInspector();
+      });
+      const deleteCategoryButton = makeButton(
+        'Delete category',
+        'level-editor__button level-editor__button--danger',
+      );
+      deleteCategoryButton.addEventListener('click', () => {
+        delete messagePools[messageType];
+        recordHistory();
+        syncCounts();
+        buildInspector();
+      });
+      categoryActions.append(addMessageButton, deleteCategoryButton);
+      categoryPanel.appendChild(categoryActions);
+
+      messages.forEach((message, messageIndex) => {
+        const messageForm = document.createElement('div');
+        messageForm.className = 'level-editor__form level-editor__selection-form';
+        const messageTitle = document.createElement('div');
+        messageTitle.className = 'level-editor__selection-subtitle';
+        messageTitle.textContent = `Message ${messageIndex + 1}`;
+        messageForm.appendChild(messageTitle);
+        addTextInput(messageForm, 'Title', message.title, false, (value) => {
+          message.title = value;
+          recordHistory();
+        });
+        addTextInput(messageForm, 'Text', message.text, true, (value) => {
+          message.text = value;
+          recordHistory();
+        });
+        addCheckboxInput(messageForm, 'Document', !!message.isDocument, (value) => {
+          message.isDocument = value;
+          recordHistory();
+        });
+        const deleteMessageButton = makeButton(
+          'Delete message',
+          'level-editor__button level-editor__button--danger',
+        );
+        deleteMessageButton.addEventListener('click', () => {
+          messages.splice(messageIndex, 1);
+          recordHistory();
+          syncCounts();
+          buildInspector();
+        });
+        messageForm.appendChild(deleteMessageButton);
+        categoryPanel.appendChild(messageForm);
+      });
+      textsPanel.appendChild(categoryPanel);
     }
 
     const materialTitle = document.createElement('div');
