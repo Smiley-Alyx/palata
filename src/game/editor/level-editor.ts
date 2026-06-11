@@ -817,6 +817,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   let painting = false;
   let cellSize = 16;
   let selectedCell: { x: number; y: number } | null = null;
+  const selectedCells = new Set<string>();
   let previewAsset: { id: string; label: string } | null = null;
   let viewerFrames: AssetFrame[] = [];
   let viewerFrameIndex = 0;
@@ -852,12 +853,14 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const undoButton = makeButton('Undo');
   const redoButton = makeButton('Redo');
+  const selectAllButton = makeButton('Select all cells');
   const viewButton = makeButton('View');
   const playtestButton = makeButton('Playtest');
   const saveButton = makeButton('Save level');
   const closeButton = makeButton('Close');
   undoButton.title = 'Undo the last map change (Ctrl/Cmd+Z)';
   redoButton.title = 'Repeat the last undone map change (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)';
+  selectAllButton.title = 'Select every map cell (Ctrl/Cmd+A)';
   viewButton.title = 'Select a material, entity or occupied cell to preview its asset';
   viewButton.disabled = true;
   saveButton.title = 'Write the current map to its JSON file (Ctrl/Cmd+S)';
@@ -866,7 +869,15 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   playtestButton.title = options.onPlaytest
     ? 'Save changes and play the level'
     : 'Playtest is unavailable';
-  headerActions.append(undoButton, redoButton, viewButton, playtestButton, saveButton, closeButton);
+  headerActions.append(
+    undoButton,
+    redoButton,
+    selectAllButton,
+    viewButton,
+    playtestButton,
+    saveButton,
+    closeButton,
+  );
   header.appendChild(headerActions);
 
   const layout = document.createElement('div');
@@ -1170,9 +1181,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       return;
     }
     currentToolMode.textContent = 'Inspect cell';
-    currentToolBrush.textContent = selectedCell
-      ? `Cell ${selectedCell.x}, ${selectedCell.y}`
-      : 'No cell selected';
+    currentToolBrush.textContent =
+      selectedCells.size > 1
+        ? `${selectedCells.size} cells selected`
+        : selectedCell
+          ? `Cell ${selectedCell.x}, ${selectedCell.y}`
+          : 'No cell selected';
     currentToolAction.textContent = 'Click a cell to show its contents in the inspector.';
   };
 
@@ -1307,7 +1321,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     cell.classList.toggle('has-entity', objects.ent.length > 0);
     cell.classList.toggle('has-light', objects.light.length > 0);
     cell.classList.toggle('has-trigger', objects.trigger.length > 0);
-    cell.classList.toggle('is-selected', selectedCell?.x === x && selectedCell.y === y);
+    cell.classList.toggle('is-selected', selectedCells.has(`${x},${y}`));
     cell.title = cellTitle(x, y);
     cell.replaceChildren();
     if (grid[y][x] !== 0 && materials[y][x]) {
@@ -1448,7 +1462,9 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const selectCell = (x: number, y: number) => {
     if (!grid[y] || grid[y][x] === undefined) return;
-    const prev = selectedCell;
+    const previousCells = [...selectedCells];
+    selectedCells.clear();
+    selectedCells.add(`${x},${y}`);
     selectedCell = { x, y };
     const objects = objectsAt(x, y);
     const entity = objects.ent.find((item) => entityPreviewId(item));
@@ -1468,8 +1484,23 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     } else {
       setPreviewAsset('', '');
     }
-    if (prev) syncCell(prev.x, prev.y);
+    for (const key of previousCells) {
+      const [prevX, prevY] = key.split(',').map(Number);
+      syncCell(prevX, prevY);
+    }
     syncCell(x, y);
+    syncCurrentTool();
+    buildInspector();
+  };
+
+  const selectAllCells = () => {
+    selectedCells.clear();
+    for (let y = 0; y < grid.length; y++) {
+      for (let x = 0; x < grid[y].length; x++) selectedCells.add(`${x},${y}`);
+    }
+    selectedCell = grid[0]?.length ? { x: 0, y: 0 } : null;
+    setPreviewAsset('', '');
+    syncAllCells();
     syncCurrentTool();
     buildInspector();
   };
@@ -1610,6 +1641,8 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     if (selectedCell && (selectedCell.x >= nextWidth || selectedCell.y >= nextHeight)) {
       selectedCell = null;
     }
+    selectedCells.clear();
+    if (selectedCell) selectedCells.add(`${selectedCell.x},${selectedCell.y}`);
     rebuildGrid();
     syncAllCells();
     buildInspector();
@@ -1660,6 +1693,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   );
   undoButton.addEventListener('click', () => stepHistory(-1));
   redoButton.addEventListener('click', () => stepHistory(1));
+  selectAllButton.addEventListener('click', selectAllCells);
   viewButton.addEventListener('click', openAssetViewer);
   assetViewerClose.addEventListener('click', closeAssetViewer);
   assetViewerPrevious.addEventListener('click', () => {
@@ -1689,6 +1723,100 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
     if (!selectedCell) {
       selectionPanel.textContent = 'No cell selected';
+    } else if (selectedCells.size > 1) {
+      const selected = [...selectedCells].map((key) => {
+        const [x, y] = key.split(',').map(Number);
+        return { x, y };
+      });
+      const editTitle = document.createElement('div');
+      editTitle.className = 'level-editor__selection-subtitle';
+      editTitle.textContent = `Edit ${selected.length} selected cells`;
+      selectionPanel.appendChild(editTitle);
+      const editForm = document.createElement('div');
+      editForm.className = 'level-editor__form level-editor__selection-form';
+      selectionPanel.appendChild(editForm);
+
+      const deleteCellsButton = makeButton(
+        'Delete everything from selected cells',
+        'level-editor__button level-editor__button--danger',
+      );
+      deleteCellsButton.addEventListener('click', () => {
+        for (const { x, y } of selected) {
+          grid[y][x] = 0;
+          materials[y][x] = '';
+        }
+        const isSelectedObject = (x: unknown, y: unknown) =>
+          selectedCells.has(`${objectCell(x)},${objectCell(y)}`);
+        replaceArray(
+          entities,
+          entities.filter((entity) => !isSelectedObject(entity.x, entity.y)),
+        );
+        replaceArray(
+          lights,
+          lights.filter((light) => !isSelectedObject(light.x, light.y)),
+        );
+        replaceArray(
+          triggers,
+          triggers.filter((trigger) => {
+            const zone = trigger.trigger as { x?: unknown; y?: unknown } | undefined;
+            return !isSelectedObject(zone?.x, zone?.y);
+          }),
+        );
+        selectedValue = 0;
+        selectedMaterial = '';
+        setPreviewAsset('', '');
+        syncAllCells();
+        recordHistory();
+        buildInspector();
+        syncToolButtons();
+        showStatus(status, `${selected.length} cells cleared`);
+      });
+      editForm.appendChild(deleteCellsButton);
+
+      const geometryValues = new Set(selected.map(({ x, y }) => grid[y][x]));
+      addChoiceInput(
+        editForm,
+        'Geometry',
+        [
+          ...(geometryValues.size > 1 ? [{ value: '', label: 'Mixed' }] : []),
+          ...TILE_TOOLS.map((tool) => ({ value: String(tool.value), label: tool.label })),
+        ],
+        geometryValues.size === 1 ? String(grid[selected[0].y][selected[0].x]) : '',
+        (value) => {
+          if (!value) return;
+          selectedValue = Number(value);
+          for (const { x, y } of selected) {
+            grid[y][x] = selectedValue;
+            if (selectedValue === 0) materials[y][x] = '';
+          }
+          syncAllCells();
+          recordHistory();
+          buildInspector();
+          syncToolButtons();
+        },
+      );
+
+      const materialValues = new Set(selected.map(({ x, y }) => materials[y][x]));
+      addChoiceInput(
+        editForm,
+        'Material',
+        [
+          ...(materialValues.size > 1 ? [{ value: '__mixed__', label: 'Mixed' }] : []),
+          { value: '', label: 'Default' },
+          ...MATERIAL_TOOLS.map((material) => ({ value: material, label: material })),
+        ],
+        materialValues.size === 1 ? materials[selected[0].y][selected[0].x] : '__mixed__',
+        (value) => {
+          if (value === '__mixed__') return;
+          selectedMaterial = value;
+          for (const { x, y } of selected) materials[y][x] = value;
+          setPreviewAsset(value, value ? `Material ${value}` : '');
+          syncAllCells();
+          recordHistory();
+          buildInspector();
+          syncToolButtons();
+        },
+      );
     } else {
       const { x, y } = selectedCell;
       const objects = objectsAt(x, y);
@@ -2055,6 +2183,11 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       target instanceof HTMLTextAreaElement ||
       (target instanceof HTMLElement && target.isContentEditable)
     ) {
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
+      e.preventDefault();
+      selectAllCells();
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
