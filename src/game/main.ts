@@ -248,95 +248,6 @@ function computeInitialVisibleCells({
   return visible;
 }
 
-function placeRandomEnemies({
-  grid,
-  player,
-  difficulty,
-}: {
-  grid: number[][];
-  player: ReturnType<typeof getPlayer>;
-  difficulty: Difficulty;
-}) {
-  const visible = computeInitialVisibleCells({
-    grid,
-    x: player.x,
-    y: player.y,
-    rot: player.rot,
-    fov: player.fov,
-  });
-
-  const w = grid[0]?.length ?? 0;
-  const h = grid.length;
-
-  const reachable = new Set<string>();
-  const q: Array<{ x: number; y: number }> = [];
-  const sx = Math.floor(player.x);
-  const sy = Math.floor(player.y);
-  if (sx >= 0 && sx < w && sy >= 0 && sy < h && grid[sy][sx] === 0) {
-    q.push({ x: sx, y: sy });
-    reachable.add(`${sx},${sy}`);
-  }
-  while (q.length) {
-    const { x, y } = q.shift()!;
-    const n = [
-      { x: x + 1, y },
-      { x: x - 1, y },
-      { x, y: y + 1 },
-      { x, y: y - 1 },
-    ];
-    for (const p of n) {
-      if (p.x < 0 || p.x >= w || p.y < 0 || p.y >= h) continue;
-      if (grid[p.y][p.x] !== 0) continue;
-      const key = `${p.x},${p.y}`;
-      if (reachable.has(key)) continue;
-      reachable.add(key);
-      q.push(p);
-    }
-  }
-  let divisor = 30;
-  let minCount = 22;
-  let maxCount = 54;
-  let minSpawnDist = 2.35;
-
-  if (difficulty === 'trapped') {
-    divisor = 20;
-    minCount = 36;
-    maxCount = 88;
-    minSpawnDist = 2.05;
-  }
-  if (difficulty === 'consumed') {
-    divisor = 14;
-    minCount = 70;
-    maxCount = 180;
-    minSpawnDist = 1.75;
-  }
-
-  const approxCount = Math.floor((w * h) / divisor);
-  const count = Math.max(minCount, Math.min(maxCount, approxCount));
-  let placed = 0;
-  let attempts = 0;
-
-  const orderlyW = difficulty === 'lost' ? 1 : difficulty === 'trapped' ? 2 : 4;
-  const result: Array<{ x: number; y: number; kind: 'skeleton_husk' | 'medical_orderly' }> = [];
-
-  while (placed < count && attempts < 5000) {
-    attempts++;
-    const x = 1 + Math.floor(Math.random() * Math.max(1, w - 2));
-    const y = 1 + Math.floor(Math.random() * Math.max(1, h - 2));
-    if (grid[y][x] !== 0) continue;
-    if (!reachable.has(`${x},${y}`)) continue;
-    if (visible.has(`${x},${y}`)) continue;
-    const dist = Math.hypot(player.x - (x + 0.5), player.y - (y + 0.5));
-    if (dist < minSpawnDist) continue;
-    const total = 10 + orderlyW;
-    const kind = Math.random() * total < orderlyW ? 'medical_orderly' : 'skeleton_husk';
-    result.push({ x: x + 0.5, y: y + 0.5, kind });
-    placed++;
-  }
-
-  return result;
-}
-
 function stripEnemyCellsFromGrid(grid: number[][], legend: Record<string, string>) {
   if (!grid.length || !grid[0]?.length) return;
   const enemyIds = new Set<number>();
@@ -1010,6 +921,7 @@ async function startLevelById(
   const entities = level.entities ?? [];
   const hasEntities = Array.isArray(entities) && entities.length > 0;
 
+  setEnemies([]);
   if (hasEntities) {
     setEntities(entities);
   } else {
@@ -1018,12 +930,6 @@ async function startLevelById(
   }
 
   const p = getPlayer();
-  const hasEntityEnemySpawns =
-    hasEntities &&
-    entities.some((e) => e && typeof e === 'object' && (e as any).type === 'enemy_spawn');
-  if (!hasEntityEnemySpawns) {
-    setEnemies(placeRandomEnemies({ grid: level.grid, player: p, difficulty }));
-  }
   setHealthPickups(placeRandomHealthPickups({ grid: level.grid, player: p, difficulty }));
 
   setAudioConfig({

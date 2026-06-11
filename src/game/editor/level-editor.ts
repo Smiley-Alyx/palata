@@ -1287,12 +1287,13 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
 
   const objectsAt = (x: number, y: number) => {
     const ent = entities.filter((e) => objectCell(e.x) === x && objectCell(e.y) === y);
+    const enemy = ent.filter((e) => e.type === 'enemy_spawn');
     const light = lights.filter((l) => objectCell(l.x) === x && objectCell(l.y) === y);
     const trigger = triggers.filter((t) => {
       const zone = t.trigger as { x?: unknown; y?: unknown } | undefined;
       return objectCell(zone?.x) === x && objectCell(zone?.y) === y;
     });
-    return { ent, light, trigger };
+    return { ent, enemy, light, trigger };
   };
 
   const legendMaterialAt = (x: number, y: number) => {
@@ -1312,6 +1313,10 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const material = effectiveMaterialAt(x, y);
     if (material) parts.push(`mat ${material}`);
     if (objects.ent.length) parts.push(`${objects.ent.length} entities`);
+    if (objects.enemy.length) {
+      const kinds = objects.enemy.map((enemy) => String(enemy.kind ?? 'enemy')).join(', ');
+      parts.push(`enemies: ${kinds}`);
+    }
     if (objects.light.length) parts.push(`${objects.light.length} lights`);
     if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
     return parts.join(' | ');
@@ -1340,6 +1345,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const marker = document.createElement('span');
       marker.className = 'level-editor__marker level-editor__marker--entity';
       marker.textContent = String(objects.ent.length);
+      cell.appendChild(marker);
+    }
+    if (objects.enemy.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--enemy';
+      marker.textContent = objects.enemy.length > 1 ? `E${objects.enemy.length}` : 'E';
       cell.appendChild(marker);
     }
     if (objects.light.length) {
