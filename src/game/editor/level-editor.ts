@@ -1288,12 +1288,13 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
   const objectsAt = (x: number, y: number) => {
     const ent = entities.filter((e) => objectCell(e.x) === x && objectCell(e.y) === y);
     const enemy = ent.filter((e) => e.type === 'enemy_spawn');
+    const health = ent.filter((e) => e.type === 'health_pickup' || e.type === 'health');
     const light = lights.filter((l) => objectCell(l.x) === x && objectCell(l.y) === y);
     const trigger = triggers.filter((t) => {
       const zone = t.trigger as { x?: unknown; y?: unknown } | undefined;
       return objectCell(zone?.x) === x && objectCell(zone?.y) === y;
     });
-    return { ent, enemy, light, trigger };
+    return { ent, enemy, health, light, trigger };
   };
 
   const legendMaterialAt = (x: number, y: number) => {
@@ -1317,6 +1318,7 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const kinds = objects.enemy.map((enemy) => String(enemy.kind ?? 'enemy')).join(', ');
       parts.push(`enemies: ${kinds}`);
     }
+    if (objects.health.length) parts.push(`${objects.health.length} health pickups`);
     if (objects.light.length) parts.push(`${objects.light.length} lights`);
     if (objects.trigger.length) parts.push(`${objects.trigger.length} triggers`);
     return parts.join(' | ');
@@ -1351,6 +1353,12 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
       const marker = document.createElement('span');
       marker.className = 'level-editor__marker level-editor__marker--enemy';
       marker.textContent = objects.enemy.length > 1 ? `E${objects.enemy.length}` : 'E';
+      cell.appendChild(marker);
+    }
+    if (objects.health.length) {
+      const marker = document.createElement('span');
+      marker.className = 'level-editor__marker level-editor__marker--health';
+      marker.textContent = objects.health.length > 1 ? `H${objects.health.length}` : 'H';
       cell.appendChild(marker);
     }
     if (objects.light.length) {

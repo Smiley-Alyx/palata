@@ -81,96 +81,6 @@ function getDefaultMusicForLevelId(levelId: string) {
   };
 }
 
-function placeRandomHealthPickups({
-  grid,
-  player,
-  difficulty,
-}: {
-  grid: number[][];
-  player: ReturnType<typeof getPlayer>;
-  difficulty: Difficulty;
-}) {
-  const visible = computeInitialVisibleCells({
-    grid,
-    x: player.x,
-    y: player.y,
-    rot: player.rot,
-    fov: player.fov,
-  });
-
-  const w = grid[0]?.length ?? 0;
-  const h = grid.length;
-
-  const reachable = new Set<string>();
-  const q: Array<{ x: number; y: number }> = [];
-  const sx = Math.floor(player.x);
-  const sy = Math.floor(player.y);
-  if (sx >= 0 && sx < w && sy >= 0 && sy < h && grid[sy][sx] === 0) {
-    q.push({ x: sx, y: sy });
-    reachable.add(`${sx},${sy}`);
-  }
-  while (q.length) {
-    const { x, y } = q.shift()!;
-    const n = [
-      { x: x + 1, y },
-      { x: x - 1, y },
-      { x, y: y + 1 },
-      { x, y: y - 1 },
-    ];
-    for (const p of n) {
-      if (p.x < 0 || p.x >= w || p.y < 0 || p.y >= h) continue;
-      if (grid[p.y][p.x] !== 0) continue;
-      const key = `${p.x},${p.y}`;
-      if (reachable.has(key)) continue;
-      reachable.add(key);
-      q.push(p);
-    }
-  }
-
-  let divisor = 150;
-  let minCount = 2;
-  let maxCount = 8;
-  let minSpawnDist = 2.35;
-  if (difficulty === 'trapped') {
-    divisor = 230;
-    minCount = 1;
-    maxCount = 4;
-    minSpawnDist = 2.9;
-  }
-  if (difficulty === 'consumed') {
-    divisor = 320;
-    minCount = 0;
-    maxCount = 3;
-    minSpawnDist = 3.25;
-  }
-
-  const approxCount = Math.floor((w * h) / divisor);
-  const count = Math.max(minCount, Math.min(maxCount, approxCount));
-
-  const result: Array<{ x: number; y: number }> = [];
-  const used = new Set<string>();
-  let placed = 0;
-  let attempts = 0;
-
-  while (placed < count && attempts < 5000) {
-    attempts++;
-    const x = 1 + Math.floor(Math.random() * Math.max(1, w - 2));
-    const y = 1 + Math.floor(Math.random() * Math.max(1, h - 2));
-    if (grid[y][x] !== 0) continue;
-    const k = `${x},${y}`;
-    if (!reachable.has(k)) continue;
-    if (visible.has(k)) continue;
-    if (used.has(k)) continue;
-    const dist = Math.hypot(player.x - (x + 0.5), player.y - (y + 0.5));
-    if (dist < minSpawnDist) continue;
-    used.add(k);
-    result.push({ x: x + 0.5, y: y + 0.5 });
-    placed++;
-  }
-
-  return result;
-}
-
 function applyMenuAudio() {
   setAudioConfig({
     music: getDefaultMusicForLevelId('menu'),
@@ -211,41 +121,6 @@ function initDeathUi() {
     const detail = (e as CustomEvent<{ levelId?: string; message?: string }>).detail;
     void transitionToNextLevel(detail?.levelId, detail?.message);
   });
-}
-
-function computeInitialVisibleCells({
-  grid,
-  x,
-  y,
-  rot,
-  fov,
-}: {
-  grid: number[][];
-  x: number;
-  y: number;
-  rot: number;
-  fov: number;
-}) {
-  const visible = new Set<string>();
-  const rays = 64;
-  const maxDist = 14;
-  const step = 0.12;
-
-  for (let i = 0; i < rays; i++) {
-    const a = rot - fov / 2 + (i / (rays - 1)) * fov;
-    for (let d = 0; d < maxDist; d += step) {
-      const px = x + d * Math.cos(a);
-      const py = y - d * Math.sin(a);
-      const cx = Math.floor(px);
-      const cy = Math.floor(py);
-      if (cy < 0 || cy >= grid.length) break;
-      if (cx < 0 || cx >= grid[0].length) break;
-      visible.add(`${cx},${cy}`);
-      if (grid[cy][cx] !== 0) break;
-    }
-  }
-
-  return visible;
 }
 
 function stripEnemyCellsFromGrid(grid: number[][], legend: Record<string, string>) {
@@ -922,15 +797,13 @@ async function startLevelById(
   const hasEntities = Array.isArray(entities) && entities.length > 0;
 
   setEnemies([]);
+  setHealthPickups([]);
   if (hasEntities) {
     setEntities(entities);
   } else {
     setKeyPickups(level.keyPickups ?? []);
     setDoorLocks(level.doorLocks ?? []);
   }
-
-  const p = getPlayer();
-  setHealthPickups(placeRandomHealthPickups({ grid: level.grid, player: p, difficulty }));
 
   setAudioConfig({
     music: level.audio?.music ?? getDefaultMusicForLevelId(levelEntry.id),
