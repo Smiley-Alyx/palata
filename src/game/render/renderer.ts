@@ -417,7 +417,7 @@ export function createRenderer({
     if (ambientLightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = Math.min(0.42, 0.12 + litAmbient * 0.32);
+      ctx.globalAlpha = Math.min(0.48, 0.15 + litAmbient * 0.34);
       ctx.fillStyle = ambientLightColor;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
@@ -543,7 +543,7 @@ export function createRenderer({
     if (lightColor) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = Math.min(0.5, 0.12 + l * 0.38);
+      ctx.globalAlpha = Math.min(0.42, 0.1 + l * 0.32);
       ctx.fillStyle = lightColor;
       ctx.fillRect(x, y0, columnWidth, sliceHeight);
       ctx.restore();
