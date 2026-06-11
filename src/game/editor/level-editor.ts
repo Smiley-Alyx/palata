@@ -1482,18 +1482,21 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
     const entityAsset = entity ? entityPreviewId(entity) : '';
     const entityTool = entity ? paletteItemForEntity(entity) : undefined;
     const material = effectiveMaterialAt(x, y);
-    if (entityTool) selectedEntity = entityTool;
-    selectedMaterial = material && MATERIAL_TOOLS.some((item) => item === material) ? material : '';
-    if (entity && entityAsset) {
-      const label =
-        typeof entity.id === 'string'
-          ? `Entity ${entity.id}`
-          : `Entity ${String(entity.type ?? entityAsset)}`;
-      setPreviewAsset(entityAsset, label);
-    } else if (material) {
-      setPreviewAsset(material, `Material ${material}`);
-    } else {
-      setPreviewAsset('', '');
+    if (selectedTool === 'inspect') {
+      if (entityTool) selectedEntity = entityTool;
+      selectedMaterial =
+        material && MATERIAL_TOOLS.some((item) => item === material) ? material : '';
+      if (entity && entityAsset) {
+        const label =
+          typeof entity.id === 'string'
+            ? `Entity ${entity.id}`
+            : `Entity ${String(entity.type ?? entityAsset)}`;
+        setPreviewAsset(entityAsset, label);
+      } else if (material) {
+        setPreviewAsset(material, `Material ${material}`);
+      } else {
+        setPreviewAsset('', '');
+      }
     }
     for (const key of previousCells) {
       const [prevX, prevY] = key.split(',').map(Number);
@@ -1572,13 +1575,18 @@ function mountLevelEditor(path: string, level: LevelJson, options: LevelEditorOp
         cell.dataset.x = String(x);
         cell.dataset.y = String(y);
         cell.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
           e.preventDefault();
           painting = true;
           selectCell(x, y);
           if (selectedTool === 'inspect') return;
           applyAt(x, y);
         });
-        cell.addEventListener('pointerenter', () => {
+        cell.addEventListener('pointerenter', (e) => {
+          if (!(e.buttons & 1)) {
+            painting = false;
+            return;
+          }
           if (
             painting &&
             (selectedTool === 'cell' || selectedTool === 'material' || selectedTool === 'erase')
