@@ -55,12 +55,19 @@ export function createRenderer({
   let killFill = 0;
   let killFillTarget = 0;
   let weaponActionStartedAtMs = -Infinity;
-  let backgroundPlaneCache: {
+  type BackgroundPlaneCache = {
     w: number;
     h: number;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
-  } | null = null;
+  };
+  const backgroundPlaneCache: {
+    texture: BackgroundPlaneCache | null;
+    light: BackgroundPlaneCache | null;
+  } = {
+    texture: null,
+    light: null,
+  };
   const renderTextureCache = new WeakMap<object, HTMLCanvasElement>();
   const shadedTextureCache = new WeakMap<object, Map<number, HTMLCanvasElement>>();
   const tintedTextureCache = new WeakMap<object, Map<string, HTMLCanvasElement>>();
@@ -270,8 +277,7 @@ export function createRenderer({
 
   function drawTexturedPlane(
     output: ImageData,
-    texture: ImageData | null,
-    baseColor: { r: number; g: number; b: number },
+    texture: ImageData,
     screenRow: number,
     outputRow: number,
     screenH: number,
@@ -300,46 +306,18 @@ export function createRenderer({
     let worldX = player.x + rowDistance * leftX;
     let worldY = player.y + rowDistance * leftY;
     const outData = output.data;
-    const texData = texture?.data;
-    const texW = texture?.width ?? 1;
-    const texH = texture?.height ?? 1;
+    const texData = texture.data;
+    const texW = texture.width;
+    const texH = texture.height;
     let out = outputRow * w * 4;
 
     for (let x = 0; x < w; x++) {
       const tx = Math.floor((worldX - Math.floor(worldX)) * texW) % texW;
       const ty = Math.floor((worldY - Math.floor(worldY)) * texH) % texH;
       const src = (ty * texW + tx) * 4;
-      const textureAlpha = texData ? 0.68 : 0;
-      let red = baseColor.r * (1 - textureAlpha) + (texData?.[src] ?? 0) * textureAlpha;
-      let green = baseColor.g * (1 - textureAlpha) + (texData?.[src + 1] ?? 0) * textureAlpha;
-      let blue = baseColor.b * (1 - textureAlpha) + (texData?.[src + 2] ?? 0) * textureAlpha;
-
-      const sampleX = Math.floor(worldX * 4) / 4 + 0.125;
-      const sampleY = Math.floor(worldY * 4) / 4 + 0.125;
-      const light01 = typeof getLightAt === 'function' ? getLightAt(sampleX, sampleY) : 1;
-      const light = Math.max(0, Math.min(1, light01 * lightingMultiplier));
-      const brightness = 0.3 + light * 0.7;
-      red *= brightness;
-      green *= brightness;
-      blue *= brightness;
-
-      const lightColor =
-        typeof getLightColorAt === 'function' ? getLightColorAt(sampleX, sampleY) : null;
-      const tint = lightColor ? parseColor(lightColor) : null;
-      if (tint) {
-        const influence =
-          typeof getLightColorInfluenceAt === 'function'
-            ? getLightColorInfluenceAt(sampleX, sampleY)
-            : 1;
-        const tintAlpha = Math.min(0.32, Math.max(0, influence) * 0.14);
-        red = red * (1 - tintAlpha) + tint.r * tintAlpha;
-        green = green * (1 - tintAlpha) + tint.g * tintAlpha;
-        blue = blue * (1 - tintAlpha) + tint.b * tintAlpha;
-      }
-
-      outData[out] = Math.round(red);
-      outData[out + 1] = Math.round(green);
-      outData[out + 2] = Math.round(blue);
+      outData[out] = texData[src];
+      outData[out + 1] = texData[src + 1];
+      outData[out + 2] = texData[src + 2];
       outData[out + 3] = 255;
       out += 4;
       worldX += stepX;
@@ -347,9 +325,71 @@ export function createRenderer({
     }
   }
 
-  function getBackgroundPlaneCanvas(w: number, h: number) {
-    if (backgroundPlaneCache && backgroundPlaneCache.w === w && backgroundPlaneCache.h === h) {
-      return backgroundPlaneCache;
+  function drawLightingPlane(
+    output: ImageData,
+    screenRow: number,
+    outputRow: number,
+    screenH: number,
+    screenW: number,
+    ceiling: boolean,
+  ) {
+    const w = output.width;
+    const horizon = screenH / 2;
+    const rowDelta = ceiling ? horizon - screenRow : screenRow - horizon;
+    if (rowDelta <= 0) return;
+
+    const projectionPlane = screenW / 2 / Math.tan(player.fov / 2);
+    const rowDistance = (projectionPlane * 0.5) / rowDelta;
+    const dirX = Math.cos(player.rot);
+    const dirY = -Math.sin(player.rot);
+    const planeSize = Math.tan(player.fov / 2);
+    const planeX = -Math.sin(player.rot) * planeSize;
+    const planeY = -Math.cos(player.rot) * planeSize;
+    const leftX = dirX + planeX;
+    const leftY = dirY + planeY;
+    const rightX = dirX - planeX;
+    const rightY = dirY - planeY;
+    const stepX = (rowDistance * (rightX - leftX)) / w;
+    const stepY = (rowDistance * (rightY - leftY)) / w;
+
+    let worldX = player.x + rowDistance * leftX;
+    let worldY = player.y + rowDistance * leftY;
+    const outData = output.data;
+    let out = outputRow * w * 4;
+
+    for (let x = 0; x < w; x++) {
+      const sampleX = Math.floor(worldX * 4) / 4 + 0.125;
+      const sampleY = Math.floor(worldY * 4) / 4 + 0.125;
+      const light01 = typeof getLightAt === 'function' ? getLightAt(sampleX, sampleY) : 1;
+      const light = Math.max(0, Math.min(1, light01 * lightingMultiplier));
+      const brightness = 0.3 + light * 0.7;
+      const lightColor =
+        typeof getLightColorAt === 'function' ? getLightColorAt(sampleX, sampleY) : null;
+      const tint = lightColor ? parseColor(lightColor) : null;
+      const influence =
+        tint && typeof getLightColorInfluenceAt === 'function'
+          ? getLightColorInfluenceAt(sampleX, sampleY)
+          : tint
+            ? 1
+            : 0;
+      const tintAlpha = tint ? Math.min(0.32, Math.max(0, influence) * 0.14) : 0;
+      const alpha = 1 - brightness * (1 - tintAlpha);
+      const tintScale = alpha > 0.001 ? tintAlpha / alpha : 0;
+
+      outData[out] = Math.round((tint?.r ?? 0) * tintScale);
+      outData[out + 1] = Math.round((tint?.g ?? 0) * tintScale);
+      outData[out + 2] = Math.round((tint?.b ?? 0) * tintScale);
+      outData[out + 3] = Math.round(alpha * 255);
+      out += 4;
+      worldX += stepX;
+      worldY += stepY;
+    }
+  }
+
+  function getBackgroundPlaneCanvas(kind: 'texture' | 'light', w: number, h: number) {
+    const cached = backgroundPlaneCache[kind];
+    if (cached && cached.w === w && cached.h === h) {
+      return cached;
     }
 
     const canvas = document.createElement('canvas');
@@ -359,43 +399,55 @@ export function createRenderer({
     if (!cctx) return null;
     cctx.imageSmoothingEnabled = false;
 
-    backgroundPlaneCache = { w, h, canvas, ctx: cctx };
-    return backgroundPlaneCache;
+    backgroundPlaneCache[kind] = { w, h, canvas, ctx: cctx };
+    return backgroundPlaneCache[kind];
   }
 
   function drawBackgroundPlane(
     texture: ImageData | null,
-    color: string,
     y: number,
     height: number,
     ceiling: boolean,
     scale: number,
   ) {
+    if (!texture) return;
+
     const planeW = Math.ceil(getViewWidth() / scale);
     const planeH = Math.ceil(height / scale);
-    const plane = getBackgroundPlaneCanvas(planeW, planeH);
+    const plane = getBackgroundPlaneCanvas('texture', planeW, planeH);
     if (!plane) return;
 
     const pixels = plane.ctx.createImageData(planeW, planeH);
     const horizon = Math.floor(getViewHeight() / 2);
-    const baseColor = parseColor(color) ?? { r: 0, g: 0, b: 0 };
     for (let row = 0; row < planeH; row++) {
       const screenRow = ceiling ? row * scale : horizon + row * scale;
-      drawTexturedPlane(
-        pixels,
-        texture,
-        baseColor,
-        screenRow,
-        row,
-        getViewHeight(),
-        getViewWidth(),
-        ceiling,
-      );
+      drawTexturedPlane(pixels, texture, screenRow, row, getViewHeight(), getViewWidth(), ceiling);
     }
     plane.ctx.putImageData(pixels, 0, 0);
 
     ctx.save();
+    ctx.globalAlpha = 0.68;
     ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(plane.canvas, 0, 0, planeW, planeH, 0, y, getViewWidth(), height);
+    ctx.restore();
+  }
+
+  function drawBackgroundLighting(y: number, height: number, ceiling: boolean, scale: number) {
+    const planeW = Math.ceil(getViewWidth() / scale);
+    const planeH = Math.ceil(height / scale);
+    const plane = getBackgroundPlaneCanvas('light', planeW, planeH);
+    if (!plane) return;
+
+    const pixels = plane.ctx.createImageData(planeW, planeH);
+    const horizon = Math.floor(getViewHeight() / 2);
+    for (let row = 0; row < planeH; row++) {
+      const screenRow = ceiling ? row * scale : horizon + row * scale;
+      drawLightingPlane(pixels, screenRow, row, getViewHeight(), getViewWidth(), ceiling);
+    }
+    plane.ctx.putImageData(pixels, 0, 0);
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
     ctx.drawImage(plane.canvas, 0, 0, planeW, planeH, 0, y, getViewWidth(), height);
     ctx.restore();
   }
@@ -417,8 +469,12 @@ export function createRenderer({
     ctx.fillRect(0, h / 2, w, h / 2);
 
     const planeScale = w > 480 ? 4 : 2;
-    drawBackgroundPlane(ceilingData, ceilingColor, 0, h / 2, true, planeScale);
-    drawBackgroundPlane(floorData, floorColor, h / 2, h / 2, false, planeScale);
+    drawBackgroundPlane(ceilingData, 0, h / 2, true, planeScale);
+    drawBackgroundPlane(floorData, h / 2, h / 2, false, planeScale);
+
+    const lightScale = w > 480 ? 8 : 4;
+    drawBackgroundLighting(0, h / 2, true, lightScale);
+    drawBackgroundLighting(h / 2, h / 2, false, lightScale);
 
     // Distance shading for ceiling/floor: darker at the horizon (far),
     // brighter near the camera.
