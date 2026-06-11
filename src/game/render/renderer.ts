@@ -179,7 +179,7 @@ export function createRenderer({
     cctx.imageSmoothingEnabled = false;
     cctx.drawImage(shaded, 0, 0, w, h);
     cctx.globalCompositeOperation = 'source-atop';
-    cctx.globalAlpha = 0.62;
+    cctx.globalAlpha = 0.2;
     cctx.fillStyle = tint;
     cctx.fillRect(0, 0, w, h);
     cctx.globalCompositeOperation = 'source-over';
@@ -416,8 +416,8 @@ export function createRenderer({
 
     if (ambientLightColor) {
       ctx.save();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = Math.min(0.52, 0.18 + litAmbient * 0.3);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = Math.min(0.42, 0.12 + litAmbient * 0.32);
       ctx.fillStyle = ambientLightColor;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
@@ -542,8 +542,8 @@ export function createRenderer({
     ctx.drawImage(drawTexture, texX, 0, 1, texH, x, y0, columnWidth, sliceHeight);
     if (lightColor) {
       ctx.save();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = Math.min(0.62, 0.18 + l * 0.44);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = Math.min(0.5, 0.12 + l * 0.38);
       ctx.fillStyle = lightColor;
       ctx.fillRect(x, y0, columnWidth, sliceHeight);
       ctx.restore();
