@@ -27,6 +27,8 @@ type LightSample = {
 
 type IsLightBlockingAt = (xMap: number, yMap: number, offset: number) => boolean;
 
+const LIGHT_VISIBILITY_OFFSETS = [-0.18, 0, 0.18] as const;
+
 function parseHexColor(color: string | null): { r: number; g: number; b: number } | null {
   if (!color) return null;
   const match = /^#([0-9a-f]{6})$/i.exec(color);
@@ -57,7 +59,7 @@ export function createLightsSystem({
 } = {}) {
   let timeSec = 0;
   let lights: Light[] = [];
-  const tileLightCache = new Map<string, LightSample>();
+  const lightSampleCache = new Map<string, LightSample>();
 
   function setLights(
     next: Array<{
@@ -71,7 +73,7 @@ export function createLightsSystem({
       colorInfluence?: number;
     }>,
   ) {
-    tileLightCache.clear();
+    lightSampleCache.clear();
     lights = Array.isArray(next)
       ? next
           .filter(
@@ -98,14 +100,14 @@ export function createLightsSystem({
   function onMapChanged() {
     lights = [];
     timeSec = 0;
-    tileLightCache.clear();
+    lightSampleCache.clear();
   }
 
   function tick(dt: number) {
     const clamped = Math.max(0, dt);
     if (clamped <= 0) return;
     timeSec += clamped;
-    tileLightCache.clear();
+    lightSampleCache.clear();
   }
 
   function modulate(mode: LightMode, phase: number): number {
@@ -181,6 +183,22 @@ export function createLightsSystem({
     return false;
   }
 
+  function getVisibility(light: Light, x: number, y: number): number {
+    if (typeof isLightBlockingAt !== 'function') return 1;
+
+    const xMap = Math.floor(light.x);
+    const yMap = Math.floor(light.y);
+    let visible = 0;
+    for (const offsetY of LIGHT_VISIBILITY_OFFSETS) {
+      for (const offsetX of LIGHT_VISIBILITY_OFFSETS) {
+        const sampleX = Math.max(xMap + 0.08, Math.min(xMap + 0.92, light.x + offsetX));
+        const sampleY = Math.max(yMap + 0.08, Math.min(yMap + 0.92, light.y + offsetY));
+        if (hasLineOfSight(sampleX, sampleY, x, y)) visible++;
+      }
+    }
+    return visible / (LIGHT_VISIBILITY_OFFSETS.length * LIGHT_VISIBILITY_OFFSETS.length);
+  }
+
   function computeLightSampleAt(x: number, y: number): LightSample {
     if (!lights.length) return { light01: 1, color: null, colorInfluence: 0 };
 
@@ -196,11 +214,12 @@ export function createLightsSystem({
       const distSq = dx * dx + dy * dy;
       const radiusSq = l.radius * l.radius;
       if (distSq > radiusSq) continue;
-      if (!hasLineOfSight(l.x, l.y, x, y)) continue;
+      const visibility = getVisibility(l, x, y);
+      if (visibility <= 0) continue;
 
       const falloff = 1 - Math.sqrt(distSq) / l.radius;
       const inten = l.intensity * modulate(l.mode, l.phase);
-      const contribution = inten * falloff * falloff;
+      const contribution = inten * falloff * falloff * visibility;
       acc += contribution;
       const color = parseHexColor(l.color);
       if (color) {
@@ -230,22 +249,13 @@ export function createLightsSystem({
     };
   }
 
-  function getTileLightCacheKey(x: number, y: number): string | null {
-    const xMap = x - 0.5;
-    const yMap = y - 0.5;
-    if (!Number.isInteger(xMap) || !Number.isInteger(yMap)) return null;
-    return `${xMap},${yMap}`;
-  }
-
   function getLightSampleAt(x: number, y: number): LightSample {
-    const key = getTileLightCacheKey(x, y);
-    if (!key) return computeLightSampleAt(x, y);
-
-    const cached = tileLightCache.get(key);
+    const key = `${x},${y}`;
+    const cached = lightSampleCache.get(key);
     if (cached !== undefined) return cached;
 
     const sample = computeLightSampleAt(x, y);
-    tileLightCache.set(key, sample);
+    lightSampleCache.set(key, sample);
     return sample;
   }
 
