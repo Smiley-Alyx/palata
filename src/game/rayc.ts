@@ -1047,13 +1047,6 @@ function ensureEngine() {
         portalsSystem?.tick(dt);
         predatorSystem?.tick(dt);
         ambienceSystem?.tick(dt);
-        renderer?.setAmbientLight01(lightsSystem ? lightsSystem.getLightAt(player.x, player.y) : 1);
-        renderer?.setAmbientLightColor(
-          lightsSystem ? lightsSystem.getLightColorAt(player.x, player.y) : null,
-        );
-        renderer?.setAmbientLightColorInfluence(
-          lightsSystem ? lightsSystem.getLightColorInfluenceAt(player.x, player.y) : 0,
-        );
         doorsSystem?.tick(dt, (xMap, yMap) => {
           // Block auto-close if player or an enemy is in / very close to the door cell.
           const cx = xMap + 0.5;

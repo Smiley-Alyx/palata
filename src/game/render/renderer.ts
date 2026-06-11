@@ -48,9 +48,6 @@ export function createRenderer({
   let ceilingMaterial: string | number | null = null;
   let floorMaterial: string | number | null = null;
 
-  let ambientLight01 = 1;
-  let ambientLightColor: string | null = null;
-  let ambientLightColorInfluence = 0;
   let lightingMultiplier = 1.12;
 
   let flash = 0;
@@ -210,6 +207,22 @@ export function createRenderer({
     return Math.max(0, Math.min(0.92, alpha + (1 - lightingMultiplier) * 0.35));
   }
 
+  function parseColor(color: string): { r: number; g: number; b: number } | null {
+    const hex = /^#([0-9a-f]{6})$/i.exec(color);
+    if (hex) {
+      const value = Number.parseInt(hex[1], 16);
+      return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+    }
+
+    const rgb = /^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/i.exec(color);
+    if (!rgb) return null;
+    return {
+      r: Math.max(0, Math.min(255, Number(rgb[1]))),
+      g: Math.max(0, Math.min(255, Number(rgb[2]))),
+      b: Math.max(0, Math.min(255, Number(rgb[3]))),
+    };
+  }
+
   function getTextureData(texture: CanvasImageSource): ImageData | null {
     const cached = textureDataCache.get(texture as object);
     if (cached) return cached;
@@ -250,18 +263,6 @@ export function createRenderer({
     if ('floor' in materials) floorMaterial = materials.floor ?? null;
   }
 
-  function setAmbientLight01(light01: number) {
-    ambientLight01 = Math.max(0, Math.min(1, light01));
-  }
-
-  function setAmbientLightColor(color: string | null) {
-    ambientLightColor = color;
-  }
-
-  function setAmbientLightColorInfluence(influence: number) {
-    ambientLightColorInfluence = Math.max(0, Math.min(2, influence));
-  }
-
   function setLightingMultiplier(multiplier: number) {
     if (!Number.isFinite(multiplier)) return;
     lightingMultiplier = Math.max(0.7, Math.min(1.4, multiplier));
@@ -269,7 +270,8 @@ export function createRenderer({
 
   function drawTexturedPlane(
     output: ImageData,
-    texture: ImageData,
+    texture: ImageData | null,
+    baseColor: { r: number; g: number; b: number },
     screenRow: number,
     outputRow: number,
     screenH: number,
@@ -298,18 +300,46 @@ export function createRenderer({
     let worldX = player.x + rowDistance * leftX;
     let worldY = player.y + rowDistance * leftY;
     const outData = output.data;
-    const texData = texture.data;
-    const texW = texture.width;
-    const texH = texture.height;
+    const texData = texture?.data;
+    const texW = texture?.width ?? 1;
+    const texH = texture?.height ?? 1;
     let out = outputRow * w * 4;
 
     for (let x = 0; x < w; x++) {
       const tx = Math.floor((worldX - Math.floor(worldX)) * texW) % texW;
       const ty = Math.floor((worldY - Math.floor(worldY)) * texH) % texH;
       const src = (ty * texW + tx) * 4;
-      outData[out] = texData[src];
-      outData[out + 1] = texData[src + 1];
-      outData[out + 2] = texData[src + 2];
+      const textureAlpha = texData ? 0.68 : 0;
+      let red = baseColor.r * (1 - textureAlpha) + (texData?.[src] ?? 0) * textureAlpha;
+      let green = baseColor.g * (1 - textureAlpha) + (texData?.[src + 1] ?? 0) * textureAlpha;
+      let blue = baseColor.b * (1 - textureAlpha) + (texData?.[src + 2] ?? 0) * textureAlpha;
+
+      const sampleX = Math.floor(worldX * 4) / 4 + 0.125;
+      const sampleY = Math.floor(worldY * 4) / 4 + 0.125;
+      const light01 = typeof getLightAt === 'function' ? getLightAt(sampleX, sampleY) : 1;
+      const light = Math.max(0, Math.min(1, light01 * lightingMultiplier));
+      const brightness = 0.3 + light * 0.7;
+      red *= brightness;
+      green *= brightness;
+      blue *= brightness;
+
+      const lightColor =
+        typeof getLightColorAt === 'function' ? getLightColorAt(sampleX, sampleY) : null;
+      const tint = lightColor ? parseColor(lightColor) : null;
+      if (tint) {
+        const influence =
+          typeof getLightColorInfluenceAt === 'function'
+            ? getLightColorInfluenceAt(sampleX, sampleY)
+            : 1;
+        const tintAlpha = Math.min(0.32, Math.max(0, influence) * 0.14);
+        red = red * (1 - tintAlpha) + tint.r * tintAlpha;
+        green = green * (1 - tintAlpha) + tint.g * tintAlpha;
+        blue = blue * (1 - tintAlpha) + tint.b * tintAlpha;
+      }
+
+      outData[out] = Math.round(red);
+      outData[out + 1] = Math.round(green);
+      outData[out + 2] = Math.round(blue);
       outData[out + 3] = 255;
       out += 4;
       worldX += stepX;
@@ -335,13 +365,12 @@ export function createRenderer({
 
   function drawBackgroundPlane(
     texture: ImageData | null,
+    color: string,
     y: number,
     height: number,
     ceiling: boolean,
     scale: number,
   ) {
-    if (!texture) return;
-
     const planeW = Math.ceil(getViewWidth() / scale);
     const planeH = Math.ceil(height / scale);
     const plane = getBackgroundPlaneCanvas(planeW, planeH);
@@ -349,14 +378,23 @@ export function createRenderer({
 
     const pixels = plane.ctx.createImageData(planeW, planeH);
     const horizon = Math.floor(getViewHeight() / 2);
+    const baseColor = parseColor(color) ?? { r: 0, g: 0, b: 0 };
     for (let row = 0; row < planeH; row++) {
       const screenRow = ceiling ? row * scale : horizon + row * scale;
-      drawTexturedPlane(pixels, texture, screenRow, row, getViewHeight(), getViewWidth(), ceiling);
+      drawTexturedPlane(
+        pixels,
+        texture,
+        baseColor,
+        screenRow,
+        row,
+        getViewHeight(),
+        getViewWidth(),
+        ceiling,
+      );
     }
     plane.ctx.putImageData(pixels, 0, 0);
 
     ctx.save();
-    ctx.globalAlpha = 0.68;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(plane.canvas, 0, 0, planeW, planeH, 0, y, getViewWidth(), height);
     ctx.restore();
@@ -379,23 +417,23 @@ export function createRenderer({
     ctx.fillRect(0, h / 2, w, h / 2);
 
     const planeScale = w > 480 ? 4 : 2;
-    drawBackgroundPlane(ceilingData, 0, h / 2, true, planeScale);
-    drawBackgroundPlane(floorData, h / 2, h / 2, false, planeScale);
+    drawBackgroundPlane(ceilingData, ceilingColor, 0, h / 2, true, planeScale);
+    drawBackgroundPlane(floorData, floorColor, h / 2, h / 2, false, planeScale);
 
     // Distance shading for ceiling/floor: darker at the horizon (far),
     // brighter near the camera.
     ctx.save();
     const ceilingShade = ctx.createLinearGradient(0, 0, 0, h / 2);
     ceilingShade.addColorStop(0, 'rgba(0,0,0,0)');
-    ceilingShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.28)})`);
-    ceilingShade.addColorStop(1, `rgba(0,0,0,${getDarkAlpha(0.64)})`);
+    ceilingShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.16)})`);
+    ceilingShade.addColorStop(1, `rgba(0,0,0,${getDarkAlpha(0.36)})`);
     ctx.fillStyle = ceilingShade;
     ctx.fillRect(0, 0, w, h / 2);
 
     const floorShade = ctx.createLinearGradient(0, h / 2, 0, h);
     // Near horizon = far away → dark; near bottom = close → bright.
-    floorShade.addColorStop(0, `rgba(0,0,0,${getDarkAlpha(0.64)})`);
-    floorShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.28)})`);
+    floorShade.addColorStop(0, `rgba(0,0,0,${getDarkAlpha(0.36)})`);
+    floorShade.addColorStop(0.45, `rgba(0,0,0,${getDarkAlpha(0.16)})`);
     floorShade.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = floorShade;
     ctx.fillRect(0, h / 2, w, h / 2);
@@ -414,23 +452,6 @@ export function createRenderer({
     vignette.addColorStop(1, `rgba(0,0,0,${getDarkAlpha(0.4)})`);
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, w, h);
-
-    // Screen-space darkness driven by world lighting.
-    const litAmbient = Math.max(0, Math.min(1, ambientLight01 * lightingMultiplier));
-    const darkness = 0.04 + (1 - litAmbient) * 0.58;
-    if (darkness > 0.001) {
-      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.86, darkness)})`;
-      ctx.fillRect(0, 0, w, h);
-    }
-
-    if (ambientLightColor) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = Math.min(0.48, 0.15 + litAmbient * 0.34) * ambientLightColorInfluence;
-      ctx.fillStyle = ambientLightColor;
-      ctx.fillRect(0, 0, w, h);
-      ctx.restore();
-    }
 
     if (flash > 0) {
       ctx.fillStyle = `rgba(255,255,255,${Math.min(0.18, flash)})`;
@@ -797,9 +818,6 @@ export function createRenderer({
     drawCrosshair,
     setBackgroundColors,
     setBackgroundMaterials,
-    setAmbientLight01,
-    setAmbientLightColor,
-    setAmbientLightColorInfluence,
     setLightingMultiplier,
     triggerFlash,
     triggerDamagePulse,

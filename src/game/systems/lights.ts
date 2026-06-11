@@ -28,6 +28,7 @@ type LightSample = {
 type IsLightBlockingAt = (xMap: number, yMap: number, offset: number) => boolean;
 
 const LIGHT_VISIBILITY_OFFSETS = [-0.18, 0, 0.18] as const;
+const MAX_LIGHT_SAMPLE_CACHE_SIZE = 8192;
 
 function parseHexColor(color: string | null): { r: number; g: number; b: number } | null {
   if (!color) return null;
@@ -255,7 +256,7 @@ export function createLightsSystem({
     if (cached !== undefined) return cached;
 
     const sample = computeLightSampleAt(x, y);
-    lightSampleCache.set(key, sample);
+    if (lightSampleCache.size < MAX_LIGHT_SAMPLE_CACHE_SIZE) lightSampleCache.set(key, sample);
     return sample;
   }
 
