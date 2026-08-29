@@ -194,11 +194,15 @@ audio, редактор) готовы. Основной оставшийся о�
    переиспользуется для всех пяти боссов по мере наполнения уровней.
 
 8. **Полировка.**
-   Уникальные кадры HUD-портрета per-state (сейчас только CSS-фильтр поверх
-   общего портрета), доснять `walk`/`attack`/`damaged`/`death` для
-   `flesh_machine` (сейчас только idle), решить судьбу неиспользуемых
-   заготовок `public/assets/decals`, `skyboxes/`, `shaders/` — либо
-   подключить, либо убрать.
+   HUD-портреты per-level лежат как отдельные PNG
+   (`sprites/hud/portrait_level_1_ward.png` … `portrait_level_6_hunt.png`).
+   Разделение по уровням и perception-states — в
+   `animations/ui/hud_portrait.json` (пока все states уровня указывают на
+   один файл уровня; уникальные кадры per-state можно докинуть тем же
+   форматом). Подключить манифест в `main.ts` вместо нарезки
+   `portrait_sheet.png`. Арт `walk`/`attack`/`damaged`/`death` для
+   `flesh_machine` на шите уже есть (нужен код). Решить судьбу
+   `skyboxes/` / `shaders/` — либо подключить, либо убрать.
 
 ### Ассеты, которых не хватает
 
@@ -209,48 +213,44 @@ audio, редактор) готовы. Основной оставшийся о�
 
 **Текстуры**
 
-- Органика для level3–4: сейчас на весь проект один файл
-  `textures/flesh/flesh_wall.png`. Нужно несколько вариантов органических
-  стен/пола/потолка (пульсирующая плоть крупным планом, вентиляция,
-  срастающаяся с плотью, гибрид труб и сосудов) — по нарративу «металл
-  срастается с flesh-структурами».
-- `textures/floors/` и `textures/ceilings/` — сейчас по 1–2 generic файла на
-  всю игру (`seamless_floor`, `organic_floor`, `seamless_ceiling`). Для
-  визуального разнообразия по уровням нужны отдельные варианты пола/потолка
-  под каждую стадию (индустриальный, органический, городской).
-- Городской набор материалов для level5 «Город внутри»: сейчас все стены —
-  больничные/индустриальные (`medical_tiles`, `hospital_wall_stripe`,
-  `concrete_tunnel`, `metal_panels`…). Нужны панельный дом, школа, подъезд,
-  остановка — двери и стены отдельным набором в `textures/walls/` и
-  `textures/doors/` (дверь квартиры, решётка, ржавые ворота — под level5/6).
-- `decals/decal_bloody.png`, `decal_wall.png` — уже есть, но не подключены в
-  коде; если решите использовать декали, может понадобиться ещё несколько
-  вариантов потёков/повреждений под разные стадии уровня.
+Файлы сгенерированы (лежат в `public/assets/…`). В код/манифест/карты
+ещё не подключены — кроме городского набора, который уже был заведён ранее.
+
+- Органика level3–4:
+  - `textures/flesh/flesh_wall.png` (был)
+  - `textures/flesh/flesh_closeup.png`
+  - `textures/flesh/flesh_vent.png`
+  - `textures/flesh/industrial_flesh.png`
+  - `textures/ceilings/organic_ceiling.png`
+- Полы/потолки по стадиям:
+  - индустриальные: `floors/industrial_floor.png`,
+    `ceilings/industrial_ceiling.png`
+  - органические: `floors/organic_floor.png` (был),
+    `ceilings/organic_ceiling.png`
+  - городские: `floors/asphalt_floor.png`,
+    `ceilings/urban_ceiling.png`
+  - generic: `seamless_floor`, `seamless_ceiling` (были)
+- Городской набор level5–6 (стены/двери + wiring):
+  - стены: `panel_facade`, `school_plaster`, `entrance_hallway`,
+    `bus_stop_concrete`
+  - двери/ограждения: `apartment_door`, `metal_grate`, `rusty_gate`
+- Декали: `decal_bloody`, `decal_wall` (были) + `decal_flesh_drip`,
+  `decal_blood_fresh`, `decal_cracks`, `decal_rust`. В коде по-прежнему
+  не подключены.
 
 **Звуки (SFX)**
 
-Сейчас несколько врагов и боссов озвучены не своими, а чужими сэмплами
-(fallback в `src/game/systems/enemy-profiles.ts`). Нужны отдельные наборы
-`idle/attack/hurt/death` (по образцу `sounds/enemies/husk/`,
-`sounds/enemies/orderly/`) для:
+Собственные наборы врагов и боссов записаны и подключены
+(`sfx-config.ts` + `enemy-profiles.ts`):
 
-- `sounds/enemies/deformed_patient/` — сейчас использует звуки husk/orderly.
-- `sounds/enemies/flesh_watcher/` — сейчас звуки hallucinations.
-- `sounds/enemies/flesh_eye/` — сейчас звуки hallucinations.
-- `sounds/enemies/flesh_machine/` — сейчас звук выстрела дробовика + orderly.
-- `sounds/enemies/doppelganger/` — сейчас predator growl/hunt + orderly.
-
-И наборы `intro/attack/death` (по образцу `sounds/bosses/chief_doctor/`,
-`sounds/bosses/heart_hospital/`) для:
-
-- `sounds/bosses/choir/` — сейчас звуки hallucinations.
-- `sounds/bosses/dade_keeper/` — сейчас звуки orderly.
-- `sounds/bosses/shepherd/` — сейчас predator growl/hunt + orderly.
-
-После записи каждого набора нужно будет завести соответствующие ключи в
-`src/game/audio/sfx-config.ts` (`SFX.enemies.*` / `SFX.bosses.*`) и
-переключить на них `enemy-profiles.ts` — сама механика fallback-озвучки
-уже работает, менять там почти нечего.
+- `sounds/enemies/deformed_patient/` — idle/attack/hurt/death
+- `sounds/enemies/flesh_watcher/` — idle/attack/hurt/death
+- `sounds/enemies/flesh_eye/` — idle/attack/hurt/death
+- `sounds/enemies/flesh_machine/` — idle/attack/hurt/death
+- `sounds/enemies/doppelganger/` — idle/attack/hurt/death
+- `sounds/bosses/choir/` — intro/attack/hurt/death
+- `sounds/bosses/dade_keeper/` — intro/attack/hurt/death
+- `sounds/bosses/shepherd/` — intro/attack/hurt/death
 
 Оружие третьего яруса (`bone_blade`, `organic_shotgun`, `parasitic_rifle`) —
 звук уже полностью готов в `sounds/weapons/`, тут ничего дозаписывать не
@@ -258,18 +258,22 @@ audio, редактор) готовы. Основной оставшийся о�
 
 **Музыка**
 
-- `music/level_5/` и `music/level_6/` — по одному треку на уровень, без
-  альтернативной версии (у level1–4 по два трека, `..._legacy` и
-  тематический). Стоит либо решить, что для 5–6 одного трека достаточно,
-  либо добавить второй вариант для смены состояния восприятия
-  (withdrawal/predator).
-- Отдельных боевых тем для боссов нет — сейчас во время боя продолжает
-  играть музыка уровня, поддержанная только SFX-стингерами
-  (`SFX.bosses.*`). Если нужен более выраженный boss-момент — по одному
-  короткому треку/стингеру на каждого из пяти боссов.
+Файлы сгенерированы (в код пока не подключены):
+
+- Alt для level5–6 (predator-восприятие):
+  - `music/level_5/level_5_predator.mp3`
+  - `music/level_6/level_6_predator.mp3`
+- Боевые темы боссов (`music/bosses/`):
+  - `boss_chief_doctor.mp3`
+  - `boss_choir.mp3`
+  - `boss_dade_keeper.mp3`
+  - `boss_heart_hospital.mp3`
+  - `boss_shepherd.mp3`
+
+Ещё открыто по музыке (не генерация, а решение):
 - `music/level_1/level_1_palata.mp3` используется, а
   `music/level_2/level_2_lower_block.mp3`,
   `music/level_3/level_3_complex_guts.mp3`,
   `music/level_4/level_4_complex_womb.mp3` лежат неиспользуемыми — уровни
-  2–4 сейчас играют `..._legacy` версии. Стоит определиться, какие треки
-  финальные, и почистить лишние перед релизом.
+  2–4 сейчас играют `..._legacy` версии. Нужно выбрать финальные треки
+  и почистить лишние перед релизом.

@@ -84,6 +84,36 @@ export const SFX = {
       hurt: 'enemy.orderly.hurt',
       death: 'enemy.orderly.death',
     },
+    deformedPatient: {
+      idle: 'enemy.deformed_patient.idle',
+      attack: 'enemy.deformed_patient.attack',
+      hurt: 'enemy.deformed_patient.hurt',
+      death: 'enemy.deformed_patient.death',
+    },
+    fleshWatcher: {
+      idle: 'enemy.flesh_watcher.idle',
+      attack: 'enemy.flesh_watcher.attack',
+      hurt: 'enemy.flesh_watcher.hurt',
+      death: 'enemy.flesh_watcher.death',
+    },
+    fleshEye: {
+      idle: 'enemy.flesh_eye.idle',
+      attack: 'enemy.flesh_eye.attack',
+      hurt: 'enemy.flesh_eye.hurt',
+      death: 'enemy.flesh_eye.death',
+    },
+    fleshMachine: {
+      idle: 'enemy.flesh_machine.idle',
+      attack: 'enemy.flesh_machine.attack',
+      hurt: 'enemy.flesh_machine.hurt',
+      death: 'enemy.flesh_machine.death',
+    },
+    doppelganger: {
+      idle: 'enemy.doppelganger.idle',
+      attack: 'enemy.doppelganger.attack',
+      hurt: 'enemy.doppelganger.hurt',
+      death: 'enemy.doppelganger.death',
+    },
   },
   hallucinations: {
     burst: 'hallucination.burst',
@@ -114,6 +144,24 @@ export const SFX = {
       ambient: 'boss.heart_hospital.ambient',
       attack: 'boss.heart_hospital.attack',
       death: 'boss.heart_hospital.death',
+    },
+    choir: {
+      intro: 'boss.choir.intro',
+      attack: 'boss.choir.attack',
+      hurt: 'boss.choir.hurt',
+      death: 'boss.choir.death',
+    },
+    dadeKeeper: {
+      intro: 'boss.dade_keeper.intro',
+      attack: 'boss.dade_keeper.attack',
+      hurt: 'boss.dade_keeper.hurt',
+      death: 'boss.dade_keeper.death',
+    },
+    shepherd: {
+      intro: 'boss.shepherd.intro',
+      attack: 'boss.shepherd.attack',
+      hurt: 'boss.shepherd.hurt',
+      death: 'boss.shepherd.death',
     },
   },
   machinery: {
@@ -227,6 +275,58 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   [SFX.enemies.orderly.attack]: url('/assets/sounds/enemies/orderly/orderly_attack.wav'),
   [SFX.enemies.orderly.hurt]: url('/assets/sounds/enemies/orderly/orderly_hurt.wav'),
   [SFX.enemies.orderly.death]: url('/assets/sounds/enemies/orderly/orderly_death.wav'),
+  [SFX.enemies.deformedPatient.idle]: url(
+    '/assets/sounds/enemies/deformed_patient/deformed_patient_idle.wav',
+  ),
+  [SFX.enemies.deformedPatient.attack]: url(
+    '/assets/sounds/enemies/deformed_patient/deformed_patient_attack.wav',
+  ),
+  [SFX.enemies.deformedPatient.hurt]: url(
+    '/assets/sounds/enemies/deformed_patient/deformed_patient_hurt.wav',
+  ),
+  [SFX.enemies.deformedPatient.death]: url(
+    '/assets/sounds/enemies/deformed_patient/deformed_patient_death.wav',
+  ),
+  [SFX.enemies.fleshWatcher.idle]: url(
+    '/assets/sounds/enemies/flesh_watcher/flesh_watcher_idle.wav',
+  ),
+  [SFX.enemies.fleshWatcher.attack]: url(
+    '/assets/sounds/enemies/flesh_watcher/flesh_watcher_attack.wav',
+  ),
+  [SFX.enemies.fleshWatcher.hurt]: url(
+    '/assets/sounds/enemies/flesh_watcher/flesh_watcher_hurt.wav',
+  ),
+  [SFX.enemies.fleshWatcher.death]: url(
+    '/assets/sounds/enemies/flesh_watcher/flesh_watcher_death.wav',
+  ),
+  [SFX.enemies.fleshEye.idle]: url('/assets/sounds/enemies/flesh_eye/flesh_eye_idle.wav'),
+  [SFX.enemies.fleshEye.attack]: url('/assets/sounds/enemies/flesh_eye/flesh_eye_attack.wav'),
+  [SFX.enemies.fleshEye.hurt]: url('/assets/sounds/enemies/flesh_eye/flesh_eye_hurt.wav'),
+  [SFX.enemies.fleshEye.death]: url('/assets/sounds/enemies/flesh_eye/flesh_eye_death.wav'),
+  [SFX.enemies.fleshMachine.idle]: url(
+    '/assets/sounds/enemies/flesh_machine/flesh_machine_idle.wav',
+  ),
+  [SFX.enemies.fleshMachine.attack]: url(
+    '/assets/sounds/enemies/flesh_machine/flesh_machine_attack.wav',
+  ),
+  [SFX.enemies.fleshMachine.hurt]: url(
+    '/assets/sounds/enemies/flesh_machine/flesh_machine_hurt.wav',
+  ),
+  [SFX.enemies.fleshMachine.death]: url(
+    '/assets/sounds/enemies/flesh_machine/flesh_machine_death.wav',
+  ),
+  [SFX.enemies.doppelganger.idle]: url(
+    '/assets/sounds/enemies/doppelganger/doppelganger_idle.wav',
+  ),
+  [SFX.enemies.doppelganger.attack]: url(
+    '/assets/sounds/enemies/doppelganger/doppelganger_attack.wav',
+  ),
+  [SFX.enemies.doppelganger.hurt]: url(
+    '/assets/sounds/enemies/doppelganger/doppelganger_hurt.wav',
+  ),
+  [SFX.enemies.doppelganger.death]: url(
+    '/assets/sounds/enemies/doppelganger/doppelganger_death.wav',
+  ),
 
   // --- Hallucinations ---
   [SFX.hallucinations.burst]: url('/assets/sounds/hallucinations/hallucination_burst.wav'),
@@ -262,6 +362,18 @@ export const DEFAULT_SFX: Record<SfxKey, string> = {
   [SFX.bosses.heartHospital.ambient]: url('/assets/sounds/bosses/heart_hospital/heart_ambient.wav'),
   [SFX.bosses.heartHospital.attack]: url('/assets/sounds/bosses/heart_hospital/heart_attack.wav'),
   [SFX.bosses.heartHospital.death]: url('/assets/sounds/bosses/heart_hospital/heart_death.wav'),
+  [SFX.bosses.choir.intro]: url('/assets/sounds/bosses/choir/choir_intro.wav'),
+  [SFX.bosses.choir.attack]: url('/assets/sounds/bosses/choir/choir_attack.wav'),
+  [SFX.bosses.choir.hurt]: url('/assets/sounds/bosses/choir/choir_hurt.wav'),
+  [SFX.bosses.choir.death]: url('/assets/sounds/bosses/choir/choir_death.wav'),
+  [SFX.bosses.dadeKeeper.intro]: url('/assets/sounds/bosses/dade_keeper/dade_keeper_intro.wav'),
+  [SFX.bosses.dadeKeeper.attack]: url('/assets/sounds/bosses/dade_keeper/dade_keeper_attack.wav'),
+  [SFX.bosses.dadeKeeper.hurt]: url('/assets/sounds/bosses/dade_keeper/dade_keeper_hurt.wav'),
+  [SFX.bosses.dadeKeeper.death]: url('/assets/sounds/bosses/dade_keeper/dade_keeper_death.wav'),
+  [SFX.bosses.shepherd.intro]: url('/assets/sounds/bosses/shepherd/shepherd_intro.wav'),
+  [SFX.bosses.shepherd.attack]: url('/assets/sounds/bosses/shepherd/shepherd_attack.wav'),
+  [SFX.bosses.shepherd.hurt]: url('/assets/sounds/bosses/shepherd/shepherd_hurt.wav'),
+  [SFX.bosses.shepherd.death]: url('/assets/sounds/bosses/shepherd/shepherd_death.wav'),
 
   // --- Machinery ---
   [SFX.machinery.fluorescentBuzz]: url('/assets/sounds/machinery/fluorescent_buzz.wav'),

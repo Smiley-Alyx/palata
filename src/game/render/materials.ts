@@ -27,11 +27,18 @@ const materialToDomId = new Map<string, string>([
   ['ventilation_shaft', 'ventilation_shaft'],
   ['flesh_wall', 'flesh_wall'],
   ['industrial_flesh', 'industrial_flesh'],
+  ['panel_facade', 'panel_facade'],
+  ['school_plaster', 'school_plaster'],
+  ['entrance_hallway', 'entrance_hallway'],
+  ['bus_stop_concrete', 'bus_stop_concrete'],
   ['medical_door', 'medical_door'],
   ['archive_door', 'archive_door'],
   ['ward_door', 'ward_door'],
   ['shower_door', 'shower_door'],
   ['blast_door', 'blast_door'],
+  ['apartment_door', 'apartment_door'],
+  ['metal_grate', 'metal_grate'],
+  ['rusty_gate', 'rusty_gate'],
   ['reinforced_window', 'reinforced_window'],
   ['ward_window', 'ward_window'],
   ['false_window', 'false_window'],
@@ -41,6 +48,7 @@ const materialToDomId = new Map<string, string>([
   // --- Floor / ceiling materials (used by setBackgroundMaterials) ---
   ['seamless_floor', 'seamless_floor'],
   ['organic_floor', 'organic_floor'],
+  ['asphalt_floor', 'asphalt_floor'],
   ['seamless_ceiling', 'seamless_ceiling'],
 
   // --- Sprite materials (used by entities/pickups) ---

@@ -13,6 +13,11 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   ventilation_shaft: 'assets/textures/walls/ventilation_shaft.png',
   flesh_wall: 'assets/textures/flesh/flesh_wall.png',
   industrial_flesh: 'assets/textures/flesh/flesh_wall.png',
+  // Urban / Soviet city set (level5–6)
+  panel_facade: 'assets/textures/walls/panel_facade.png',
+  school_plaster: 'assets/textures/walls/school_plaster.png',
+  entrance_hallway: 'assets/textures/walls/entrance_hallway.png',
+  bus_stop_concrete: 'assets/textures/walls/bus_stop_concrete.png',
 
   // Doors / windows
   medical_door: 'assets/textures/doors/medical_door.png',
@@ -20,6 +25,9 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   ward_door: 'assets/textures/doors/ward_door.png',
   shower_door: 'assets/textures/doors/shower_door.png',
   blast_door: 'assets/textures/doors/blast_door.png',
+  apartment_door: 'assets/textures/doors/apartment_door.png',
+  metal_grate: 'assets/textures/doors/metal_grate.png',
+  rusty_gate: 'assets/textures/doors/rusty_gate.png',
   reinforced_window: 'assets/textures/walls/reinforced_window.svg',
   ward_window: 'assets/textures/windows/ward_window.png',
   false_window: 'assets/textures/windows/false_window.png',
@@ -29,6 +37,7 @@ export const ASSET_MANIFEST: Readonly<Record<string, string>> = Object.freeze({
   // Floors / ceilings
   seamless_floor: 'assets/textures/floors/seamless_floor.png',
   organic_floor: 'assets/textures/floors/organic_floor.png',
+  asphalt_floor: 'assets/textures/floors/asphalt_floor.png',
   seamless_ceiling: 'assets/textures/ceilings/seamless_ceiling.png',
 
   // Enemies
