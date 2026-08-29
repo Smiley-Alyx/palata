@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "_comment": "HUD face by story level + perception state. One PNG per entry (no atlas slicing). Resolve: currentLevel → first matching key in perceptionPriority that is active → src; else states.default. If hp<=0 use states.dead.",
+  "transparentEdges": { "r": 0, "g": 0, "b": 0, "tolerance": 4 },
+  "canvas": { "width": 128, "height": 96 },
+  "tickMs": 800,
+  "perceptionPriority": [
+    "predator",
+    "nightmare",
+    "infected",
+    "withdrawal",
+    "medicated"
+  ],
+  "portraits": {
+    "ward": "sprites/hud/portrait_level_1_ward.png",
+    "lower_block": "sprites/hud/portrait_level_2_lower_block.png",
+    "guts": "sprites/hud/portrait_level_3_guts.png",
+    "womb": "sprites/hud/portrait_level_4_womb.png",
+    "city": "sprites/hud/portrait_level_5_city.png",
+    "hunt": "sprites/hud/portrait_level_6_hunt.png",
+    "dead": {
+      "src": "sprites/hud/portrait_sheet.png",
+      "cols": 3,
+      "rows": 5,
+      "frame": 14
+    }
+  },
+  "legacySheet": {
+    "src": "sprites/hud/portrait_sheet.png",
+    "cols": 3,
+    "rows": 5,
+    "_comment": "Old 3×5 sheet still used by main.ts until this manifest is wired.",
+    "hpCycles": {
+      "dead": [14],
+      "low": [5, 8, 5, 7],
+      "mid": [4, 5, 4, 8],
+      "high": [3, 1, 3, 2],
+      "full": [0, 1, 0, 2]
+    },
+    "stateCycles": {
+      "predator": [11, 12, 13, 6],
+      "nightmare": [7, 12, 13, 8],
+      "infected": [9, 10, 9, 7],
+      "withdrawal": [8, 3, 8, 4]
+    }
+  },
+  "levels": {
+    "1": {
+      "id": "ward",
+      "title": "Палата",
+      "narrative": "Усталость и страх; ещё человек.",
+      "states": {
+        "default": "ward",
+        "medicated": "ward",
+        "withdrawal": "lower_block",
+        "infected": "guts",
+        "nightmare": "womb",
+        "predator": "hunt",
+        "dead": "dead"
+      }
+    },
+    "2": {
+      "id": "lower_block",
+      "title": "Нижний блок",
+      "narrative": "Психическое истощение; индустриальный dread.",
+      "states": {
+        "default": "lower_block",
+        "medicated": "lower_block",
+        "withdrawal": "lower_block",
+        "infected": "guts",
+        "nightmare": "womb",
+        "predator": "hunt",
+        "dead": "dead"
+      }
+    },
+    "3": {
+      "id": "guts",
+      "title": "Кишки комплекса",
+      "narrative": "Первые признаки заражения; medicated/withdrawal.",
+      "states": {
+        "default": "guts",
+        "medicated": "guts",
+        "withdrawal": "guts",
+        "infected": "guts",
+        "nightmare": "womb",
+        "predator": "hunt",
+        "dead": "dead"
+      }
+    },
+    "4": {
+      "id": "womb",
+      "title": "Чрево",
+      "narrative": "Инфекция / nightmare; лицо искажается.",
+      "states": {
+        "default": "womb",
+        "medicated": "womb",
+        "withdrawal": "womb",
+        "infected": "womb",
+        "nightmare": "womb",
+        "predator": "city",
+        "dead": "dead"
+      }
+    },
+    "5": {
+      "id": "city",
+      "title": "Город внутри",
+      "narrative": "Продвинутая мутация; predator mechanics.",
+      "states": {
+        "default": "city",
+        "medicated": "city",
+        "withdrawal": "city",
+        "infected": "city",
+        "nightmare": "city",
+        "predator": "hunt",
+        "dead": "dead"
+      }
+    },
+    "6": {
+      "id": "hunt",
+      "title": "Охота",
+      "narrative": "Финальный нечеловеческий хищный облик.",
+      "states": {
+        "default": "hunt",
+        "medicated": "hunt",
+        "withdrawal": "hunt",
+        "infected": "hunt",
+        "nightmare": "hunt",
+        "predator": "hunt",
+        "dead": "dead"
+      }
+    }
+  }
+}
