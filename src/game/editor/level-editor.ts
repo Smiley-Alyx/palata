@@ -802,13 +802,43 @@ function objectCell(value: unknown) {
 }
 
 function compactMaterials(materials: string[][]) {
-  const out: Array<{ x: number; y: number; material: string }> = [];
-  for (let y = 0; y < materials.length; y++) {
-    for (let x = 0; x < (materials[y]?.length ?? 0); x++) {
+  const height = materials.length;
+  const width = materials[0]?.length ?? 0;
+  const covered = Array.from({ length: height }, () => new Array(width).fill(false));
+  const out: Array<{ x: number; y: number; w?: number; h?: number; material: string }> = [];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (covered[y][x]) continue;
       const material = materials[y][x];
-      if (material) out.push({ x, y, material });
+      if (!material) continue;
+
+      let w = 1;
+      while (x + w < width && !covered[y][x + w] && materials[y][x + w] === material) w++;
+
+      let h = 1;
+      heightLoop: while (y + h < height) {
+        for (let xx = x; xx < x + w; xx++) {
+          if (covered[y + h][xx] || materials[y + h][xx] !== material) break heightLoop;
+        }
+        h++;
+      }
+
+      for (let yy = y; yy < y + h; yy++) {
+        for (let xx = x; xx < x + w; xx++) covered[yy][xx] = true;
+      }
+
+      const entry: { x: number; y: number; w?: number; h?: number; material: string } = {
+        x,
+        y,
+        material,
+      };
+      if (w > 1) entry.w = w;
+      if (h > 1) entry.h = h;
+      out.push(entry);
     }
   }
+
   return out;
 }
 

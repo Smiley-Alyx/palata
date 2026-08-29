@@ -73,7 +73,7 @@
     "1110000001111101111111111111111001111111111111111100000000001111",
     "1111111111111101111000000000011001111111111110000000000000001111",
     "1111000000000000011000000000011001110000000000001100000000001111",
-    "1111000000000000011000000000011001110000000000001100000000001111",
+    "1111000000000000011000100000011001110000000000001100000000001111",
     "1111000000000000000000000000011001110000000000001100000000001113",
     "1111000000000000013000000000010001000000000000000000000000001111",
     "1111000000000000013000000000011001110000000000001300000000001111",
@@ -88,88 +88,35 @@
     "1111111111111111111111111000000000000001111111111111111111111111",
     "1111111111111111111111111000000000000001111111111111111111111111",
     "1111111111111111111111111111111111111111111111111111111111111111",
-    "1111111111113111111111111111111111111111111111111311111111111111"
+    "1111111111111111111111111111111111111111111111111311111111111111"
   ],
   "materialsWall": [
     {
-      "x": 2,
-      "y": 11,
-      "w": 18,
-      "h": 13,
-      "material": "medical_tiles"
-    },
-    {
-      "x": 2,
-      "y": 28,
-      "w": 18,
-      "h": 14,
-      "material": "concrete_tunnel"
-    },
-    {
-      "x": 2,
-      "y": 46,
-      "w": 18,
-      "h": 14,
-      "material": "hospital_wall_stripe"
-    },
-    {
-      "x": 50,
-      "y": 9,
-      "w": 13,
-      "h": 15,
-      "material": "medical_tiles"
-    },
-    {
-      "x": 51,
-      "y": 26,
-      "w": 12,
-      "h": 16,
-      "material": "metal_panels"
-    },
-    {
-      "x": 35,
-      "y": 46,
-      "w": 28,
-      "h": 14,
-      "material": "hospital_wall_stripe"
-    },
-    {
-      "x": 35,
-      "y": 11,
-      "w": 17,
-      "h": 13,
-      "material": "metal_emergency"
-    },
-    {
       "x": 28,
       "y": 0,
-      "w": 8,
-      "h": 25,
-      "material": "ventilation_shaft"
-    },
-    {
-      "x": 28,
-      "y": 24,
-      "w": 8,
-      "h": 20,
-      "material": "metal_emergency"
-    },
-    {
-      "x": 24,
-      "y": 42,
-      "w": 18,
-      "h": 21,
-      "material": "hospital_wall_stripe"
+      "material": "ventilation_shaft",
+      "w": 3,
+      "h": 24
     },
     {
       "x": 31,
       "y": 0,
-      "material": "blast_door"
+      "material": "blast_door",
+      "w": 2
     },
     {
-      "x": 32,
+      "x": 33,
       "y": 0,
-      "material": "blast_door"
+      "material": "ventilation_shaft",
+      "w": 3,
+      "h": 24
+    },
+    {
+      "x": 31,
+      "y": 1,
+      "material": "ventilation_shaft",
+      "w": 2,
+      "h": 7
     },
     {
       "x": 31,
@@ -177,19 +124,143 @@
       "material": "blast_door"
     },
     {
+      "x": 32,
+      "y": 8,
+      "material": "ventilation_shaft",
+      "h": 16
+    },
+    {
+      "x": 31,
+      "y": 9,
+      "material": "ventilation_shaft",
+      "h": 15
+    },
+    {
+      "x": 50,
+      "y": 9,
+      "material": "medical_tiles",
+      "w": 13,
+      "h": 2
+    },
+    {
+      "x": 2,
+      "y": 11,
+      "material": "medical_tiles",
+      "w": 18,
+      "h": 5
+    },
+    {
+      "x": 36,
+      "y": 11,
+      "material": "metal_emergency",
+      "w": 16,
+      "h": 5
+    },
+    {
+      "x": 52,
+      "y": 11,
+      "material": "medical_tiles",
+      "w": 11,
+      "h": 13
+    },
+    {
+      "x": 63,
+      "y": 15,
+      "material": "false_window"
+    },
+    {
+      "x": 2,
+      "y": 16,
+      "material": "medical_tiles",
+      "w": 16,
+      "h": 8
+    },
+    {
+      "x": 18,
+      "y": 16,
+      "material": "ward_window",
+      "h": 2
+    },
+    {
+      "x": 19,
+      "y": 16,
+      "material": "medical_tiles",
+      "h": 8
+    },
+    {
+      "x": 36,
+      "y": 16,
+      "material": "metal_emergency",
+      "w": 14,
+      "h": 8
+    },
+    {
+      "x": 50,
+      "y": 16,
+      "material": "false_window",
+      "h": 2
+    },
+    {
+      "x": 51,
+      "y": 16,
+      "material": "metal_emergency",
+      "h": 8
+    },
+    {
+      "x": 0,
+      "y": 17,
+      "material": "ward_window"
+    },
+    {
+      "x": 18,
+      "y": 18,
+      "material": "medical_tiles",
+      "h": 6
+    },
+    {
+      "x": 50,
+      "y": 18,
+      "material": "metal_emergency",
+      "h": 6
+    },
+    {
+      "x": 28,
+      "y": 24,
+      "material": "metal_emergency",
+      "w": 3,
+      "h": 18
+    },
+    {
       "x": 31,
       "y": 24,
       "material": "medical_door"
     },
     {
-      "x": 31,
-      "y": 42,
-      "material": "archive_door"
+      "x": 32,
+      "y": 24,
+      "material": "metal_emergency",
+      "w": 4,
+      "h": 18
     },
     {
       "x": 31,
-      "y": 54,
-      "material": "ward_door"
+      "y": 25,
+      "material": "metal_emergency",
+      "h": 17
+    },
+    {
+      "x": 51,
+      "y": 26,
+      "material": "metal_panels",
+      "w": 12,
+      "h": 8
+    },
+    {
+      "x": 2,
+      "y": 28,
+      "material": "concrete_tunnel",
+      "w": 15,
+      "h": 14
     },
     {
       "x": 17,
@@ -197,8 +268,46 @@
       "material": "archive_door"
     },
     {
-      "x": 0,
-      "y": 17,
+      "x": 18,
+      "y": 28,
+      "material": "concrete_tunnel",
+      "w": 2,
+      "h": 6
+    },
+    {
+      "x": 17,
+      "y": 29,
+      "material": "concrete_tunnel",
+      "h": 13
+    },
+    {
+      "x": 18,
+      "y": 34,
+      "material": "false_window",
+      "h": 2
+    },
+    {
+      "x": 19,
+      "y": 34,
+      "material": "concrete_tunnel",
+      "h": 8
+    },
+    {
+      "x": 51,
+      "y": 34,
+      "material": "ward_window",
+      "h": 2
+    },
+    {
+      "x": 52,
+      "y": 34,
+      "material": "metal_panels",
+      "w": 11,
+      "h": 8
+    },
+    {
+      "x": 63,
+      "y": 34,
       "material": "ward_window"
     },
     {
@@ -207,24 +316,127 @@
       "material": "false_window"
     },
     {
-      "x": 0,
-      "y": 52,
-      "material": "ward_window"
+      "x": 18,
+      "y": 36,
+      "material": "concrete_tunnel",
+      "h": 6
     },
     {
-      "x": 63,
-      "y": 15,
-      "material": "false_window"
+      "x": 51,
+      "y": 36,
+      "material": "metal_panels",
+      "h": 6
     },
     {
-      "x": 63,
-      "y": 34,
-      "material": "ward_window"
+      "x": 24,
+      "y": 42,
+      "material": "hospital_wall_stripe",
+      "w": 7,
+      "h": 21
+    },
+    {
+      "x": 31,
+      "y": 42,
+      "material": "archive_door"
+    },
+    {
+      "x": 32,
+      "y": 42,
+      "material": "hospital_wall_stripe",
+      "w": 10,
+      "h": 21
+    },
+    {
+      "x": 31,
+      "y": 43,
+      "material": "hospital_wall_stripe",
+      "h": 11
+    },
+    {
+      "x": 2,
+      "y": 46,
+      "material": "hospital_wall_stripe",
+      "w": 18,
+      "h": 4
+    },
+    {
+      "x": 42,
+      "y": 46,
+      "material": "hospital_wall_stripe",
+      "w": 21,
+      "h": 5
     },
     {
       "x": 63,
       "y": 49,
       "material": "false_window"
+    },
+    {
+      "x": 2,
+      "y": 50,
+      "material": "hospital_wall_stripe",
+      "w": 16,
+      "h": 10
+    },
+    {
+      "x": 18,
+      "y": 50,
+      "material": "ward_window",
+      "h": 2
+    },
+    {
+      "x": 19,
+      "y": 50,
+      "material": "hospital_wall_stripe",
+      "h": 10
+    },
+    {
+      "x": 42,
+      "y": 51,
+      "material": "hospital_wall_stripe",
+      "w": 7,
+      "h": 9
+    },
+    {
+      "x": 49,
+      "y": 51,
+      "material": "false_window",
+      "h": 2
+    },
+    {
+      "x": 50,
+      "y": 51,
+      "material": "hospital_wall_stripe",
+      "w": 13,
+      "h": 9
+    },
+    {
+      "x": 0,
+      "y": 52,
+      "material": "ward_window"
+    },
+    {
+      "x": 18,
+      "y": 52,
+      "material": "hospital_wall_stripe",
+      "h": 8
+    },
+    {
+      "x": 49,
+      "y": 53,
+      "material": "hospital_wall_stripe",
+      "h": 7
+    },
+    {
+      "x": 31,
+      "y": 54,
+      "material": "ward_door"
+    },
+    {
+      "x": 31,
+      "y": 55,
+      "material": "hospital_wall_stripe",
+      "h": 8
     },
     {
       "x": 12,
@@ -235,66 +447,6 @@
       "x": 49,
       "y": 63,
       "material": "ward_window"
-    },
-    {
-      "x": 18,
-      "y": 16,
-      "material": "ward_window"
-    },
-    {
-      "x": 18,
-      "y": 17,
-      "material": "ward_window"
-    },
-    {
-      "x": 50,
-      "y": 16,
-      "material": "false_window"
-    },
-    {
-      "x": 50,
-      "y": 17,
-      "material": "false_window"
-    },
-    {
-      "x": 18,
-      "y": 34,
-      "material": "false_window"
-    },
-    {
-      "x": 18,
-      "y": 35,
-      "material": "false_window"
-    },
-    {
-      "x": 51,
-      "y": 34,
-      "material": "ward_window"
-    },
-    {
-      "x": 51,
-      "y": 35,
-      "material": "ward_window"
-    },
-    {
-      "x": 18,
-      "y": 50,
-      "material": "ward_window"
-    },
-    {
-      "x": 18,
-      "y": 51,
-      "material": "ward_window"
-    },
-    {
-      "x": 49,
-      "y": 51,
-      "material": "false_window"
-    },
-    {
-      "x": 49,
-      "y": 52,
-      "material": "false_window"
     }
   ],
   "worldStates": {
